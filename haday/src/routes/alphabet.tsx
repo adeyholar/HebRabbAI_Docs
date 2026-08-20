@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { Panel } from "@/components/panel";
 import { CONSONANTS, VOWELS, type HebrewLetter } from "@/lib/alphabet";
 import { shuffle } from "@/lib/vocab";
 import { cn } from "@/lib/cn";
@@ -13,15 +14,17 @@ function AlphabetPage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold tracking-tight">Alef-bet</h1>
-      <p className="mt-1 text-sm text-muted">Week 1 foundation: consonants, final forms, and vowels.</p>
-      <div className="mt-4 flex gap-2">
-        {(["letters", "vowels", "drill"] as const).map((t) => (
-          <Button key={t} size="sm" variant={tab === t ? "primary" : "outline"} onClick={() => setTab(t)}>
-            {t === "letters" ? "Letters" : t === "vowels" ? "Vowels" : "Quiz"}
-          </Button>
-        ))}
-      </div>
+      <Panel>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Alef-bet</h1>
+        <p className="mt-1 text-sm text-muted">Week 1 foundation: consonants, final forms, and vowels.</p>
+        <div className="mt-4 flex gap-2">
+          {(["letters", "vowels", "drill"] as const).map((t) => (
+            <Button key={t} size="sm" variant={tab === t ? "primary" : "outline"} onClick={() => setTab(t)}>
+              {t === "letters" ? "Letters" : t === "vowels" ? "Vowels" : "Quiz"}
+            </Button>
+          ))}
+        </div>
+      </Panel>
 
       {tab === "letters" && (
         <>

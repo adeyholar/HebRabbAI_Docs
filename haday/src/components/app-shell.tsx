@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh text-fg">
-      <header className="sticky top-0 z-20 border-b border-border bg-parchment/92 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4">
           <BrandLockup linked />
           <div className="account-chip min-w-0 shrink">
@@ -99,7 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-6 sm:pb-24">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
         <ul className="mx-auto grid max-w-3xl grid-cols-6">
           {NAV.map((item) => {
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
@@ -128,7 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 function ShellSkeleton() {
   return (
     <div className="min-h-dvh text-fg">
-      <header className="sticky top-0 z-20 border-b border-border bg-parchment/92 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
           <BrandLockup />
           <div className="h-8 w-8 animate-pulse rounded-full bg-surface" />

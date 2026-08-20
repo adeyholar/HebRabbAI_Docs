@@ -6,6 +6,7 @@ import { POS_LABEL, itemsForWeek, type VocabItem } from "@/lib/vocab";
 import { queueForFocus, useStudy } from "@/lib/store";
 import { VerseCard } from "@/components/verse-card";
 import { FocusToggle } from "@/components/focus-toggle";
+import { Panel } from "@/components/panel";
 
 export const Route = createFileRoute("/drill")({ component: DrillPage });
 
@@ -74,31 +75,28 @@ function DrillPage() {
 
   return (
     <>
-      <div className="mb-4 flex items-end justify-between gap-3">
-        <div className="flex-1">
-          <WeekSelect />
-          <FocusToggle />
+      <Panel className="mb-4">
+        <WeekSelect />
+        <FocusToggle />
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <span className="tabular-nums font-medium text-ink">
+            {progressed + 1} / {total}
+          </span>
+          <button
+            type="button"
+            className="min-h-11 text-sm font-semibold text-primary"
+            onClick={() => setDirection(frontHe ? "en-he" : "he-en")}
+          >
+            {frontHe ? "Hebrew → English" : "English → Hebrew"}
+          </button>
         </div>
-      </div>
-
-      <div className="mb-3 flex items-center justify-between text-sm text-muted">
-        <span className="tabular-nums">
-          {progressed + 1} / {total}
-        </span>
-        <button
-          type="button"
-          className="min-h-11 text-sm font-medium text-primary"
-          onClick={() => setDirection(frontHe ? "en-he" : "he-en")}
-        >
-          {frontHe ? "Hebrew → English" : "English → Hebrew"}
-        </button>
-      </div>
-      <div className="mb-4 h-1 overflow-hidden rounded-full bg-surface">
-        <div
-          className="h-full bg-primary transition-[width] duration-[var(--motion-fast)]"
-          style={{ width: `${(progressed / total) * 100}%` }}
-        />
-      </div>
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface">
+          <div
+            className="h-full bg-primary transition-[width] duration-[var(--motion-fast)]"
+            style={{ width: `${(progressed / total) * 100}%` }}
+          />
+        </div>
+      </Panel>
 
       <button
         type="button"

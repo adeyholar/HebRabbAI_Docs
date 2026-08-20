@@ -5,6 +5,7 @@ import { InkPad, type InkPadHandle } from "@/components/ink-pad";
 import { VerseCard } from "@/components/verse-card";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
+import { Panel } from "@/components/panel";
 import { matchHandwriting, type HandMatch } from "@/lib/hebrew";
 import { readHandwriting } from "@/lib/read-handwriting";
 import { queueForFocus, useStudy } from "@/lib/store";
@@ -130,17 +131,19 @@ function WritePage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold tracking-tight">Write it</h1>
-      <p className="mt-1 text-sm text-muted">
-        English first. Scribble the Hebrew on the pad — right to left — then check. Vowels are optional.
-      </p>
-      <div className="mt-4">
-        <WeekSelect />
-        <FocusToggle />
-      </div>
-      <p className="mt-3 text-sm tabular-nums text-muted">
-        {i + 1} / {round.length} · {left} checks left today
-      </p>
+      <Panel className="mb-4">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Write it</h1>
+        <p className="mt-1 text-sm text-muted">
+          English first. Scribble the Hebrew on the pad — right to left — then check. Vowels are optional.
+        </p>
+        <div className="mt-4">
+          <WeekSelect />
+          <FocusToggle />
+        </div>
+        <p className="mt-3 text-sm font-medium tabular-nums text-ink">
+          {i + 1} / {round.length} · {left} checks left today
+        </p>
+      </Panel>
 
       <div className="mt-3 rounded-[var(--radius-xl)] bg-card px-5 py-6 text-center shadow-[var(--shadow-border)]">
         <p className="text-xs font-medium uppercase tracking-wide text-muted">

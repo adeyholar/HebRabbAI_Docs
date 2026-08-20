@@ -9,7 +9,7 @@ export function ScrollBackdrop() {
           className="pointer-events-none fixed inset-0 -z-10 size-full object-cover"
         />
       </picture>
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-parchment/15" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-parchment/58" />
     </>
   );
 }

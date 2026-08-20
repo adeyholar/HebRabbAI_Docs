@@ -7,6 +7,7 @@ import { FocusToggle } from "@/components/focus-toggle";
 import { glossMatches, itemsForWeek, quizChoices, type VocabItem } from "@/lib/vocab";
 import { useStudy, weightedQuizDeck, weakQueue } from "@/lib/store";
 import { cn } from "@/lib/cn";
+import { Panel } from "@/components/panel";
 
 export const Route = createFileRoute("/quiz")({ component: QuizPage });
 
@@ -104,19 +105,21 @@ function QuizPage() {
 
   return (
     <>
-      <WeekSelect />
-      <FocusToggle />
-      <div className="mt-4 flex gap-2">
-        <Button size="sm" variant={mode === "choice" ? "primary" : "outline"} onClick={() => { setMode("choice"); resetRound(); }}>
-          Multiple choice
-        </Button>
-        <Button size="sm" variant={mode === "type" ? "primary" : "outline"} onClick={() => { setMode("type"); resetRound(); }}>
-          Type the gloss
-        </Button>
-      </div>
-      <p className="mt-4 text-sm tabular-nums text-muted">
-        {i + 1} / {deck.length} · {score.right} correct
-      </p>
+      <Panel className="mb-4">
+        <WeekSelect />
+        <FocusToggle />
+        <div className="mt-4 flex gap-2">
+          <Button size="sm" variant={mode === "choice" ? "primary" : "outline"} onClick={() => { setMode("choice"); resetRound(); }}>
+            Multiple choice
+          </Button>
+          <Button size="sm" variant={mode === "type" ? "primary" : "outline"} onClick={() => { setMode("type"); resetRound(); }}>
+            Type the gloss
+          </Button>
+        </div>
+        <p className="mt-4 text-sm font-medium tabular-nums text-ink">
+          {i + 1} / {deck.length} · {score.right} correct
+        </p>
+      </Panel>
 
       <div className="mt-3 rounded-[var(--radius-xl)] bg-card px-5 py-8 text-center shadow-[var(--shadow-border)]">
         <p className="he-word text-5xl">{item.hebrew}</p>

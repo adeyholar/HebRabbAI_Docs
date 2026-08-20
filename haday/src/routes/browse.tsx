@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { WeekSelect } from "@/components/week-select";
 import { VerseCard } from "@/components/verse-card";
+import { Panel } from "@/components/panel";
 import { POS_LABEL, VOCAB, itemsForWeek, type Pos } from "@/lib/vocab";
 import { hydrateCard, isMastered, isWeak } from "@/lib/srs";
 import { useStudy } from "@/lib/store";
@@ -37,17 +38,19 @@ function BrowsePage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold tracking-tight">Lexicon</h1>
-      <p className="mt-1 text-sm text-muted">{VOCAB.length} high-frequency lemmas. Tap a word for a Tanakh example.</p>
-      <div className="mt-4">
-        <WeekSelect />
-      </div>
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search gloss, Hebrew, or transliteration"
-        className="mt-3 h-12 w-full rounded-[var(--radius-md)] bg-card px-4 text-sm shadow-[var(--shadow-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
+      <Panel>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Lexicon</h1>
+        <p className="mt-1 text-sm text-muted">{VOCAB.length} high-frequency lemmas. Tap a word for a Tanakh example.</p>
+        <div className="mt-4">
+          <WeekSelect />
+        </div>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search gloss, Hebrew, or transliteration"
+          className="mt-3 h-12 w-full rounded-[var(--radius-md)] border border-border bg-parchment px-4 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+      </Panel>
       <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
         <button
           type="button"

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
+import { Panel } from "@/components/panel";
 import { COURSE_WEEKS, VOCAB, itemsForWeek } from "@/lib/vocab";
 import { statsFor, useStudy, weakestOf } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
@@ -25,16 +26,16 @@ function Home() {
 
   return (
     <>
-      <section className="mb-6">
-        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">HaDay · Hebraic Mentor</p>
-        <h1 className="mt-1 font-display text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
+      <Panel className="mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">HaDay · Hebraic Mentor</p>
+        <h1 className="mt-1 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
           {firstName ? `${firstName}, learn the words that open the text.` : "Learn the words that open the text."}
         </h1>
         <p className="mt-3 max-w-prose text-muted">
           Flip, write, and quiz high-frequency Biblical Hebrew. Misses float to the front. Week 7 is the midterm pack;
           Week 15 is the cumulative set.
         </p>
-      </section>
+      </Panel>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="Due" value={s.due} />
@@ -117,8 +118,9 @@ function Home() {
       </div>
 
       <section className="mt-8">
-        <h2 className="font-display text-xl font-semibold">Course map</h2>
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        <Panel>
+          <h2 className="font-display text-xl font-bold text-ink">Course map</h2>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {COURSE_WEEKS.map((w) => {
             const st = statsFor(itemsForWeek(w.week), cards);
             const active = w.week === week;
@@ -128,7 +130,7 @@ function Home() {
                   type="button"
                   onClick={() => useStudy.getState().setWeek(w.week)}
                   className={`w-full rounded-[var(--radius-lg)] p-4 text-left shadow-[var(--shadow-border)] ${
-                    active ? "bg-primary text-primary-foreground" : "bg-card"
+                    active ? "bg-primary text-primary-foreground" : "bg-surface"
                   }`}
                 >
                   <div className="flex items-baseline justify-between gap-2">
@@ -150,23 +152,26 @@ function Home() {
               </li>
             );
           })}
-        </ul>
+          </ul>
+        </Panel>
       </section>
 
-      <p className="mt-8 text-xs text-subtle">
-        Full lexicon {VOCAB.length} lemmas · {all.mastered} mastered · {all.weak} weak overall. High-frequency Biblical
-        Hebrew with standard dictionary glosses — a study companion, not a reprint of any textbook list. Progress is
-        saved to this account.
-      </p>
-      <button
-        type="button"
-        className="mt-3 min-h-11 text-xs text-muted underline-offset-2 hover:underline"
-        onClick={() => {
-          if (confirm("Reset all progress on this account?")) reset();
-        }}
-      >
-        Reset account progress
-      </button>
+      <Panel className="mt-8">
+        <p className="text-xs text-muted">
+          Full lexicon {VOCAB.length} lemmas · {all.mastered} mastered · {all.weak} weak overall. High-frequency Biblical
+          Hebrew with standard dictionary glosses — a study companion, not a reprint of any textbook list. Progress is
+          saved to this account.
+        </p>
+        <button
+          type="button"
+          className="mt-3 min-h-11 text-xs font-medium text-muted underline-offset-2 hover:underline"
+          onClick={() => {
+            if (confirm("Reset all progress on this account?")) reset();
+          }}
+        >
+          Reset account progress
+        </button>
+      </Panel>
     </>
   );
 }
@@ -174,8 +179,8 @@ function Home() {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-[var(--radius-lg)] bg-card px-3 py-3 shadow-[var(--shadow-border)]">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-0.5 font-display text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-0.5 font-sans text-2xl font-bold tabular-nums text-ink">{value}</p>
     </div>
   );
 }

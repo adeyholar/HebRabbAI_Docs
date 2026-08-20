@@ -15,7 +15,7 @@ export function WeekSelect() {
         value={week}
         onChange={(e) => setWeek(Number(e.target.value))}
         className={cn(
-          "h-11 w-full min-h-11 rounded-[var(--radius-md)] bg-card px-3 text-sm shadow-[var(--shadow-border)]",
+          "h-11 w-full min-h-11 rounded-[var(--radius-md)] border border-border bg-parchment px-3 text-sm text-ink",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
