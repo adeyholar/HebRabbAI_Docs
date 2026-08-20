@@ -135,6 +135,7 @@ function QuizPage() {
       </div>
 
       {mode === "choice" ? (
+        <>
         <ul className="mt-4 grid gap-2">
           {choices.map((c) => {
             const selected = picked === c;
@@ -170,13 +171,14 @@ function QuizPage() {
                 >
                   {c}
                 </button>
-                {firstMiss && !picked && (
-                  <p className="mt-1 text-sm font-semibold text-danger">One more try</p>
-                )}
               </li>
             );
           })}
         </ul>
+        {missedChoice && !picked && (
+          <p className="mt-3 text-center text-sm font-semibold text-danger">One more try</p>
+        )}
+        </>
       ) : (
         <form
           className="mt-4"

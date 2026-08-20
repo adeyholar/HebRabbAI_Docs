@@ -237,13 +237,13 @@ function FoundationQuiz() {
                   optionLabel(o)
                 )}
               </button>
-              {missedId === id && !picked && (
-                <p className="mt-1 text-center text-sm font-semibold text-danger">One more try</p>
-              )}
             </li>
           );
         })}
       </ul>
+      {missedId && !picked && (
+        <p className="mt-3 text-center text-sm font-semibold text-danger">One more try</p>
+      )}
       {picked && (
         <Button
           className="mt-4 w-full"
