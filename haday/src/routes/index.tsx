@@ -79,9 +79,9 @@ function Home() {
                 Drill weak
               </Button>
             </Link>
-            <Link to="/write" className="flex-1">
+            <Link to="/write" search={{ mode: "memorize" }} className="flex-1">
               <Button className="w-full" size="sm" variant="outline" onClick={() => setFocus("weak")}>
-                Write weak
+                Memorize weak
               </Button>
             </Link>
           </div>
@@ -103,17 +103,24 @@ function Home() {
             />
           </div>
         </div>
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+        <div className="mt-5 flex flex-col gap-2">
           <Link to="/drill" className="flex-1">
             <Button className="w-full" size="lg">
               Study due cards
             </Button>
           </Link>
-          <Link to="/write" className="flex-1">
-            <Button className="w-full" variant="outline" size="lg">
-              Write the Hebrew
-            </Button>
-          </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link to="/write" search={{ mode: "write" }}>
+              <Button className="w-full" variant="outline" size="lg">
+                Write
+              </Button>
+            </Link>
+            <Link to="/write" search={{ mode: "memorize" }}>
+              <Button className="w-full" variant="outline" size="lg">
+                Memorize + Write
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 

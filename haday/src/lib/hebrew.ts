@@ -76,3 +76,55 @@ export function findHitRange(hebrew: string, hit: string): { start: number; end:
   if (start == null || last == null) return null;
   return { start, end: last + 1 };
 }
+
+const CONS = /[\u05D0-\u05EA]/;
+const DAGESH = "\u05BC";
+const FULL_VOWEL = /[\u05B1-\u05BB]/;
+const BEGAD = new Set(["ב", "ג", "ד", "כ", "פ", "ת", "ך", "ף"]);
+
+export type DageshMark = { letter: string; kind: "lene" | "forte" };
+
+export function classifyDagesh(hebrew: string): DageshMark[] {
+  const clusters: { letter: string; marks: string }[] = [];
+  for (let i = 0; i < hebrew.length; i++) {
+    if (!CONS.test(hebrew[i])) continue;
+    let marks = "";
+    let j = i + 1;
+    while (j < hebrew.length && !CONS.test(hebrew[j])) {
+      marks += hebrew[j];
+      j++;
+    }
+    clusters.push({ letter: hebrew[i], marks });
+    i = j - 1;
+  }
+
+  const out: DageshMark[] = [];
+  for (let i = 0; i < clusters.length; i++) {
+    const c = clusters[i];
+    if (!c.marks.includes(DAGESH)) continue;
+    if (!BEGAD.has(c.letter)) {
+      out.push({ letter: c.letter, kind: "forte" });
+      continue;
+    }
+    const prev = clusters[i - 1];
+    const vowelBefore = Boolean(prev && FULL_VOWEL.test(prev.marks));
+    out.push({ letter: c.letter, kind: vowelBefore ? "forte" : "lene" });
+  }
+  return out;
+}
+
+export function dageshCoach(hebrew: string): string | null {
+  const hits = classifyDagesh(hebrew);
+  if (!hits.length) return null;
+  return hits
+    .map((h) => {
+      if (h.kind === "lene") {
+        return `${h.letter} has dagesh lene — no vowel before it. Hard sound, not doubled.`;
+      }
+      if (BEGAD.has(h.letter)) {
+        return `${h.letter} has dagesh forte — a vowel sits before it, so the letter is doubled.`;
+      }
+      return `${h.letter} has dagesh forte — this letter is doubled.`;
+    })
+    .join(" ");
+}
