@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { WeekSelect } from "@/components/week-select";
@@ -10,6 +10,23 @@ import { Panel } from "@/components/panel";
 
 export const Route = createFileRoute("/drill")({ component: DrillPage });
 
+function buildRound(pool: VocabItem[], focus: "due" | "weak", limit = 18): VocabItem[] {
+  const cards = useStudy.getState().cards;
+  const first = queueForFocus(pool, cards, focus, limit);
+  const seen = new Set(first.map((item) => item.id));
+  const rest = pool.filter((item) => !seen.has(item.id));
+  return [...first, ...rest].slice(0, Math.min(limit, pool.length));
+}
+
+function nextOpen(from: number, round: VocabItem[], done: Set<string>): number {
+  if (!round.length || done.size >= round.length) return -1;
+  for (let step = 1; step <= round.length; step++) {
+    const j = (from + step) % round.length;
+    if (!done.has(round[j].id)) return j;
+  }
+  return -1;
+}
+
 function DrillPage() {
   const week = useStudy((s) => s.week);
   const direction = useStudy((s) => s.direction);
@@ -17,25 +34,33 @@ function DrillPage() {
   const focus = useStudy((s) => s.focus);
   const rate = useStudy((s) => s.rate);
   const pool = useMemo(() => itemsForWeek(week), [week]);
-  const [session, setSession] = useState<VocabItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [cleared, setCleared] = useState(0);
+
+  const [round, setRound] = useState<VocabItem[]>([]);
+  const [pos, setPos] = useState(0);
+  const [done, setDone] = useState<Set<string>>(() => new Set());
   const [flipped, setFlipped] = useState(false);
+  const [ready, setReady] = useState(false);
+  const roundRef = useRef(round);
+  roundRef.current = round;
 
   function deal() {
-    const next = queueForFocus(pool, useStudy.getState().cards, focus, 18);
-    setSession(next);
-    setTotal(next.length);
-    setCleared(0);
+    const next = buildRound(pool, focus, 18);
+    setRound(next);
+    setPos(0);
+    setDone(new Set());
     setFlipped(false);
+    setReady(true);
   }
 
   useEffect(() => {
     deal();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild only when the study set changes
+    // Rebuild only when the set itself changes — not after each rating.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [week, focus, pool]);
 
-  const current = session[0];
+  const current = pos >= 0 ? round[pos] : undefined;
+  const cleared = done.size;
+  const finished = round.length > 0 && (pos < 0 || cleared >= round.length || !current);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -51,33 +76,56 @@ function DrillPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  });
+  }, [flipped, current?.id]);
 
   function grade(r: "again" | "good" | "easy") {
     if (!current) return;
+    const list = roundRef.current;
+    const here = pos;
     rate(current.id, r);
     setFlipped(false);
-    setSession((s) => {
-      const rest = s.slice(1);
-      if (r !== "again") return rest;
-      if (rest.length === 0) return [current];
-      const later = Math.min(rest.length, 2);
-      return [...rest.slice(0, later), current, ...rest.slice(later)];
-    });
-    if (r !== "again") setCleared((n) => n + 1);
+    if (r === "again") {
+      const nxt = nextOpen(here, list, done);
+      setPos(nxt === -1 ? here : nxt);
+      return;
+    }
+    const nextDone = new Set(done);
+    nextDone.add(current.id);
+    setDone(nextDone);
+    setPos(nextOpen(here, list, nextDone));
   }
 
-  if (!current) {
+  if (!pool.length) {
     return (
       <>
         <WeekSelect />
-        <FocusToggle />
-        <div className="mt-8 rounded-[var(--radius-xl)] bg-card p-8 text-center shadow-[var(--shadow-border)]">
+        <p className="mt-6 text-muted">No words in this set.</p>
+      </>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <>
+        <WeekSelect />
+        <p className="mt-8 text-sm text-muted">Dealing a round…</p>
+      </>
+    );
+  }
+
+  if (finished || !current) {
+    return (
+      <>
+        <Panel className="mb-4">
+          <WeekSelect />
+          <FocusToggle />
+        </Panel>
+        <div className="mt-4 rounded-[var(--radius-xl)] bg-card p-8 text-center shadow-[var(--shadow-border)]">
           <p className="he-word text-4xl text-primary">שָׁלוֹם</p>
           <h1 className="mt-3 font-display text-3xl font-semibold">Caught up</h1>
           <p className="mt-2 text-muted">
-            {total === 0
-              ? "No cards due in this set. Quiz it, or switch weeks."
+            {round.length === 0
+              ? "No cards in this set. Quiz it, or switch weeks."
               : "You finished this round. Start another, or quiz the weak list."}
           </p>
           <Button className="mt-6" onClick={deal}>
@@ -89,7 +137,7 @@ function DrillPage() {
   }
 
   const frontHe = direction === "he-en";
-  const step = Math.min(cleared + 1, Math.max(total, 1));
+  const total = round.length;
 
   return (
     <>
@@ -98,8 +146,7 @@ function DrillPage() {
         <FocusToggle />
         <div className="mt-4 flex items-center justify-between text-sm">
           <span className="tabular-nums font-medium text-ink">
-            {step} / {total}
-            {session.length > 1 ? ` · ${session.length} left` : ""}
+            {Math.min(cleared + 1, total)} / {total}
           </span>
           <button
             type="button"
@@ -145,15 +192,15 @@ function DrillPage() {
 
       {flipped && (
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <Button variant="danger" onClick={() => grade("again")}>
+          <Button type="button" variant="danger" onClick={() => grade("again")}>
             Again
             <span className="text-xs opacity-70">1</span>
           </Button>
-          <Button variant="outline" onClick={() => grade("good")}>
+          <Button type="button" variant="outline" onClick={() => grade("good")}>
             Good
             <span className="text-xs opacity-70">2</span>
           </Button>
-          <Button variant="primary" onClick={() => grade("easy")}>
+          <Button type="button" variant="primary" onClick={() => grade("easy")}>
             Easy
             <span className="text-xs opacity-70">3</span>
           </Button>
