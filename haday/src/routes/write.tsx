@@ -172,7 +172,7 @@ function WritePage() {
         </h1>
         <p className="mt-1 text-sm text-muted">
           {memorize
-            ? "See the English, picture the Hebrew, then scribble it. Misses come back sooner."
+            ? "Look at the Hebrew while the count runs. Then write it from the English."
             : "English first. Scribble the Hebrew on the pad — right to left — then check. Vowels are optional."}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -210,23 +210,27 @@ function WritePage() {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">
           {POS_LABEL[item.pos]} · Ch. {item.chapter}
         </p>
-        <p className="mt-2 font-display text-3xl font-bold text-ink">{item.gloss}</p>
-        {memorize && !result && (
-          <p className="mt-2 text-sm text-muted">
-            {recalling ? "Picture the Hebrew. The pad opens next." : "Now write it from memory."}
-          </p>
+        {recalling ? (
+          <>
+            <p className="he-word mt-3 text-5xl sm:text-6xl">{item.hebrew}</p>
+            <p className="mt-2 text-sm text-muted">{item.translit}</p>
+            <p className="mt-4 font-sans text-4xl font-bold tabular-nums text-ink">{recallLeft}</p>
+            <p className="mt-1 text-sm text-muted">Look, then write from English.</p>
+            <Button className="mt-5" variant="outline" onClick={() => setRecallLeft(0)}>
+              I have it — write now
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 font-display text-3xl font-bold text-ink">{item.gloss}</p>
+            {memorize && !result && (
+              <p className="mt-2 text-sm text-muted">Write the Hebrew for this gloss.</p>
+            )}
+          </>
         )}
       </div>
 
-      {recalling ? (
-        <div className="mt-4 rounded-[var(--radius-xl)] bg-card px-5 py-10 text-center shadow-[var(--shadow-border)]">
-          <p className="font-sans text-5xl font-bold tabular-nums text-ink">{recallLeft}</p>
-          <p className="mt-2 text-sm text-muted">Recall beat</p>
-          <Button className="mt-6" variant="outline" onClick={() => setRecallLeft(0)}>
-            Skip to pad
-          </Button>
-        </div>
-      ) : (
+      {!recalling && (
         <>
           <div className="relative mt-4">
             <InkPad ref={pad} disabled={busy || result !== null} onChange={setEmpty} />
