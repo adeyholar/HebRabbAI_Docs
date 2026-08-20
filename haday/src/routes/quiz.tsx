@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/verse-card";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
-import { glossMatches, itemsForWeek, quizChoices, type VocabItem } from "@/lib/vocab";
+import { glossMatches, liveGloss, itemsForWeek, quizChoices, type VocabItem } from "@/lib/vocab";
 import { useStudy, weightedQuizDeck, weakQueue } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { Panel } from "@/components/panel";
@@ -25,6 +25,7 @@ function QuizPage() {
   const [picked, setPicked] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
   const [revealed, setRevealed] = useState(false);
+  const [typeTries, setTypeTries] = useState(0);
   const [score, setScore] = useState({ right: 0, wrong: 0 });
   const [ready, setReady] = useState(false);
 
@@ -37,6 +38,7 @@ function QuizPage() {
     setPicked(null);
     setTyped("");
     setRevealed(false);
+    setTypeTries(0);
     setReady(true);
   }, [pool, seed, focus]);
 
@@ -49,6 +51,7 @@ function QuizPage() {
     setPicked(null);
     setTyped("");
     setRevealed(false);
+    setTypeTries(0);
     setScore({ right: 0, wrong: 0 });
     setSeed((s) => s + 1);
   }
@@ -63,6 +66,7 @@ function QuizPage() {
     setPicked(null);
     setTyped("");
     setRevealed(false);
+    setTypeTries(0);
     setI((n) => n + 1);
   }
 
@@ -165,8 +169,17 @@ function QuizPage() {
               return;
             }
             const ok = glossMatches(item, typed);
+            if (ok) {
+              setRevealed(true);
+              mark(true);
+              return;
+            }
+            if (typeTries < 1) {
+              setTypeTries(1);
+              return;
+            }
             setRevealed(true);
-            mark(ok);
+            mark(false);
           }}
         >
           <input
@@ -174,17 +187,44 @@ function QuizPage() {
             onChange={(e) => setTyped(e.target.value)}
             disabled={revealed}
             placeholder="English gloss"
-            className="h-12 w-full rounded-[var(--radius-md)] bg-card px-4 shadow-[var(--shadow-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={cn(
+              "h-12 w-full rounded-[var(--radius-md)] bg-card px-4 shadow-[var(--shadow-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              !revealed && liveGloss(item, typed) === "exact" && "ring-2 ring-good",
+              !revealed && liveGloss(item, typed) === "off" && "ring-2 ring-danger",
+            )}
             autoCapitalize="off"
             autoCorrect="off"
           />
+          {!revealed && (
+            <p
+              className={cn(
+                "mt-2 text-sm font-medium",
+                liveGloss(item, typed) === "exact" && "text-good",
+                liveGloss(item, typed) === "off" && "text-danger",
+                (liveGloss(item, typed) === "empty" || liveGloss(item, typed) === "prefix") && "text-muted",
+              )}
+            >
+              {liveGloss(item, typed) === "exact"
+                ? "Correct — tap Check to lock it."
+                : liveGloss(item, typed) === "prefix"
+                  ? "Keep going."
+                  : liveGloss(item, typed) === "off"
+                    ? typeTries >= 1
+                      ? "Still off — one more try used after Check."
+                      : "Not yet."
+                    : "Type the English gloss."}
+            </p>
+          )}
+          {typeTries >= 1 && !revealed && (
+            <p className="mt-1 text-sm text-danger">Missed once. Correct it, then Check again.</p>
+          )}
           {revealed && (
             <p className={`mt-3 text-sm ${glossMatches(item, typed) ? "text-good" : "text-danger"}`}>
               {glossMatches(item, typed) ? "Correct." : `Answer: ${item.gloss}`}
             </p>
           )}
           <Button className="mt-3 w-full" type="submit">
-            {revealed ? "Next" : "Check"}
+            {revealed ? "Next" : typeTries >= 1 ? "Check retry" : "Check"}
           </Button>
         </form>
       )}

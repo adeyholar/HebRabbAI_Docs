@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { InkPad, type InkPadHandle } from "@/components/ink-pad";
+import { HebrewType } from "@/components/hebrew-type";
 import { VerseCard } from "@/components/verse-card";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
@@ -14,6 +15,7 @@ import { takeWriteCheck, writeChecksLeft, WRITE_DAILY_LIMIT } from "@/lib/write-
 import { cn } from "@/lib/cn";
 
 type WriteMode = "write" | "memorize";
+type InputMethod = "pad" | "type";
 
 export const Route = createFileRoute("/write")({
   validateSearch: (s: Record<string, unknown>): { mode: WriteMode } => ({
@@ -45,6 +47,10 @@ function WritePage() {
   const [left, setLeft] = useState(WRITE_DAILY_LIMIT);
   const [ready, setReady] = useState(false);
   const [recallLeft, setRecallLeft] = useState(0);
+  const [inputMethod, setInputMethod] = useState<InputMethod>("type");
+  const [typed, setTyped] = useState("");
+  const [tries, setTries] = useState(0);
+  const ratedRef = useRef(false);
 
   useEffect(() => {
     setRound(queueForFocus(pool, useStudy.getState().cards, focus, 12));
@@ -52,6 +58,9 @@ function WritePage() {
     setResult(null);
     pad.current?.clear();
     setEmpty(true);
+    setTyped("");
+    setTries(0);
+    ratedRef.current = false;
     setReady(true);
   }, [week, focus, pool]);
 
@@ -65,7 +74,10 @@ function WritePage() {
     if (!item) return;
     pad.current?.clear();
     setEmpty(true);
+    setTyped("");
     setResult(null);
+    setTries(0);
+    ratedRef.current = false;
     if (!memorize) {
       setRecallLeft(0);
       return;
@@ -80,15 +92,32 @@ function WritePage() {
     return () => window.clearTimeout(t);
   }, [recallLeft]);
 
-  function setMode(next: WriteMode) {
+  function setStudyMode(next: WriteMode) {
     void navigate({ search: { mode: next } });
   }
 
+  function commitRate(match: HandMatch, attempt = tries) {
+    if (!item || ratedRef.current) return;
+    ratedRef.current = true;
+    if (match === "exact") rate(item.id, attempt <= 1 ? "easy" : "good");
+    else if (match === "close") rate(item.id, "good");
+    else rate(item.id, "again");
+  }
+
   function nextCard() {
+    if (result) commitRate(result.match);
     setResult(null);
     pad.current?.clear();
     setEmpty(true);
+    setTyped("");
     setI((n) => n + 1);
+  }
+
+  function retryOnce() {
+    setResult(null);
+    pad.current?.clear();
+    setEmpty(true);
+    setTyped("");
   }
 
   function restartRound() {
@@ -97,14 +126,26 @@ function WritePage() {
     setResult(null);
     pad.current?.clear();
     setEmpty(true);
+    setTyped("");
+    setTries(0);
+    ratedRef.current = false;
   }
 
-  async function check() {
+  function applyCheck(match: HandMatch, read: string, note?: string) {
+    const nextTries = tries + 1;
+    setTries(nextTries);
+    setResult({ match, read, note });
+    if (match === "exact" || match === "close" || nextTries >= 2) {
+      commitRate(match, nextTries);
+    }
+  }
+
+  async function checkPad() {
     if (!item || empty || busy) return;
     const image = pad.current?.toImage();
     if (!image) return;
     if (!takeWriteCheck()) {
-      setResult({ match: "wrong", read: "", note: "Daily check limit reached. Come back tomorrow, or reveal and self-grade." });
+      applyCheck("wrong", "", "Daily check limit reached. Come back tomorrow, or type the word instead.");
       setLeft(0);
       return;
     }
@@ -113,7 +154,7 @@ function WritePage() {
     try {
       const res = await readHandwriting({ data: { image, expected: item.hebrew } });
       if (!res.ok) {
-        setResult({ match: "wrong", read: "", note: res.error });
+        applyCheck("wrong", "", res.error);
         return;
       }
       const compared = matchHandwriting(item.hebrew, res.hebrew);
@@ -121,15 +162,18 @@ function WritePage() {
       if (match !== "exact" && res.verdict === "exact" && compared.distance <= 2) match = "exact";
       else if (match === "wrong" && res.verdict === "close") match = "close";
       else if (match === "empty" && res.verdict === "exact") match = "close";
-      setResult({ match, read: res.hebrew });
-      if (match === "exact") rate(item.id, "easy");
-      else if (match === "close") rate(item.id, "good");
-      else rate(item.id, "again");
+      applyCheck(match, res.hebrew);
     } catch {
-      setResult({ match: "wrong", read: "", note: "Could not reach the reader. Try again." });
+      applyCheck("wrong", "", "Could not reach the reader. Try again.");
     } finally {
       setBusy(false);
     }
+  }
+
+  function checkType() {
+    if (!item || !typed.trim() || busy) return;
+    const compared = matchHandwriting(item.hebrew, typed);
+    applyCheck(compared.match, typed);
   }
 
   if (!pool.length) {
@@ -166,6 +210,8 @@ function WritePage() {
   }
 
   const recalling = memorize && recallLeft > 0 && !result;
+  const locked = result ? result.match === "exact" || result.match === "close" || tries >= 2 : false;
+  const canRetry = Boolean(result) && !locked && tries < 2;
 
   return (
     <>
@@ -175,13 +221,13 @@ function WritePage() {
         </h1>
         <p className="mt-1 text-sm text-muted">
           {memorize
-            ? "Look at the Hebrew while the count runs. Then write it from the English."
-            : "English first. Scribble the Hebrew on the pad — right to left — then check. Vowels are optional."}
+            ? "Look at the Hebrew while the count runs. Then type or write it from the English. One retry if you miss."
+            : "English first. Type or scribble the Hebrew. Live check while you type. One retry on a miss."}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => setMode("write")}
+            onClick={() => setStudyMode("write")}
             className={cn(
               "min-h-11 rounded-[var(--radius-md)] px-3 py-2 text-left text-sm font-medium shadow-[var(--shadow-border)]",
               !memorize ? "bg-ink text-parchment" : "bg-parchment text-ink",
@@ -191,7 +237,7 @@ function WritePage() {
           </button>
           <button
             type="button"
-            onClick={() => setMode("memorize")}
+            onClick={() => setStudyMode("memorize")}
             className={cn(
               "min-h-11 rounded-[var(--radius-md)] px-3 py-2 text-left text-sm font-medium shadow-[var(--shadow-border)]",
               memorize ? "bg-ink text-parchment" : "bg-parchment text-ink",
@@ -205,7 +251,7 @@ function WritePage() {
           <FocusToggle />
         </div>
         <p className="mt-3 text-sm font-medium tabular-nums text-ink">
-          {i + 1} / {round.length} · {left} checks left today
+          {i + 1} / {round.length} · {left} pad checks left today
         </p>
       </Panel>
 
@@ -235,71 +281,137 @@ function WritePage() {
 
       {!recalling && (
         <>
-          <div className="relative mt-4">
-            <InkPad ref={pad} disabled={busy || result !== null} onChange={setEmpty} />
-            {empty && !result && (
-              <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted">
-                Write the Hebrew here
-              </p>
-            )}
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setInputMethod("type")}
+              className={cn(
+                "min-h-11 rounded-[var(--radius-md)] px-3 text-sm font-medium shadow-[var(--shadow-border)]",
+                inputMethod === "type" ? "bg-ink text-parchment" : "bg-card text-ink",
+              )}
+            >
+              Type
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMethod("pad")}
+              className={cn(
+                "min-h-11 rounded-[var(--radius-md)] px-3 text-sm font-medium shadow-[var(--shadow-border)]",
+                inputMethod === "pad" ? "bg-ink text-parchment" : "bg-card text-ink",
+              )}
+            >
+              Handwrite
+            </button>
           </div>
 
-          <div className="mt-3 flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => pad.current?.undo()} disabled={busy || !!result}>
-              Undo
-            </Button>
-            <Button
-              variant="ghost"
-              className="flex-1"
-              onClick={() => {
-                pad.current?.clear();
-                setEmpty(true);
-              }}
-              disabled={busy || !!result}
-            >
-              Clear
-            </Button>
-            <Button className="flex-[2]" onClick={() => void check()} disabled={busy || empty || !!result}>
-              {busy ? "Reading…" : "Check writing"}
-            </Button>
-          </div>
+          {inputMethod === "type" ? (
+            <div className="mt-4 rounded-[var(--radius-xl)] bg-card p-4 shadow-[var(--shadow-border)]">
+              <HebrewType value={typed} onChange={setTyped} target={item.hebrew} disabled={locked} />
+              <Button className="mt-3 w-full" onClick={checkType} disabled={locked || !typed.trim()}>
+                Check
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="relative mt-4">
+                <InkPad ref={pad} disabled={busy || locked} onChange={setEmpty} />
+                {empty && !result && (
+                  <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted">
+                    Write the Hebrew here
+                  </p>
+                )}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => pad.current?.undo()} disabled={busy || locked}>
+                  Undo
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => {
+                    pad.current?.clear();
+                    setEmpty(true);
+                  }}
+                  disabled={busy || locked}
+                >
+                  Clear
+                </Button>
+                <Button className="flex-[2]" onClick={() => void checkPad()} disabled={busy || empty || locked}>
+                  {busy ? "Reading…" : "Check writing"}
+                </Button>
+              </div>
+            </>
+          )}
         </>
       )}
 
-      {result && <ResultPanel item={item} result={result} onNext={nextCard} />}
+      {result && (
+        <ResultPanel item={item} result={result} canRetry={canRetry} hideAnswer={canRetry} onNext={nextCard} onRetry={retryOnce} />
+      )}
     </>
   );
 }
 
-function ResultPanel({ item, result, onNext }: { item: VocabItem; result: Result; onNext: () => void }) {
+function ResultPanel({
+  item,
+  result,
+  canRetry,
+  hideAnswer,
+  onNext,
+  onRetry,
+}: {
+  item: VocabItem;
+  result: Result;
+  canRetry: boolean;
+  hideAnswer: boolean;
+  onNext: () => void;
+  onRetry: () => void;
+}) {
   const tone =
     result.match === "exact" ? "text-good" : result.match === "close" ? "text-primary" : "text-danger";
   const label =
-    result.match === "exact" ? "Correct." : result.match === "close" ? "Close — count it." : result.match === "empty" ? "Nothing readable." : "Not yet.";
-  const coach = dageshCoach(item.hebrew);
+    result.match === "exact" ? "Correct."
+    : result.match === "close" ? "Close — count it."
+    : result.match === "empty" ? "Nothing readable."
+    : canRetry ? "Not yet — one retry."
+    : "Not yet.";
+  const coach = hideAnswer ? null : dageshCoach(item.hebrew);
 
   return (
     <div className="mt-4 rounded-[var(--radius-xl)] bg-card p-5 shadow-[var(--shadow-border)]">
       <p className={cn("font-display text-2xl font-bold", tone)}>{label}</p>
-      <p className="mt-1 text-sm text-muted">
-        Target <span className="he-word text-lg text-fg">{item.hebrew}</span>
-        {result.read ? (
-          <>
-            {" "}
-            · read as <span className="he-word text-lg text-fg">{result.read}</span>
-          </>
-        ) : null}
-      </p>
+      {!hideAnswer && (
+        <p className="mt-1 text-sm text-muted">
+          Target <span className="he-word text-lg text-fg">{item.hebrew}</span>
+          {result.read ? (
+            <>
+              {" "}
+              · read as <span className="he-word text-lg text-fg">{result.read}</span>
+            </>
+          ) : null}
+        </p>
+      )}
       {result.note && <p className="mt-2 text-sm text-muted">{result.note}</p>}
       {coach && (
         <p className="mt-3 rounded-[var(--radius-md)] bg-surface px-3 py-2 text-sm text-ink">
           {coach}
         </p>
       )}
-      <VerseCard item={item} />
-      <Button className="mt-4 w-full" onClick={onNext}>
-        Next word
-      </Button>
+      {!hideAnswer && <VerseCard item={item} />}
+      {canRetry ? (
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <Button className="flex-1" onClick={onRetry}>
+            Retry once
+          </Button>
+          <Button className="flex-1" variant="outline" onClick={onNext}>
+            Continue
+          </Button>
+        </div>
+      ) : (
+        <Button className="mt-4 w-full" onClick={onNext}>
+          Next word
+        </Button>
+      )}
     </div>
   );
 }

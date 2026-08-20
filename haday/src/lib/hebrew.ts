@@ -91,6 +91,15 @@ export function weightedDistance(a: string, b: string): number {
   return rows[a.length][b.length];
 }
 
+export function liveMatch(expected: string, typed: string): "empty" | "prefix" | "exact" | "off" {
+  const want = normalizeHebrew(expected);
+  const got = normalizeHebrew(typed);
+  if (!got) return "empty";
+  if (got === want) return "exact";
+  if (want.startsWith(got)) return "prefix";
+  return "off";
+}
+
 export function matchHandwriting(expected: string, read: string): { match: HandMatch; distance: number; expectedN: string; readN: string } {
   const expectedN = normalizeHebrew(expected);
   const readN = normalizeHebrew(read);

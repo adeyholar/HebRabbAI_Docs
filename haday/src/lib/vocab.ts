@@ -435,6 +435,15 @@ export function glossMatches(item: VocabItem, input: string): boolean {
   return pool.some((g) => g.split(/,|\/|\s+or\s+/).map((p) => p.trim()).includes(n));
 }
 
+export function liveGloss(item: VocabItem, input: string): "empty" | "prefix" | "exact" | "off" {
+  const n = normalizeGloss(input);
+  if (!n) return "empty";
+  if (glossMatches(item, input)) return "exact";
+  const pool = [item.gloss, ...item.alts].map(normalizeGloss);
+  if (pool.some((g) => g.startsWith(n))) return "prefix";
+  return "off";
+}
+
 export function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
