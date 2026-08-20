@@ -12,25 +12,30 @@ export const Route = createFileRoute("/drill")({ component: DrillPage });
 
 function DrillPage() {
   const week = useStudy((s) => s.week);
-  const cards = useStudy((s) => s.cards);
   const direction = useStudy((s) => s.direction);
   const setDirection = useStudy((s) => s.setDirection);
   const focus = useStudy((s) => s.focus);
   const rate = useStudy((s) => s.rate);
   const pool = useMemo(() => itemsForWeek(week), [week]);
-  const queue = useMemo(() => queueForFocus(pool, cards, focus, 18), [pool, cards, focus]);
-  const [index, setIndex] = useState(0);
+  const [session, setSession] = useState<VocabItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [cleared, setCleared] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [done, setDone] = useState<VocabItem[]>([]);
 
-  const remaining = queue.filter((q) => !done.some((d) => d.id === q.id));
-  const current = remaining[index] ?? remaining[0];
+  function deal() {
+    const next = queueForFocus(pool, useStudy.getState().cards, focus, 18);
+    setSession(next);
+    setTotal(next.length);
+    setCleared(0);
+    setFlipped(false);
+  }
 
   useEffect(() => {
-    setIndex(0);
-    setFlipped(false);
-    setDone([]);
-  }, [week, focus]);
+    deal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild only when the study set changes
+  }, [week, focus, pool]);
+
+  const current = session[0];
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -52,26 +57,39 @@ function DrillPage() {
     if (!current) return;
     rate(current.id, r);
     setFlipped(false);
-    setDone((d) => [...d, current]);
-    setIndex(0);
+    setSession((s) => {
+      const rest = s.slice(1);
+      if (r !== "again") return rest;
+      if (rest.length === 0) return [current];
+      const later = Math.min(rest.length, 2);
+      return [...rest.slice(0, later), current, ...rest.slice(later)];
+    });
+    if (r !== "again") setCleared((n) => n + 1);
   }
 
   if (!current) {
     return (
       <>
         <WeekSelect />
+        <FocusToggle />
         <div className="mt-8 rounded-[var(--radius-xl)] bg-card p-8 text-center shadow-[var(--shadow-border)]">
           <p className="he-word text-4xl text-primary">שָׁלוֹם</p>
           <h1 className="mt-3 font-display text-3xl font-semibold">Caught up</h1>
-          <p className="mt-2 text-muted">No cards due in this set. Quiz it, or switch weeks.</p>
+          <p className="mt-2 text-muted">
+            {total === 0
+              ? "No cards due in this set. Quiz it, or switch weeks."
+              : "You finished this round. Start another, or quiz the weak list."}
+          </p>
+          <Button className="mt-6" onClick={deal}>
+            New round
+          </Button>
         </div>
       </>
     );
   }
 
   const frontHe = direction === "he-en";
-  const total = Math.min(18, queue.length);
-  const progressed = done.length;
+  const step = Math.min(cleared + 1, Math.max(total, 1));
 
   return (
     <>
@@ -80,7 +98,8 @@ function DrillPage() {
         <FocusToggle />
         <div className="mt-4 flex items-center justify-between text-sm">
           <span className="tabular-nums font-medium text-ink">
-            {progressed + 1} / {total}
+            {step} / {total}
+            {session.length > 1 ? ` · ${session.length} left` : ""}
           </span>
           <button
             type="button"
@@ -93,7 +112,7 @@ function DrillPage() {
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface">
           <div
             className="h-full bg-primary transition-[width] duration-[var(--motion-fast)]"
-            style={{ width: `${(progressed / total) * 100}%` }}
+            style={{ width: `${total ? (cleared / total) * 100 : 0}%` }}
           />
         </div>
       </Panel>
