@@ -1,0 +1,181 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { WeekSelect } from "@/components/week-select";
+import { FocusToggle } from "@/components/focus-toggle";
+import { COURSE_WEEKS, VOCAB, itemsForWeek } from "@/lib/vocab";
+import { statsFor, useStudy, weakestOf } from "@/lib/store";
+import { useCurrentUser } from "@/lib/auth/use-current-user";
+
+export const Route = createFileRoute("/")({ component: Home });
+
+function Home() {
+  const user = useCurrentUser();
+  const week = useStudy((s) => s.week);
+  const cards = useStudy((s) => s.cards);
+  const streak = useStudy((s) => s.streak);
+  const setFocus = useStudy((s) => s.setFocus);
+  const reset = useStudy((s) => s.reset);
+  const items = itemsForWeek(week);
+  const s = statsFor(items, cards);
+  const all = statsFor(VOCAB, cards);
+  const meta = COURSE_WEEKS.find((w) => w.week === week)!;
+  const pct = s.total ? Math.round((s.mastered / s.total) * 100) : 0;
+  const weakList = weakestOf(items, cards, 5);
+  const firstName = user?.displayName?.split(" ")[0];
+
+  return (
+    <>
+      <section className="mb-6">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">HaDay · Hebraic Mentor</p>
+        <h1 className="mt-1 font-display text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
+          {firstName ? `${firstName}, learn the words that open the text.` : "Learn the words that open the text."}
+        </h1>
+        <p className="mt-3 max-w-prose text-muted">
+          Flip, write, and quiz high-frequency Biblical Hebrew. Misses float to the front. Week 7 is the midterm pack;
+          Week 15 is the cumulative set.
+        </p>
+      </section>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Stat label="Due" value={s.due} />
+        <Stat label="Weak" value={s.weak} />
+        <Stat label="Mastered" value={`${s.mastered}/${s.total}`} />
+        <Stat label="Streak" value={`${streak}d`} />
+      </div>
+
+      {weakList.length > 0 && (
+        <section className="mt-4 rounded-[var(--radius-xl)] bg-card p-5 shadow-[var(--shadow-border)]">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="font-display text-xl font-semibold">Needs work</h2>
+            <button
+              type="button"
+              className="text-sm font-medium text-primary"
+              onClick={() => setFocus("weak")}
+            >
+              Focus these
+            </button>
+          </div>
+          <ul className="mt-3 divide-y divide-border">
+            {weakList.map((item) => {
+              const c = cards[item.id];
+              const misses = c?.misses ?? 0;
+              return (
+                <li key={item.id} className="flex items-center justify-between gap-3 py-2">
+                  <div className="min-w-0">
+                    <p className="he-word text-xl leading-tight">{item.hebrew}</p>
+                    <p className="truncate text-sm text-muted">{item.gloss}</p>
+                  </div>
+                  <span className="shrink-0 text-xs tabular-nums text-danger">
+                    {misses} miss{misses === 1 ? "" : "es"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-3 flex gap-2">
+            <Link to="/drill" className="flex-1">
+              <Button className="w-full" size="sm" onClick={() => setFocus("weak")}>
+                Drill weak
+              </Button>
+            </Link>
+            <Link to="/write" className="flex-1">
+              <Button className="w-full" size="sm" variant="outline" onClick={() => setFocus("weak")}>
+                Write weak
+              </Button>
+            </Link>
+          </div>
+        </section>
+      )}
+
+      <div className="mt-4 rounded-[var(--radius-xl)] bg-card p-5 shadow-[var(--shadow-border)]">
+        <WeekSelect />
+        <FocusToggle />
+        <div className="mt-4">
+          <div className="mb-1.5 flex items-center justify-between text-sm">
+            <span className="text-muted">{meta.hint}</span>
+            <span className="tabular-nums text-fg">{pct}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-surface">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-[var(--motion-fast)]"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          <Link to="/drill" className="flex-1">
+            <Button className="w-full" size="lg">
+              Study due cards
+            </Button>
+          </Link>
+          <Link to="/write" className="flex-1">
+            <Button className="w-full" variant="outline" size="lg">
+              Write the Hebrew
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      <section className="mt-8">
+        <h2 className="font-display text-xl font-semibold">Course map</h2>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {COURSE_WEEKS.map((w) => {
+            const st = statsFor(itemsForWeek(w.week), cards);
+            const active = w.week === week;
+            return (
+              <li key={w.week}>
+                <button
+                  type="button"
+                  onClick={() => useStudy.getState().setWeek(w.week)}
+                  className={`w-full rounded-[var(--radius-lg)] p-4 text-left shadow-[var(--shadow-border)] ${
+                    active ? "bg-primary text-primary-foreground" : "bg-card"
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-semibold">
+                      {w.label}
+                      {(w.week === 7 || w.week === 15) && (
+                        <span className={`ms-2 text-xs font-medium uppercase tracking-wide ${active ? "text-primary-foreground/70" : "text-primary"}`}>
+                          {w.week === 7 ? "Midterm" : "Final"}
+                        </span>
+                      )}
+                    </span>
+                    <span className={`text-xs tabular-nums ${active ? "text-primary-foreground/80" : "text-muted"}`}>
+                      {st.mastered}/{st.total}
+                      {st.weak ? ` · ${st.weak} weak` : ""}
+                    </span>
+                  </div>
+                  <p className={`mt-1 text-sm ${active ? "text-primary-foreground/80" : "text-muted"}`}>{w.hint}</p>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <p className="mt-8 text-xs text-subtle">
+        Full lexicon {VOCAB.length} lemmas · {all.mastered} mastered · {all.weak} weak overall. High-frequency Biblical
+        Hebrew with standard dictionary glosses — a study companion, not a reprint of any textbook list. Progress is
+        saved to this account.
+      </p>
+      <button
+        type="button"
+        className="mt-3 min-h-11 text-xs text-muted underline-offset-2 hover:underline"
+        onClick={() => {
+          if (confirm("Reset all progress on this account?")) reset();
+        }}
+      >
+        Reset account progress
+      </button>
+    </>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-[var(--radius-lg)] bg-card px-3 py-3 shadow-[var(--shadow-border)]">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-0.5 font-display text-2xl font-semibold tabular-nums">{value}</p>
+    </div>
+  );
+}

@@ -5,3 +5,7 @@ This repository contains documentation for the Hebrew Tutor Assistance Agentic A
 - **Team**: 2-3 developers (1 backend, 1 frontend, 1 shared DevOps/AI).
 - **Modules**: ASR, RAG, User Management, API Gateway, Frontend.
 - **Phases**: Setup, Module Development, Integration, Deployment.
+
+## HaDay Hebraic Mentor
+
+The BIBL 630 vocabulary trainer lives in [`haday/`](./haday).

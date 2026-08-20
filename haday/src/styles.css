@@ -1,0 +1,112 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Frank+Ruhl+Libre:wght@400;500;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;1,400&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f3eee4;
+  --color-surface: #ebe4d6;
+  --color-card: #faf7f0;
+  --color-fg: #1c1814;
+  --color-muted: #6b6258;
+  --color-subtle: #8a8176;
+  --color-primary: #2f4a42;
+  --color-primary-foreground: #f6f1e8;
+  --color-ink: #1c1814;
+  --color-parchment: #f6f1e8;
+  --color-border: color-mix(in oklab, #1c1814 12%, transparent);
+  --color-ring: #2f4a42;
+  --color-danger: #8f3d35;
+  --color-good: #3d5c49;
+  --color-foreground: #1c1814;
+  --color-background: #f3eee4;
+
+  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --font-hebrew: "Frank Ruhl Libre", "Times New Roman", serif;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius: 12px;
+
+  --shadow-border:
+    0 0 0 1px color-mix(in oklab, #1c1814 8%, transparent),
+    0 1px 2px -1px color-mix(in oklab, #1c1814 8%, transparent),
+    0 8px 24px -16px color-mix(in oklab, #1c1814 18%, transparent);
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-micro: 80ms;
+  --motion-quick: 150ms;
+  --motion-fast: 250ms;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    background-color: var(--color-bg);
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+    font-family: var(--font-display);
+  }
+  p { text-wrap: pretty; }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+.font-hebrew {
+  font-family: var(--font-hebrew);
+}
+
+.he-word {
+  font-family: var(--font-hebrew);
+  direction: rtl;
+  unicode-bidi: isolate;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.he-hit {
+  background: color-mix(in oklab, var(--color-primary) 16%, transparent);
+  color: var(--color-primary);
+  font-weight: 700;
+  padding: 0 0.08em;
+  border-radius: 2px;
+  box-decoration-break: clone;
+}
+
+.account-chip > div {
+  min-width: 0;
+}
+.account-chip span.grid {
+  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
+}
+.account-chip button {
+  color: var(--color-muted);
+  min-height: 2.75rem;
+  padding-inline: 0.35rem;
+}
+@media (max-width: 639px) {
+  .account-chip > div > span.text-sm {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
