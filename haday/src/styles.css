@@ -105,12 +105,12 @@
 }
 
 @keyframes try-flash {
-  0%, 100% { opacity: 1; color: var(--color-danger); }
-  45% { opacity: 0.25; }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
 }
 
 .try-flash {
-  animation: try-flash 0.7s var(--ease-out) 3;
+  animation: try-flash 0.75s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -242,7 +242,9 @@ function FoundationQuiz() {
         })}
       </ul>
       {missedId && !picked && (
-        <p className="try-flash mt-3 text-center text-base font-bold text-danger">One more try</p>
+        <p className="try-flash mt-4 text-center text-xl font-bold uppercase tracking-wide text-danger sm:text-2xl">
+          One more try
+        </p>
       )}
       {picked && (
         <Button
