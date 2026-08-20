@@ -111,13 +111,16 @@ function WritePage() {
     setLeft(writeChecksLeft());
     setBusy(true);
     try {
-      const res = await readHandwriting({ data: { image } });
+      const res = await readHandwriting({ data: { image, expected: item.hebrew } });
       if (!res.ok) {
         setResult({ match: "wrong", read: "", note: res.error });
         return;
       }
       const compared = matchHandwriting(item.hebrew, res.hebrew);
-      const match = compared.match;
+      let match = compared.match;
+      if (match !== "exact" && res.verdict === "exact" && compared.distance <= 2) match = "exact";
+      else if (match === "wrong" && res.verdict === "close") match = "close";
+      else if (match === "empty" && res.verdict === "exact") match = "close";
       setResult({ match, read: res.hebrew });
       if (match === "exact") rate(item.id, "easy");
       else if (match === "close") rate(item.id, "good");

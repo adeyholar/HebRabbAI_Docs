@@ -44,13 +44,60 @@ export function levenshtein(a: string, b: string): number {
 
 export type HandMatch = "exact" | "close" | "wrong" | "empty";
 
+const LOOKALIKE: Record<string, string> = {
+  ד: "ר",
+  ר: "ד",
+  ב: "כ",
+  כ: "ב",
+  ו: "י",
+  י: "ו",
+  ה: "ח",
+  ח: "ה",
+  ת: "ח",
+  ס: "ם",
+  ם: "ס",
+  מ: "ס",
+  נ: "ג",
+  ג: "נ",
+  ע: "צ",
+  צ: "ע",
+  ך: "ר",
+  ן: "ו",
+};
+
+function substCost(a: string, b: string): number {
+  if (a === b) return 0;
+  if (LOOKALIKE[a] === b || LOOKALIKE[b] === a) return 0.35;
+  const matres = new Set(["ו", "י", "ה"]);
+  if (matres.has(a) && matres.has(b)) return 0.4;
+  return 1;
+}
+
+export function weightedDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const rows = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) rows[i][0] = i;
+  for (let j = 0; j <= b.length; j++) rows[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = substCost(a[i - 1], b[j - 1]);
+      const insCost = a[i - 1] === "ו" || a[i - 1] === "י" ? 0.45 : 1;
+      const delCost = b[j - 1] === "ו" || b[j - 1] === "י" ? 0.45 : 1;
+      rows[i][j] = Math.min(rows[i - 1][j] + insCost, rows[i][j - 1] + delCost, rows[i - 1][j - 1] + cost);
+    }
+  }
+  return rows[a.length][b.length];
+}
+
 export function matchHandwriting(expected: string, read: string): { match: HandMatch; distance: number; expectedN: string; readN: string } {
   const expectedN = normalizeHebrew(expected);
   const readN = normalizeHebrew(read);
   if (!readN) return { match: "empty", distance: expectedN.length, expectedN, readN };
-  const distance = levenshtein(expectedN, readN);
+  const distance = weightedDistance(expectedN, readN);
   if (distance === 0) return { match: "exact", distance, expectedN, readN };
-  const close = distance <= 1 || (expectedN.length >= 4 && distance / expectedN.length <= 0.25);
+  const close = distance <= 0.9 || (expectedN.length >= 4 && distance / expectedN.length <= 0.28);
   return { match: close ? "close" : "wrong", distance, expectedN, readN };
 }
 
@@ -82,7 +129,7 @@ const DAGESH = "\u05BC";
 const FULL_VOWEL = /[\u05B1-\u05BB]/;
 const BEGAD = new Set(["ב", "ג", "ד", "כ", "פ", "ת", "ך", "ף"]);
 
-export type DageshMark = { letter: string; kind: "lene" | "forte" };
+export type DageshMark = { letter: string; kind: "lene" | "forte" | "shureq" | "mappiq" };
 
 export function classifyDagesh(hebrew: string): DageshMark[] {
   const clusters: { letter: string; marks: string }[] = [];
@@ -102,6 +149,14 @@ export function classifyDagesh(hebrew: string): DageshMark[] {
   for (let i = 0; i < clusters.length; i++) {
     const c = clusters[i];
     if (!c.marks.includes(DAGESH)) continue;
+    if (c.letter === "ו") {
+      out.push({ letter: "ו", kind: "shureq" });
+      continue;
+    }
+    if (c.letter === "ה") {
+      out.push({ letter: "ה", kind: "mappiq" });
+      continue;
+    }
     if (!BEGAD.has(c.letter)) {
       out.push({ letter: c.letter, kind: "forte" });
       continue;
@@ -118,6 +173,12 @@ export function dageshCoach(hebrew: string): string | null {
   if (!hits.length) return null;
   return hits
     .map((h) => {
+      if (h.kind === "shureq") {
+        return `וּ is shureq (û) — the dot in the vav is the vowel, not dagesh forte.`;
+      }
+      if (h.kind === "mappiq") {
+        return `הּ is mappiq — a sounded h at the end of the word, not doubling.`;
+      }
       if (h.kind === "lene") {
         return `${h.letter} has dagesh lene — no vowel before it. Hard sound, not doubled.`;
       }

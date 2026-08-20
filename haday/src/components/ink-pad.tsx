@@ -135,19 +135,55 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       redraw();
     },
     toImage: () => {
-      const src = canvasRef.current;
-      if (!src || strokesRef.current.length === 0) return null;
+      if (strokesRef.current.length === 0) return null;
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const stroke of strokesRef.current) {
+        for (const p of stroke) {
+          minX = Math.min(minX, p.x);
+          minY = Math.min(minY, p.y);
+          maxX = Math.max(maxX, p.x);
+          maxY = Math.max(maxY, p.y);
+        }
+      }
+      if (!Number.isFinite(minX)) return null;
+      const pad = 36;
+      const srcW = Math.max(8, maxX - minX);
+      const srcH = Math.max(8, maxY - minY);
+      const outW = 960;
+      const scale = outW / (srcW + pad * 2);
+      const outH = Math.max(220, Math.round((srcH + pad * 2) * scale));
       const out = document.createElement("canvas");
-      const w = 720;
-      const h = Math.round((src.height / src.width) * w) || 280;
-      out.width = w;
-      out.height = h;
+      out.width = outW;
+      out.height = outH;
       const ctx = out.getContext("2d");
       if (!ctx) return null;
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(src, 0, 0, w, h);
-      return out.toDataURL("image/jpeg", 0.82);
+      ctx.fillRect(0, 0, outW, outH);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "#111111";
+      ctx.fillStyle = "#111111";
+      ctx.lineWidth = Math.max(5.5, 6.2);
+      const tx = (x: number) => (x - minX + pad) * scale;
+      const ty = (y: number) => (y - minY + pad) * scale;
+      for (const stroke of strokesRef.current) {
+        if (stroke.length < 2) {
+          if (stroke[0]) {
+            ctx.beginPath();
+            ctx.arc(tx(stroke[0].x), ty(stroke[0].y), ctx.lineWidth / 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          continue;
+        }
+        ctx.beginPath();
+        ctx.moveTo(tx(stroke[0].x), ty(stroke[0].y));
+        for (let i = 1; i < stroke.length; i++) ctx.lineTo(tx(stroke[i].x), ty(stroke[i].y));
+        ctx.stroke();
+      }
+      return out.toDataURL("image/png");
     },
   }));
 
