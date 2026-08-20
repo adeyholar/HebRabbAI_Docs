@@ -78,9 +78,9 @@ function AlphabetPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-ink">
                         {v.name}{" "}
-                        <span className="text-sm font-normal text-muted">
-                          · {v.vowelClass}-class
-                        </span>
+                        {v.kind !== "shewa" && (
+                          <span className="text-sm font-normal text-muted">· {v.vowelClass}-class</span>
+                        )}
                       </p>
                       <p className="text-sm text-muted">{v.sound}</p>
                       {v.note && <p className="mt-0.5 text-xs text-muted">{v.note}</p>}
@@ -108,10 +108,10 @@ function FoundationQuiz() {
   const [missedId, setMissedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  const letterDeck = useMemo(() => shuffle(CONSONANTS).slice(0, 12), [seed, kind]);
-  const vowelDeck = useMemo(() => shuffle(VOWELS).slice(0, 12), [seed, kind]);
+  const letterDeck = useMemo(() => shuffle(CONSONANTS), [seed, kind]);
+  const vowelDeck = useMemo(() => shuffle(VOWELS), [seed, kind]);
   const isLetter = kind.startsWith("letter") || kind === "translit-letter";
-  const total = 12;
+  const total = isLetter ? letterDeck.length : vowelDeck.length;
 
   useEffect(() => {
     setI(0);

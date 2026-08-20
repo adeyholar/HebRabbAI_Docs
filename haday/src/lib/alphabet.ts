@@ -33,7 +33,7 @@ export const CONSONANTS: HebrewLetter[] = [
   { id: "tav", letter: "ת", name: "Tav", sound: "t", translit: "t" },
 ];
 
-export type VowelKind = "long" | "short" | "reduced" | "he" | "waw" | "yod";
+export type VowelKind = "long" | "short" | "reduced" | "shewa" | "he" | "waw" | "yod";
 export type VowelClass = "a" | "e" | "i" | "o" | "u";
 
 export type HebrewVowel = {
@@ -56,7 +56,9 @@ export const VOWELS: HebrewVowel[] = [
   { id: "seghol", mark: "בֶ", name: "Seghol", sound: "e as in better", translit: "e", vowelClass: "e", kind: "short" },
   { id: "hireq", mark: "בִ", name: "Hireq", sound: "i as in bitter", translit: "i", vowelClass: "i", kind: "short" },
   { id: "qamets-hatuf", mark: "בָ", name: "Qamets Hatuf", sound: "o as in bottle", translit: "o", vowelClass: "o", kind: "short", note: "Looks like qamets; short o in a closed unaccented syllable." },
-  { id: "qibbuts", mark: "בֻ", name: "Qibbuts", sound: "u as in ruler", translit: "u", vowelClass: "u", kind: "short" },
+  { id: "qibbuts", mark: "בֻ", name: "Qibbuts", sound: "u as in ruler (three dots under the letter)", translit: "u", vowelClass: "u", kind: "short" },
+
+  { id: "shewa", mark: "בְ", name: "Shewa", sound: "silent, or a quick ə (the murmur vowel)", translit: "ə", vowelClass: "e", kind: "shewa", note: "Vocal shewa is a brief murmur. Silent shewa has no sound and closes the syllable." },
 
   { id: "hateph-pathach", mark: "בֲ", name: "Hateph Pathach", sound: "a as in amuse", translit: "ă", vowelClass: "a", kind: "reduced" },
   { id: "hateph-seghol", mark: "בֱ", name: "Hateph Seghol", sound: "e as in metallic", translit: "ĕ", vowelClass: "e", kind: "reduced" },
@@ -68,7 +70,7 @@ export const VOWELS: HebrewVowel[] = [
   { id: "holem-he", mark: "בֹה", name: "Holem He", sound: "o as in role", translit: "ô", vowelClass: "o", kind: "he" },
 
   { id: "holem-waw", mark: "בוֹ", name: "Holem Waw", sound: "o as in role", translit: "ô", vowelClass: "o", kind: "waw", note: "Unchangeable long o — the waw is the vowel letter." },
-  { id: "shureq", mark: "בוּ", name: "Shureq", sound: "u as in ruler", translit: "û", vowelClass: "u", kind: "waw", note: "The dot in the waw is the vowel û, not dagesh forte." },
+  { id: "shureq", mark: "בוּ", name: "Shureq", sound: "û as in ruler (dot in the waw)", translit: "û", vowelClass: "u", kind: "waw", note: "The dot in the waw is the vowel û, not dagesh forte. Unchangeable." },
 
   { id: "tsere-yod", mark: "בֵי", name: "Tsere Yod", sound: "e as in they", translit: "ê", vowelClass: "e", kind: "yod", note: "Unchangeable long e." },
   { id: "seghol-yod", mark: "בֶי", name: "Seghol Yod", sound: "e as in better", translit: "ê", vowelClass: "e", kind: "yod" },
@@ -79,8 +81,9 @@ export const VOWEL_GROUPS: Array<{ id: VowelKind; title: string; blurb: string }
   { id: "long", title: "Long vowels", blurb: "Changeable long vowels. No i-class or u-class in this row." },
   { id: "short", title: "Short vowels", blurb: "All five classes: a, e, i, o, u." },
   { id: "reduced", title: "Reduced vowels", blurb: "Hateph vowels. No i-class or u-class." },
+  { id: "shewa", title: "Shewa", blurb: "Not a full vowel. Vocal shewa is a brief murmur; silent shewa has no sound." },
   { id: "he", title: "Vowel letters with he", blurb: "He is a vowel letter only at the end of a word." },
-  { id: "waw", title: "Vowel letters with waw", blurb: "Unchangeable. Shureq is the u-class name of its own." },
+  { id: "waw", title: "Vowel letters with waw", blurb: "Unchangeable. Shureq is û — the dot in the waw, not dagesh forte." },
   { id: "yod", title: "Vowel letters with yod", blurb: "Unchangeable long vowels with yod." },
 ];
 
