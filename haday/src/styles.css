@@ -104,6 +104,15 @@
   }
 }
 
+@keyframes try-flash {
+  0%, 100% { opacity: 1; color: var(--color-danger); }
+  45% { opacity: 0.25; }
+}
+
+.try-flash {
+  animation: try-flash 0.7s var(--ease-out) 3;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
