@@ -105,7 +105,7 @@ function FoundationQuiz() {
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [right, setRight] = useState(0);
-  const [tries, setTries] = useState(0);
+  const [missedId, setMissedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   const letterDeck = useMemo(() => shuffle(CONSONANTS).slice(0, 12), [seed, kind]);
@@ -117,7 +117,7 @@ function FoundationQuiz() {
     setI(0);
     setPicked(null);
     setRight(0);
-    setTries(0);
+    setMissedId(null);
     setReady(true);
   }, [seed, kind]);
 
@@ -208,25 +208,27 @@ function FoundationQuiz() {
             <li key={id}>
               <button
                 type="button"
-                disabled={picked !== null}
+                disabled={picked !== null || missedId === id}
                 onClick={() => {
                   if (id === prompt.id) {
                     setPicked(id);
                     setRight((r) => r + 1);
                     return;
                   }
-                  if (tries < 1) {
-                    setTries(1);
+                  if (!missedId) {
+                    setMissedId(id);
                     return;
                   }
                   setPicked(id);
                 }}
                 className={cn(
-                  "w-full min-h-12 rounded-[var(--radius-md)] px-3 py-3 text-sm shadow-[var(--shadow-border)]",
-                  !show && "bg-card",
+                  "w-full min-h-12 rounded-[var(--radius-md)] px-3 py-3 text-sm font-medium shadow-[var(--shadow-border)]",
+                  !show && missedId !== id && "bg-card",
+                  missedId === id && !show && "bg-danger text-parchment",
                   show && correct && "bg-good text-parchment",
                   show && picked === id && !correct && "bg-danger text-parchment",
-                  show && picked !== id && !correct && "bg-card text-muted",
+                  show && picked !== id && !correct && missedId !== id && "bg-card text-muted",
+                  show && missedId === id && "bg-danger text-parchment",
                 )}
               >
                 {kind === "translit-letter" && "letter" in o ? (
@@ -235,19 +237,19 @@ function FoundationQuiz() {
                   optionLabel(o)
                 )}
               </button>
+              {missedId === id && !picked && (
+                <p className="mt-1 text-center text-sm font-semibold text-danger">One more try</p>
+              )}
             </li>
           );
         })}
       </ul>
-      {tries >= 1 && !picked && (
-        <p className="mt-2 text-sm text-danger">Missed once. Pick again — the miss is still open.</p>
-      )}
       {picked && (
         <Button
           className="mt-4 w-full"
           onClick={() => {
             setPicked(null);
-            setTries(0);
+            setMissedId(null);
             setI((n) => n + 1);
           }}
         >

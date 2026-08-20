@@ -23,6 +23,7 @@ function QuizPage() {
   const [deck, setDeck] = useState<VocabItem[]>([]);
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
+  const [missedChoice, setMissedChoice] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
   const [revealed, setRevealed] = useState(false);
   const [typeTries, setTypeTries] = useState(0);
@@ -36,6 +37,7 @@ function QuizPage() {
     setDeck(weightedQuizDeck(base, snapshot, 12));
     setI(0);
     setPicked(null);
+    setMissedChoice(null);
     setTyped("");
     setRevealed(false);
     setTypeTries(0);
@@ -49,6 +51,7 @@ function QuizPage() {
   function resetRound() {
     setI(0);
     setPicked(null);
+    setMissedChoice(null);
     setTyped("");
     setRevealed(false);
     setTypeTries(0);
@@ -64,6 +67,7 @@ function QuizPage() {
 
   function next() {
     setPicked(null);
+    setMissedChoice(null);
     setTyped("");
     setRevealed(false);
     setTypeTries(0);
@@ -136,25 +140,39 @@ function QuizPage() {
             const selected = picked === c;
             const correct = c === item.gloss;
             const show = picked !== null;
+            const firstMiss = missedChoice === c;
             return (
               <li key={c}>
                 <button
                   type="button"
-                  disabled={picked !== null}
+                  disabled={picked !== null || firstMiss}
                   onClick={() => {
+                    if (c === item.gloss) {
+                      setPicked(c);
+                      mark(true);
+                      return;
+                    }
+                    if (!missedChoice) {
+                      setMissedChoice(c);
+                      return;
+                    }
                     setPicked(c);
-                    mark(c === item.gloss);
+                    mark(false);
                   }}
                   className={cn(
-                    "w-full min-h-12 rounded-[var(--radius-md)] px-4 py-3 text-left text-sm shadow-[var(--shadow-border)]",
-                    !show && "bg-card hover:bg-surface",
+                    "w-full min-h-12 rounded-[var(--radius-md)] px-4 py-3 text-left text-sm font-medium shadow-[var(--shadow-border)]",
+                    !show && !firstMiss && "bg-card hover:bg-surface",
+                    firstMiss && "bg-danger text-parchment",
                     show && correct && "bg-good text-parchment",
                     show && selected && !correct && "bg-danger text-parchment",
-                    show && !selected && !correct && "bg-card text-muted",
+                    show && !selected && !correct && !firstMiss && "bg-card text-muted",
                   )}
                 >
                   {c}
                 </button>
+                {firstMiss && !picked && (
+                  <p className="mt-1 text-sm font-semibold text-danger">One more try</p>
+                )}
               </li>
             );
           })}
