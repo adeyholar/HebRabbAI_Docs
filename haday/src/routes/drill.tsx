@@ -191,7 +191,7 @@ function DrillPage() {
         {!ui.flipped && <p className="mt-8 text-sm text-subtle">Tap to reveal · Space</p>}
       </button>
 
-      {ui.flipped && <VerseCard item={current} />}
+      <VerseCard item={current} showEnglish={ui.flipped} />
 
       {ui.flipped && (
         <div className="mt-4 grid grid-cols-3 gap-2">
