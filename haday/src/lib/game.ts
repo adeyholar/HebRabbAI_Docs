@@ -40,7 +40,7 @@ export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   5: { title: "Article & nouns", blurb: "The, and, fire, heaven, gold" },
   6: { title: "Prepositions", blurb: "In, to, from, with, before" },
   7: { title: "Adjectives", blurb: "Good, holy, great, very" },
-  8: { title: "Core verbs I", blurb: "Say, go, see, give, take" },
+  8: { title: "Pronouns", blurb: "I, you, this, who, why" },
   9: { title: "Core verbs II", blurb: "Hear, know, sit, die, live" },
   10: { title: "More verbs", blurb: "Call, eat, send, find" },
   11: { title: "Midterm verbs", blurb: "Remember, keep, serve" },
