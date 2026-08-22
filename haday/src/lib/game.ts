@@ -51,7 +51,7 @@ export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   16: { title: "Redeem", blurb: "Redeem, atone, forsake, there" },
   17: { title: "Love & judge", blurb: "Love, perish, tent, sun" },
   18: { title: "Choose & seek", blurb: "Choose, ask, peace, please" },
-  19: { title: "Rule", blurb: "Rule, establish, support" },
+  19: { title: "Trust & work", blurb: "Trust, weep, seed, iniquity" },
 };
 
 const EMPTY_STAGE: StageRecord = { stars: 0, best: 0, cleared: false };
