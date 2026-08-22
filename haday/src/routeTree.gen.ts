@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AlphabetRouteImport } from './routes/alphabet'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as DrillRouteImport } from './routes/drill'
+import { Route as GuideRouteImport } from './routes/guide'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as WriteRouteImport } from './routes/write'
@@ -39,6 +40,11 @@ const BrowseRoute = BrowseRouteImport.update({
 const DrillRoute = DrillRouteImport.update({
   id: '/drill',
   path: '/drill',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/write': typeof WriteRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/write': typeof WriteRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
+  '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/write': typeof WriteRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/alphabet'
     | '/browse'
     | '/drill'
+    | '/guide'
     | '/login'
     | '/quiz'
     | '/write'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/alphabet'
     | '/browse'
     | '/drill'
+    | '/guide'
     | '/login'
     | '/quiz'
     | '/write'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/alphabet'
     | '/browse'
     | '/drill'
+    | '/guide'
     | '/login'
     | '/quiz'
     | '/write'
@@ -164,6 +176,7 @@ export interface RootRouteChildren {
   AlphabetRoute: typeof AlphabetRoute
   BrowseRoute: typeof BrowseRoute
   DrillRoute: typeof DrillRoute
+  GuideRoute: typeof GuideRoute
   LoginRoute: typeof LoginRoute
   QuizRoute: typeof QuizRoute
   WriteRoute: typeof WriteRoute
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/drill'
       fullPath: '/drill'
       preLoaderRoute: typeof DrillRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -260,6 +280,7 @@ const rootRouteChildren: RootRouteChildren = {
   AlphabetRoute: AlphabetRoute,
   BrowseRoute: BrowseRoute,
   DrillRoute: DrillRoute,
+  GuideRoute: GuideRoute,
   LoginRoute: LoginRoute,
   QuizRoute: QuizRoute,
   WriteRoute: WriteRoute,

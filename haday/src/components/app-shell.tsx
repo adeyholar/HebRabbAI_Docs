@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, Compass, House, Languages, Layers, ListChecks, Map, PenLine } from "lucide-react";
+import { BookOpen, CircleHelp, Compass, House, Languages, Layers, ListChecks, Map, PenLine } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { snapshotOf, useStudy } from "@/lib/store";
 import { loadProgress, saveProgress } from "@/lib/progress";
@@ -106,6 +106,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Game
               </Link>
             )}
+            <Link
+              to="/guide"
+              aria-label="User guide"
+              className={cn(
+                "flex size-11 items-center justify-center rounded-[var(--radius-md)]",
+                pathname === "/guide" ? "text-primary" : "text-muted",
+              )}
+            >
+              <CircleHelp className="size-5" strokeWidth={pathname === "/guide" ? 2.2 : 1.8} />
+            </Link>
             <SfxToggle />
             <div className="account-chip min-w-0 shrink">
               <UserButton />

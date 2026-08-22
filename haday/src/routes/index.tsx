@@ -36,7 +36,10 @@ function Home() {
           {firstName ? `${firstName}, learn the words that open the text.` : "Learn the words that open the text."}
         </h1>
         <p className="mt-3 max-w-prose text-muted">
-          Game mode is a gated chapter path. Study mode is the free toolbox — drill, write, quiz, lex, alef.
+          Game mode is a gated chapter path. Study mode is the free toolbox — drill, write, quiz, lex, alef.{" "}
+          <Link to="/guide" className="font-semibold text-primary">
+            How to use HaDay
+          </Link>
         </p>
       </Panel>
 
