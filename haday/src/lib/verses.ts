@@ -130,6 +130,9 @@ export const VERSES: Record<string, VerseEx> = {
   sheni: { ref: "Gen 1:8", he: "וַיְהִי־עֶרֶב וַיְהִי־בֹקֶר יוֹם שֵׁנִי", en: "There was evening and there was morning, a second day.", hit: "שֵׁנִי" },
   shelishi: { ref: "Gen 1:13", he: "וַיְהִי־עֶרֶב וַיְהִי־בֹקֶר יוֹם שְׁלִישִׁי", en: "There was evening and there was morning, a third day.", hit: "שְׁלִישִׁי" },
   shebii: { ref: "Gen 2:2", he: "וַיְכַל אֱלֹהִים בַּיּוֹם הַשְּׁבִיעִי מְלַאכְתּוֹ אֲשֶׁר עָשָׂה", en: "God finished on the seventh day his work that he had done.", hit: "הַשְּׁבִיעִי" },
+  ak: { ref: "Gen 9:4", he: "אַךְ־בָּשָׂר בְּנַפְשׁוֹ דָמוֹ לֹא תֹאכֵלוּ", en: "Only flesh with its life, its blood, you shall not eat.", hit: "אַךְ" },
+  bal: { ref: "Ps 16:8", he: "שִׁוִּיתִי יְהוָה לְנֶגְדִּי תָמִיד כִּי מִימִינִי בַּל־אֶמּוֹט", en: "I have set YHWH before me continually; because he is at my right hand, I shall not be shaken.", hit: "בַּל" },
+  tamid: { ref: "Exod 25:30", he: "וְנָתַתָּ עַל־הַשֻּׁלְחָן לֶחֶם פָּנִים לְפָנַי תָּמִיד", en: "You shall set the bread of the Presence on the table before me continually.", hit: "תָּמִיד" },
 
   we: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "וְ" },
   ha: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
