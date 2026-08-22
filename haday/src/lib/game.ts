@@ -35,7 +35,7 @@ export type GameSnapshot = {
 export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   1: { title: "Alphabet", blurb: "Consonants of the alef-bet" },
   2: { title: "Names", blurb: "Frequent proper names" },
-  3: { title: "Nouns", blurb: "Core nouns of the text" },
+  3: { title: "Nouns", blurb: "Father, son, house, God" },
   4: { title: "Adjectives", blurb: "Good, great, holy, living" },
   5: { title: "Particles", blurb: "The glue of the sentence" },
   6: { title: "World & body", blurb: "Heaven, hand, priest, path" },
