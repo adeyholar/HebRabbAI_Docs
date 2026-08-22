@@ -76,6 +76,10 @@ export const VERSES: Record<string, VerseEx> = {
   achot: { ref: "Exod 2:4", he: "וַתֵּתַצַּב אֲחֹתוֹ מֵרָחֹק לְדֵעָה מַה־יֵּעָשֶׂה לוֹ", en: "His sister stood at a distance to know what would be done to him.", hit: "אֲחֹתוֹ" },
   "el-god": { ref: "Gen 33:20", he: "וַיַּצֶּב־שָׁם מִזְבֵּחַ וַיִּקְרָא־לוֹ אֵל אֱלֹהֵי יִשְׂרָאֵל", en: "He set up an altar there and called it El, God of Israel.", hit: "אֵל" },
   naarah: { ref: "2 Kgs 5:2", he: "וַתֵּצֵא נַעֲרָה קְטַנָּה מֵאֶרֶץ יִשְׂרָאֵל", en: "A young girl from the land of Israel went out.", hit: "נַעֲרָה" },
+  goy: { ref: "Gen 12:2", he: "וְאֶעֶשְׂךָ לְגוֹי גָּדוֹל וַאֲבָרֶכְךָ וַאֲגַדְּלָה שְׁמֶךָ", en: "I will make you a great nation, and I will bless you and make your name great.", hit: "לְגוֹי" },
+  sus: { ref: "Exod 15:1", he: "סוּס וְרֹכְבוֹ רָמָה בַיָּם", en: "Horse and its rider he hurled into the sea.", hit: "סוּס" },
+  sefer: { ref: "Josh 1:8", he: "לֹא־יָמוּשׁ סֵפֶר הַתּוֹרָה הַזֶּה מִפִּיךָ", en: "This book of the instruction shall not depart from your mouth.", hit: "סֵפֶר" },
+  tsaba: { ref: "Ps 24:10", he: "יְהוָה צְבָאוֹת הוּא מֶלֶךְ הַכָּבוֹד סֶלָה", en: "YHWH of hosts — he is the king of glory.", hit: "צְבָאוֹת" },
 
   we: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "וְ" },
   ha: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
