@@ -85,6 +85,13 @@ export const VERSES: Record<string, VerseEx> = {
   neum: { ref: "Gen 22:16", he: "וַיֹּאמֶר בִּי נִשְׁבַּעְתִּי נְאֻם־יְהוָה", en: "He said, “By myself I have sworn, declares YHWH.”", hit: "נְאֻם" },
   anan: { ref: "Exod 13:21", he: "וַיהוָה הֹלֵךְ לִפְנֵיהֶם יוֹמָם בְּעַמּוּד עָנָן", en: "YHWH went before them by day in a pillar of cloud.", hit: "עָנָן" },
   sar: { ref: "Exod 2:14", he: "וַיֹּאמֶר מִי שָׂמְךָ לְאִישׁ שַׂר וְשֹׁפֵט עָלֵינוּ", en: "He said, “Who made you a man, a prince and a judge over us?”", hit: "שַׂר" },
+  achar: { ref: "Gen 22:13", he: "וְהִנֵּה־אַיִל אַחַר נֶאֱחַז בַּסְּבַךְ בְּקַרְנָיו", en: "And behold, a ram behind, caught in the thicket by its horns.", hit: "אַחַר" },
+  "et-with": { ref: "Gen 5:22", he: "וַיִּתְהַלֵּךְ חֲנוֹךְ אֶת־הָאֱלֹהִים אַחֲרֵי הוֹלִידוֹ אֶת־מְתוּשֶׁלַח", en: "Enoch walked with God after he fathered Methuselah.", hit: "אֶת־הָאֱלֹהִים" },
+  betokh: { ref: "Gen 2:9", he: "וְעֵץ הַחַיִּים בְּתוֹךְ הַגָּן", en: "And the tree of life in the midst of the garden.", hit: "בְּתוֹךְ" },
+  ke: { ref: "Ps 1:3", he: "וְהָיָה כְּעֵץ שָׁתוּל עַל־פַּלְגֵי מָיִם", en: "He is like a tree planted by streams of water.", hit: "כְּעֵץ" },
+  lemaan: { ref: "Ps 23:3", he: "נַפְשִׁי יְשׁוֹבֵב יַנְחֵנִי בְמַעְגְּלֵי־צֶדֶק לְמַעַן שְׁמוֹ", en: "He restores my soul; he leads me in paths of righteousness for his name’s sake.", hit: "לְמַעַן" },
+  maal: { ref: "Deut 28:13", he: "וּנְתָנְךָ יְהוָה לְרֹאשׁ וְלֹא לְזָנָב וְהָיִיתָ רַק לְמַעְלָה", en: "YHWH will make you the head and not the tail, and you shall be only above.", hit: "לְמַעְלָה" },
+  ever: { ref: "Deut 1:1", he: "אֵלֶּה הַדְּבָרִים אֲשֶׁר דִּבֶּר מֹשֶׁה אֶל־כָּל־יִשְׂרָאֵל בְּעֵבֶר הַיַּרְדֵּן", en: "These are the words Moses spoke to all Israel beyond the Jordan.", hit: "בְּעֵבֶר" },
 
   we: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "וְ" },
   ha: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },

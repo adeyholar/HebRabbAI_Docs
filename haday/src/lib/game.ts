@@ -38,7 +38,7 @@ export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   3: { title: "Nouns", blurb: "Father, son, house, God" },
   4: { title: "More nouns", blurb: "Nation, king, city, Torah" },
   5: { title: "Article & nouns", blurb: "The, and, fire, heaven, gold" },
-  6: { title: "World & body", blurb: "Heaven, hand, priest, path" },
+  6: { title: "Prepositions", blurb: "In, to, from, with, before" },
   7: { title: "Theology", blurb: "Peace, loyalty, glory, sin" },
   8: { title: "Core verbs I", blurb: "Say, go, see, give, take" },
   9: { title: "Core verbs II", blurb: "Hear, know, sit, die, live" },
