@@ -16,6 +16,7 @@ export type StageRecord = {
   stars: number;
   best: number;
   cleared: boolean;
+  attempts: number;
 };
 
 export type ChapterRecord = {
@@ -58,7 +59,7 @@ export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   19: { title: "Trust & work", blurb: "Trust, weep, seed, iniquity" },
 };
 
-const EMPTY_STAGE: StageRecord = { stars: 0, best: 0, cleared: false };
+const EMPTY_STAGE: StageRecord = { stars: 0, best: 0, cleared: false, attempts: 0 };
 
 function emptyStages(): Record<GameStageId, StageRecord> {
   return {
@@ -127,6 +128,7 @@ function mergeChapter(val: unknown): ChapterRecord {
           stars: Number(rec.stars) || 0,
           best: Number(rec.best) || 0,
           cleared: Boolean(rec.cleared),
+          attempts: Math.max(Number(rec.attempts) || 0, rec.cleared ? 1 : 0),
         };
       }
     }
@@ -239,6 +241,7 @@ export function applyStageResult(
     stars: Math.max(rec.stages[stage].stars, result.stars),
     best: Math.max(rec.stages[stage].best, result.score),
     cleared: true,
+    attempts: (rec.stages[stage].attempts || 0) + 1,
   };
 
   if (wasCleared && result.firstTryRate < 0.4) {
@@ -279,6 +282,32 @@ function alphabetItems(): VocabItem[] {
     chapter: 1,
     freq: 0,
   }));
+}
+
+export function runOrdinal(n: number): string {
+  const words = [
+    "",
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth",
+    "ninth",
+    "tenth",
+    "eleventh",
+    "twelfth",
+  ];
+  if (n >= 1 && n < words.length) return words[n];
+  const ones = n % 10;
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  if (ones === 1) return `${n}st`;
+  if (ones === 2) return `${n}nd`;
+  if (ones === 3) return `${n}rd`;
+  return `${n}th`;
 }
 
 export function shuffleInPlace<T>(arr: T[]): T[] {

@@ -12,7 +12,9 @@ import {
   CHAPTER_META,
   GAME_STAGES,
   chapterPool,
+  chapterRecord,
   continueTarget,
+  runOrdinal,
   starsForRate,
   stageMeta,
   type GameStageId,
@@ -180,6 +182,9 @@ export function GameStagePlay({ chapter, stage }: Props) {
     const next = continueTarget(game);
     const chapterCleared = Boolean(game.chapters[String(chapter)]?.cleared);
     const board = scoreboard(game, streak);
+    const rec = chapterRecord(game, chapter).stages[stage];
+    const run = rec.attempts || 1;
+    const pct = Math.round((firstSeen ? firstHits / firstSeen : 1) * 100);
     return (
       <Panel className="text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
@@ -190,9 +195,12 @@ export function GameStagePlay({ chapter, stage }: Props) {
           {"★".repeat(stars)}
           <span className="text-border">{"★".repeat(3 - stars)}</span>
         </p>
+        <p className="mt-3 font-display text-2xl font-bold capitalize text-ink">{runOrdinal(run)} run</p>
         <p className="mt-2 text-sm text-muted">
-          {Math.round((firstSeen ? firstHits / firstSeen : 1) * 100)}% first-try · {firstHits}/{firstSeen} clean
-          {" · "}
+          {pct}% this round · {firstHits}/{firstSeen} clean on first answer
+          {rec.best ? ` · best ${rec.best}%` : ""}
+        </p>
+        <p className="mt-1 text-sm text-muted">
           Level {board.level} · {board.points.toLocaleString()} pts
         </p>
         {chapterCleared && (
