@@ -39,6 +39,31 @@ function foldJerusalemPatah(s: string): string {
   return s.replace(/\u05DC\u05B4\u05B8\u05DD/g, "\u05DC\u05B4\u05B7\u05DD");
 }
 
+/** Bare ש is shin. Only a sin-dot makes it sin. */
+function foldBareShin(s: string): string {
+  const cons = /[\u05D0-\u05EA]/;
+  const chars = [...s];
+  let out = "";
+  let i = 0;
+  while (i < chars.length) {
+    const ch = chars[i];
+    if (ch !== "ש") {
+      out += ch;
+      i += 1;
+      continue;
+    }
+    i += 1;
+    const marks: string[] = [];
+    while (i < chars.length && !cons.test(chars[i])) {
+      marks.push(chars[i]);
+      i += 1;
+    }
+    if (!marks.includes("\u05C1") && !marks.includes("\u05C2")) marks.push("\u05C1");
+    out += ch + marks.join("");
+  }
+  return out;
+}
+
 function canonMarks(s: string): string {
   const cons = /[\u05D0-\u05EA]/;
   const chars = [...s];
@@ -156,18 +181,64 @@ export function liveMatch(expected: string, typed: string): "empty" | "prefix" |
 export function normalizeHebrewFull(s: string): string {
   return foldJerusalemPatah(
     canonMarks(
-    foldJerusalemHireq(
-      foldShureq(
-        s
-          .normalize("NFC")
-          .replace(/[\u0591-\u05AF\u05BD\u05BF\u05C0\u05C3-\u05C5\u05C6\u05C7]/g, "")
-          .replace(/[\u05F3\u05F4\u05BE]/g, "")
-          .replace(/[־–—]/g, "")
-          .replace(/\s+/g, ""),
-      ).replace(/[^\u05D0-\u05EA\u05B0-\u05BC\u05C1\u05C2]/g, ""),
-    ),
+      foldJerusalemHireq(
+        foldBareShin(
+          foldShureq(
+            s
+              .normalize("NFC")
+              .replace(/[\u0591-\u05AF\u05BD\u05BF\u05C0\u05C3-\u05C5\u05C6\u05C7]/g, "")
+              .replace(/[\u05F3\u05F4\u05BE]/g, "")
+              .replace(/[־–—]/g, "")
+              .replace(/\s+/g, ""),
+          ).replace(/[^\u05D0-\u05EA\u05B0-\u05BC\u05C1\u05C2]/g, ""),
+        ),
+      ),
     ),
   );
+}
+
+export function pointingHint(expected: string, typed: string): string | null {
+  if (!typed) return null;
+  if (liveMatchFull(expected, typed) === "exact") return null;
+  if (isFinalFormMismatch(expected, typed)) return "Use the final form";
+  if (consonantsMatch(expected, typed) || lettersOnly(expected) === lettersOnly(typed)) {
+    return "Consonants are right — check vowels, dagesh, and dots.";
+  }
+  return null;
+}
+
+type Cluster = { cons: string; marks: string[] };
+
+function toClusters(s: string): Cluster[] {
+  const cons = /[\u05D0-\u05EA]/;
+  const chars = [...s];
+  const out: Cluster[] = [];
+  let i = 0;
+  while (i < chars.length) {
+    const ch = chars[i];
+    if (!cons.test(ch)) {
+      i += 1;
+      continue;
+    }
+    i += 1;
+    const marks: string[] = [];
+    while (i < chars.length && !cons.test(chars[i])) {
+      marks.push(chars[i]);
+      i += 1;
+    }
+    out.push({ cons: ch, marks });
+  }
+  return out;
+}
+
+function marksSubset(got: string[], want: string[]): boolean {
+  const pool = [...want];
+  for (const m of got) {
+    const i = pool.indexOf(m);
+    if (i < 0) return false;
+    pool.splice(i, 1);
+  }
+  return true;
 }
 
 export function liveMatchFull(expected: string, typed: string): "empty" | "prefix" | "exact" | "off" {
@@ -175,8 +246,19 @@ export function liveMatchFull(expected: string, typed: string): "empty" | "prefi
   const got = normalizeHebrewFull(typed);
   if (!got) return "empty";
   if (got === want) return "exact";
-  if (want.startsWith(got)) return "prefix";
-  return "off";
+  const wc = toClusters(want);
+  const gc = toClusters(got);
+  if (!gc.length) return "empty";
+  if (gc.length > wc.length) return "off";
+  for (let i = 0; i < gc.length - 1; i++) {
+    if (gc[i].cons !== wc[i].cons) return "off";
+    if (gc[i].marks.join("") !== wc[i].marks.join("")) return "off";
+  }
+  const last = gc.length - 1;
+  if (gc[last].cons !== wc[last].cons) return "off";
+  if (!marksSubset(gc[last].marks, wc[last].marks)) return "off";
+  if (gc.length === wc.length && gc[last].marks.join("") === wc[last].marks.join("")) return "exact";
+  return "prefix";
 }
 
 export function consonantsMatch(expected: string, typed: string): boolean {

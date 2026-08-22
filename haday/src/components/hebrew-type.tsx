@@ -1,12 +1,10 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { isFinalFormMismatch, liveMatch, liveMatchFull } from "@/lib/hebrew";
+import { liveMatch, liveMatchFull, pointingHint } from "@/lib/hebrew";
 import { GradeBanner } from "@/components/grade-banner";
 import { CONSONANTS } from "@/lib/alphabet";
 
-const CONSONANT_KEYS = CONSONANTS.filter((c) => c.id !== "sin").map((c) =>
-  c.id === "shin" ? { glyph: "ש", name: "Shin" } : { glyph: c.letter, name: c.name },
-);
+const CONSONANT_KEYS = CONSONANTS.map((c) => ({ glyph: c.letter, name: c.name }));
 
 const FINAL_KEYS = CONSONANTS.filter((c) => c.final).map((c) => ({
   glyph: c.final as string,
@@ -125,7 +123,8 @@ type Props = {
 
 export function HebrewType({ value, onChange, target, disabled, strict = false, hideHint = false }: Props) {
   const live = strict ? liveMatchFull(target, value) : liveMatch(target, value);
-  const offLabel = isFinalFormMismatch(target, value) ? "Use the final form" : "Not correct";
+  const extra = live === "off" ? pointingHint(target, value) : null;
+  const offLabel = extra === "Use the final form" ? extra : "Not correct";
   const hint = strict
     ? live === "empty"
       ? "Consonant first, then its vowel. Full match."
@@ -171,6 +170,9 @@ export function HebrewType({ value, onChange, target, disabled, strict = false, 
       />
       {!disabled && !hideHint && (live === "exact" || live === "off") && (
         <GradeBanner className="mt-3" ok={live === "exact"} label={hint} size="live" />
+      )}
+      {!disabled && !hideHint && live === "off" && extra && extra !== offLabel && (
+        <p className="mt-1 text-center text-sm font-semibold text-danger">{extra}</p>
       )}
       {!disabled && !hideHint && live !== "exact" && live !== "off" && (
         <p className="mt-2 text-center text-sm font-medium text-muted">{hint}</p>
