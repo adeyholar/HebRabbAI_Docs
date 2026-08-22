@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CircleHelp, Compass, House, Languages, Layers, ListChecks, Map, PenLine } from "lucide-react";
+import { BookOpen, CircleHelp, Compass, House, Languages, Layers, ListChecks, Map, PenLine, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { snapshotOf, useStudy } from "@/lib/store";
 import { loadProgress, saveProgress } from "@/lib/progress";
@@ -9,6 +9,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { BrandLockup } from "@/components/brand-lockup";
 import { SfxToggle } from "@/components/sfx-toggle";
 import { continueTarget } from "@/lib/game";
+import { getAdminStatus } from "@/lib/admin";
 
 const STUDY_NAV = [
   { to: "/", label: "Home", icon: House },
@@ -26,12 +27,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isGame = pathname.startsWith("/game");
   const userId = user?.id ?? null;
   const [progressReady, setProgressReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const game = useStudy((s) => s.game);
   const cont = continueTarget(game);
 
   useEffect(() => {
     if (isLogin || !userId) {
       setProgressReady(false);
+      setIsAdmin(false);
       return;
     }
     let cancelled = false;
@@ -64,6 +67,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       if (cancelled) return;
       setProgressReady(true);
+
+      void getAdminStatus()
+        .then((s) => {
+          if (!cancelled) setIsAdmin(s.admin);
+        })
+        .catch(() => {
+          if (!cancelled) setIsAdmin(false);
+        });
 
       unsub = useStudy.subscribe((state) => {
         if (state.ownerId !== userId) return;
@@ -116,6 +127,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <CircleHelp className="size-5" strokeWidth={pathname === "/guide" ? 2.2 : 1.8} />
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                aria-label="Class roster"
+                className={cn(
+                  "flex size-11 items-center justify-center rounded-[var(--radius-md)]",
+                  pathname === "/admin" ? "text-primary" : "text-muted",
+                )}
+              >
+                <Users className="size-5" strokeWidth={pathname === "/admin" ? 2.2 : 1.8} />
+              </Link>
+            )}
             <SfxToggle />
             <div className="account-chip min-w-0 shrink">
               <UserButton />

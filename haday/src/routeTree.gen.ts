@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AlphabetRouteImport } from './routes/alphabet'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as DrillRouteImport } from './routes/drill'
@@ -25,6 +26,11 @@ import { Route as GameChapterStageRouteImport } from './routes/game/$chapter/$st
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlphabetRoute = AlphabetRouteImport.update({
@@ -85,6 +91,7 @@ const GameChapterStageRoute = GameChapterStageRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
@@ -114,6 +122,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/alphabet'
     | '/browse'
     | '/drill'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/alphabet'
     | '/browse'
     | '/drill'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/alphabet'
     | '/browse'
     | '/drill'
@@ -173,6 +185,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AlphabetRoute: typeof AlphabetRoute
   BrowseRoute: typeof BrowseRoute
   DrillRoute: typeof DrillRoute
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/alphabet': {
@@ -277,6 +297,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AlphabetRoute: AlphabetRoute,
   BrowseRoute: BrowseRoute,
   DrillRoute: DrillRoute,
