@@ -1,4 +1,5 @@
 import type { VocabItem } from "./vocab";
+import { shuffle } from "./vocab";
 import type { FocusMode } from "./store";
 import { queueForFocus } from "./store";
 import type { Rating } from "./srs";
@@ -19,7 +20,8 @@ export function buildRound(
   const first = queueForFocus(pool, cards, focus, limit);
   const seen = new Set(first.map((item) => item.id));
   const rest = pool.filter((item) => !seen.has(item.id));
-  return [...first, ...rest].slice(0, Math.min(limit, pool.length));
+  const picked = [...first, ...rest].slice(0, Math.min(limit, pool.length));
+  return shuffle(picked);
 }
 
 export function nextOpen(from: number, items: VocabItem[], done: ReadonlySet<string>): number {

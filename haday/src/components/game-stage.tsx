@@ -105,10 +105,25 @@ export function GameStagePlay({ chapter, stage }: Props) {
     rate(item.id, "again");
     const nextSeen = firstSeen + 1;
     setFirstSeen(nextSeen);
-    const nextQueue = [...queue.slice(1), item];
+    const rest = queue.slice(1);
+    const insertAt = rest.length ? Math.floor(Math.random() * (rest.length + 1)) : 0;
+    const nextQueue = [...rest.slice(0, insertAt), item, ...rest.slice(insertAt)];
     setQueue(nextQueue);
     resetItem();
     finishIfEmpty(nextQueue, firstHits, nextSeen);
+  }
+
+  function replayStage() {
+    setQueue(shuffleCopy(pool));
+    setPicked(null);
+    setMissedChoice(null);
+    setTyped("");
+    setRevealed(false);
+    setTries(0);
+    setFirstHits(0);
+    setFirstSeen(0);
+    setPhase("play");
+    setStars(1);
   }
 
   function resetItem() {
@@ -209,6 +224,9 @@ export function GameStagePlay({ chapter, stage }: Props) {
               Chapter map
             </Button>
           </Link>
+          <Button className="w-full" variant="outline" onClick={replayStage}>
+            New shuffled round
+          </Button>
         </div>
       </Panel>
     );

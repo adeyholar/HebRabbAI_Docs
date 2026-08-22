@@ -10,7 +10,7 @@ import { Panel } from "@/components/panel";
 import { dageshCoach, matchHandwriting, type HandMatch } from "@/lib/hebrew";
 import { readHandwriting } from "@/lib/read-handwriting";
 import { queueForFocus, useStudy } from "@/lib/store";
-import { itemsForWeek, POS_LABEL, type VocabItem } from "@/lib/vocab";
+import { itemsForWeek, POS_LABEL, shuffle, type VocabItem } from "@/lib/vocab";
 import { takeWriteCheck, writeChecksLeft, WRITE_DAILY_LIMIT } from "@/lib/write-cap";
 import { cn } from "@/lib/cn";
 import { GradeBanner } from "@/components/grade-banner";
@@ -55,7 +55,7 @@ function WritePage() {
   const ratedRef = useRef(false);
 
   useEffect(() => {
-    setRound(queueForFocus(pool, useStudy.getState().cards, focus, 12));
+    setRound(shuffle(queueForFocus(pool, useStudy.getState().cards, focus, 12)));
     setI(0);
     setResult(null);
     pad.current?.clear();
@@ -123,7 +123,7 @@ function WritePage() {
   }
 
   function restartRound() {
-    setRound(queueForFocus(pool, useStudy.getState().cards, focus, 12));
+    setRound(shuffle(queueForFocus(pool, useStudy.getState().cards, focus, 12)));
     setI(0);
     setResult(null);
     pad.current?.clear();
