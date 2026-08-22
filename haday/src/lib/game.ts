@@ -49,7 +49,7 @@ export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   14: { title: "Come & go", blurb: "Enter, rise, return, put" },
   15: { title: "Live & serve", blurb: "Live, cut, answer, life" },
   16: { title: "Redeem", blurb: "Redeem, atone, forsake, there" },
-  17: { title: "Trust", blurb: "Trust, understand, wait" },
+  17: { title: "Love & judge", blurb: "Love, perish, tent, sun" },
   18: { title: "Affect", blurb: "Love, fear, rejoice, mourn" },
   19: { title: "Rule", blurb: "Rule, establish, support" },
 };
