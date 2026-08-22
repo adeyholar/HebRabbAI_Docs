@@ -259,7 +259,9 @@ export function GameStagePlay({ chapter, stage }: Props) {
         )}
       </div>
 
-      <VerseCard item={item} showEnglish={showEnglish} />
+      {(stage !== "spell-strict" || revealed) && (
+        <VerseCard item={item} showEnglish={showEnglish} />
+      )}
 
       {stage === "recognize" ? (
         <>
