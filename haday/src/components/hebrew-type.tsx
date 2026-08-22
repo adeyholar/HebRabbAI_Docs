@@ -16,34 +16,34 @@ const FINAL_KEYS = CONSONANTS.filter((c) => c.final).map((c) => ({
 type PadKeyDef = { id: string; insert: string; show: string; name: string };
 
 const VOWEL_POINTS: PadKeyDef[] = [
-  { id: "shewa", insert: "ְ", show: "בְ", name: "Shewa" },
-  { id: "pathach", insert: "ַ", show: "בַ", name: "Pathach" },
-  { id: "qamets", insert: "ָ", show: "בָ", name: "Qamets" },
-  { id: "seghol", insert: "ֶ", show: "בֶ", name: "Seghol" },
-  { id: "tsere", insert: "ֵ", show: "בֵ", name: "Tsere" },
-  { id: "hireq", insert: "ִ", show: "בִ", name: "Hireq" },
-  { id: "holem", insert: "ֹ", show: "בֹ", name: "Holem" },
-  { id: "qibbuts", insert: "ֻ", show: "בֻ", name: "Qibbuts" },
+  { id: "shewa", insert: "ְ", show: "◌ְ", name: "Shewa" },
+  { id: "pathach", insert: "ַ", show: "◌ַ", name: "Pathach" },
+  { id: "qamets", insert: "ָ", show: "◌ָ", name: "Qamets" },
+  { id: "seghol", insert: "ֶ", show: "◌ֶ", name: "Seghol" },
+  { id: "tsere", insert: "ֵ", show: "◌ֵ", name: "Tsere" },
+  { id: "hireq", insert: "ִ", show: "◌ִ", name: "Hireq" },
+  { id: "holem", insert: "ֹ", show: "◌ֹ", name: "Holem" },
+  { id: "qibbuts", insert: "ֻ", show: "◌ֻ", name: "Qibbuts" },
 ];
 
 const REDUCED: PadKeyDef[] = [
-  { id: "hateph-a", insert: "ֲ", show: "בֲ", name: "Ḥateph a" },
-  { id: "hateph-e", insert: "ֱ", show: "בֱ", name: "Ḥateph e" },
-  { id: "hateph-o", insert: "ֳ", show: "בֳ", name: "Ḥateph o" },
+  { id: "hateph-a", insert: "ֲ", show: "◌ֲ", name: "Hateph pathach" },
+  { id: "hateph-e", insert: "ֱ", show: "◌ֱ", name: "Hateph seghol" },
+  { id: "hateph-o", insert: "ֳ", show: "◌ֳ", name: "Hateph qamets" },
 ];
 
 const MARKS: PadKeyDef[] = [
-  { id: "dagesh", insert: "ּ", show: "בּ", name: "Dagesh" },
-  { id: "shin-dot", insert: "ׁ", show: "שׁ", name: "Shin dot" },
-  { id: "sin-dot", insert: "ׂ", show: "שׂ", name: "Sin dot" },
+  { id: "dagesh", insert: "ּ", show: "◌ּ", name: "Dagesh" },
+  { id: "shin-dot", insert: "ׁ", show: "◌ׁ", name: "Shin dot" },
+  { id: "sin-dot", insert: "ׂ", show: "◌ׂ", name: "Sin dot" },
 ];
 
 const VOWEL_LETTERS: PadKeyDef[] = [
   { id: "shureq", insert: "וּ", show: "וּ", name: "Shureq" },
   { id: "holem-waw", insert: "וֹ", show: "וֹ", name: "Holem waw" },
-  { id: "hireq-yod", insert: "ִי", show: "בִי", name: "Hireq yod" },
-  { id: "tsere-yod", insert: "ֵי", show: "בֵי", name: "Tsere yod" },
-  { id: "qamets-he", insert: "ָה", show: "בָה", name: "Qamets he" },
+  { id: "hireq-yod", insert: "ִי", show: "◌ִי", name: "Hireq yod" },
+  { id: "tsere-yod", insert: "ֵי", show: "◌ֵי", name: "Tsere yod" },
+  { id: "qamets-he", insert: "ָה", show: "◌ָה", name: "Qamets he" },
 ];
 
 function dropLastGrapheme(s: string) {
@@ -70,11 +70,11 @@ function PadKey({
     <button
       type="button"
       disabled={disabled}
+      aria-label={name}
       onClick={onClick}
-      className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] bg-card px-1 py-1 shadow-[var(--shadow-border)] disabled:opacity-40"
+      className="flex min-h-12 items-center justify-center rounded-[var(--radius-sm)] bg-card px-1 shadow-[var(--shadow-border)] disabled:opacity-40"
     >
-      <span className="he-word text-2xl leading-none">{glyph}</span>
-      <span className="max-w-full truncate text-center text-xs font-medium leading-tight text-muted">{name}</span>
+      <span className="he-word text-3xl leading-none">{glyph}</span>
     </button>
   );
 }
