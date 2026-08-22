@@ -1,23 +1,117 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { liveMatch, liveMatchFull } from "@/lib/hebrew";
 import { GradeBanner } from "@/components/grade-banner";
+import { CONSONANTS } from "@/lib/alphabet";
 
-const LETTERS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר", "ש", "ת"];
+const CONSONANT_KEYS = CONSONANTS.filter((c) => c.id !== "sin").map((c) =>
+  c.id === "shin" ? { glyph: "ש", name: "Shin" } : { glyph: c.letter, name: c.name },
+);
 
-const VOWEL_MARKS: Array<{ mark: string; label: string }> = [
-  { mark: "ְ", label: "shewa" },
-  { mark: "ַ", label: "pathach" },
-  { mark: "ָ", label: "qamets" },
-  { mark: "ֶ", label: "seghol" },
-  { mark: "ֵ", label: "tsere" },
-  { mark: "ִ", label: "hireq" },
-  { mark: "ֹ", label: "holem" },
-  { mark: "ֻ", label: "qibbuts" },
-  { mark: "ּ", label: "dagesh" },
-  { mark: "ׁ", label: "shin" },
-  { mark: "ׂ", label: "sin" },
-  { mark: "ֲ", label: "ḥateph a" },
+const FINAL_KEYS = CONSONANTS.filter((c) => c.final).map((c) => ({
+  glyph: c.final as string,
+  name: `Final ${c.name}`,
+}));
+
+type PadKeyDef = { id: string; insert: string; show: string; name: string };
+
+const VOWEL_POINTS: PadKeyDef[] = [
+  { id: "shewa", insert: "ְ", show: "בְ", name: "Shewa" },
+  { id: "pathach", insert: "ַ", show: "בַ", name: "Pathach" },
+  { id: "qamets", insert: "ָ", show: "בָ", name: "Qamets" },
+  { id: "seghol", insert: "ֶ", show: "בֶ", name: "Seghol" },
+  { id: "tsere", insert: "ֵ", show: "בֵ", name: "Tsere" },
+  { id: "hireq", insert: "ִ", show: "בִ", name: "Hireq" },
+  { id: "holem", insert: "ֹ", show: "בֹ", name: "Holem" },
+  { id: "qibbuts", insert: "ֻ", show: "בֻ", name: "Qibbuts" },
 ];
+
+const REDUCED: PadKeyDef[] = [
+  { id: "hateph-a", insert: "ֲ", show: "בֲ", name: "Ḥateph a" },
+  { id: "hateph-e", insert: "ֱ", show: "בֱ", name: "Ḥateph e" },
+  { id: "hateph-o", insert: "ֳ", show: "בֳ", name: "Ḥateph o" },
+];
+
+const MARKS: PadKeyDef[] = [
+  { id: "dagesh", insert: "ּ", show: "בּ", name: "Dagesh" },
+  { id: "shin-dot", insert: "ׁ", show: "שׁ", name: "Shin dot" },
+  { id: "sin-dot", insert: "ׂ", show: "שׂ", name: "Sin dot" },
+];
+
+const VOWEL_LETTERS: PadKeyDef[] = [
+  { id: "shureq", insert: "וּ", show: "וּ", name: "Shureq" },
+  { id: "holem-waw", insert: "וֹ", show: "וֹ", name: "Holem waw" },
+  { id: "hireq-yod", insert: "ִי", show: "בִי", name: "Hireq yod" },
+  { id: "tsere-yod", insert: "ֵי", show: "בֵי", name: "Tsere yod" },
+  { id: "qamets-he", insert: "ָה", show: "בָה", name: "Qamets he" },
+];
+
+function dropLastGrapheme(s: string) {
+  if (!s) return s;
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    const parts = [...new Intl.Segmenter("he", { granularity: "grapheme" }).segment(s)];
+    return parts.slice(0, -1).map((p) => p.segment).join("");
+  }
+  return [...s].slice(0, -1).join("");
+}
+
+function PadKey({
+  glyph,
+  name,
+  disabled,
+  onClick,
+}: {
+  glyph: string;
+  name: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] bg-card px-1 py-1 shadow-[var(--shadow-border)] disabled:opacity-40"
+    >
+      <span className="he-word text-2xl leading-none">{glyph}</span>
+      <span className="max-w-full truncate text-center text-xs font-medium leading-tight text-muted">{name}</span>
+    </button>
+  );
+}
+
+function PadSection({
+  title,
+  hint,
+  cols,
+  rtl,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  cols: "cons" | "four" | "five";
+  rtl?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className="mt-3">
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{title}</h3>
+        {hint ? <p className="text-xs text-muted">{hint}</p> : null}
+      </div>
+      <div
+        dir={rtl ? "rtl" : "ltr"}
+        className={cn(
+          "grid gap-1.5",
+          cols === "cons" && "grid-cols-6",
+          cols === "four" && "grid-cols-4",
+          cols === "five" && "grid-cols-5",
+        )}
+      >
+        {children}
+      </div>
+    </section>
+  );
+}
 
 type Props = {
   value: string;
@@ -32,19 +126,24 @@ export function HebrewType({ value, onChange, target, disabled, strict = false, 
   const live = strict ? liveMatchFull(target, value) : liveMatch(target, value);
   const hint = strict
     ? live === "empty"
-      ? "Type consonants and vowels — full match."
+      ? "Consonant first, then its vowel. Full match."
       : live === "exact"
         ? "Correct"
         : live === "prefix"
           ? "Keep going — that prefix is right."
           : "Not correct"
     : live === "empty"
-      ? "Type or tap letters — vowels optional."
+      ? "Consonant first, then its vowel. Vowels optional to match."
       : live === "exact"
         ? "Correct"
         : live === "prefix"
           ? "Keep going — that prefix is right."
           : "Not correct";
+
+  function add(chunk: string) {
+    if (disabled) return;
+    onChange(value + chunk);
+  }
 
   return (
     <div>
@@ -53,8 +152,11 @@ export function HebrewType({ value, onChange, target, disabled, strict = false, 
         lang="he"
         value={value}
         disabled={disabled}
+        readOnly
+        inputMode="none"
         onChange={(e) => onChange(e.target.value)}
         placeholder="כתוב כאן"
+        aria-label="Hebrew word"
         autoCapitalize="off"
         autoCorrect="off"
         autoComplete="off"
@@ -71,40 +173,42 @@ export function HebrewType({ value, onChange, target, disabled, strict = false, 
       {!disabled && !hideHint && live !== "exact" && live !== "off" && (
         <p className="mt-2 text-center text-sm font-medium text-muted">{hint}</p>
       )}
-      <div className="mt-3 grid grid-cols-6 gap-1.5" dir="rtl">
-        {LETTERS.map((ch) => (
-          <button
-            key={ch}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(value + ch)}
-            className="min-h-11 rounded-[var(--radius-sm)] bg-card font-hebrew text-xl font-semibold text-ink shadow-[var(--shadow-border)] disabled:opacity-40"
-          >
-            {ch}
-          </button>
+
+      <PadSection title="Consonants" cols="cons" rtl>
+        {CONSONANT_KEYS.map((k) => (
+          <PadKey key={k.name + k.glyph} glyph={k.glyph} name={k.name} disabled={disabled} onClick={() => add(k.glyph)} />
         ))}
-      </div>
-      {strict && (
-        <div className="mt-2 grid grid-cols-6 gap-1.5">
-          {VOWEL_MARKS.map((v) => (
-            <button
-              key={v.label}
-              type="button"
-              disabled={disabled}
-              title={v.label}
-              onClick={() => onChange(value + v.mark)}
-              className="min-h-11 rounded-[var(--radius-sm)] bg-surface font-hebrew text-lg font-semibold text-ink shadow-[var(--shadow-border)] disabled:opacity-40"
-            >
-              ב{v.mark}
-            </button>
-          ))}
-        </div>
-      )}
+      </PadSection>
+
+      <PadSection title="Final forms" cols="five" rtl>
+        {FINAL_KEYS.map((k) => (
+          <PadKey key={k.glyph} glyph={k.glyph} name={k.name} disabled={disabled} onClick={() => add(k.glyph)} />
+        ))}
+      </PadSection>
+
+      <PadSection title="Vowels" hint="Sits on the last consonant" cols="four">
+        {VOWEL_POINTS.map((k) => (
+          <PadKey key={k.id} glyph={k.show} name={k.name} disabled={disabled} onClick={() => add(k.insert)} />
+        ))}
+      </PadSection>
+
+      <PadSection title="Reduced + marks" cols="four">
+        {REDUCED.concat(MARKS).map((k) => (
+          <PadKey key={k.id} glyph={k.show} name={k.name} disabled={disabled} onClick={() => add(k.insert)} />
+        ))}
+      </PadSection>
+
+      <PadSection title="Vowel letters" hint="Adds the letter + vowel" cols="five">
+        {VOWEL_LETTERS.map((k) => (
+          <PadKey key={k.id} glyph={k.show} name={k.name} disabled={disabled} onClick={() => add(k.insert)} />
+        ))}
+      </PadSection>
+
       <div className="mt-2 grid grid-cols-2 gap-1.5">
         <button
           type="button"
           disabled={disabled || !value}
-          onClick={() => onChange(value.slice(0, -1))}
+          onClick={() => onChange(dropLastGrapheme(value))}
           className="min-h-11 rounded-[var(--radius-sm)] bg-card text-sm font-medium text-ink shadow-[var(--shadow-border)] disabled:opacity-40"
         >
           Backspace
