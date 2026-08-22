@@ -23,7 +23,7 @@ export const VOCAB: VocabItem[] = [
   { id: "joseph", hebrew: "יוֹסֵף", translit: "yôsēp", gloss: "Joseph", alts: [], pos: "name", chapter: 2, freq: 213 },
   { id: "jacob", hebrew: "יַעֲקֹב", translit: "yaʿăqōb", gloss: "Jacob", alts: [], pos: "name", chapter: 2, freq: 349 },
   { id: "isaac", hebrew: "יִצְחָק", translit: "yiṣḥāq", gloss: "Isaac", alts: [], pos: "name", chapter: 2, freq: 108 },
-  { id: "jerusalem", hebrew: "יְרוּשָׁלַםִ", translit: "yərûšālayim", gloss: "Jerusalem", alts: [], hebrewAlts: ["יְרוּשָׁלַיִם", "יְרוּשָׁלַ͏ִם"], pos: "name", chapter: 2, freq: 643 },
+  { id: "jerusalem", hebrew: "יְרוּשָׁלַםִ", translit: "yərûšālayim", gloss: "Jerusalem", alts: [], hebrewAlts: ["יְרוּשָׁלַיִם", "יְרוּשָׁלַ͏ִם", "יְרוּשָׁלָם", "יְרוּשָׁלַם"], pos: "name", chapter: 2, freq: 643 },
   { id: "jeremiah", hebrew: "יִרְמְיָהוּ", translit: "yirməyāhû", gloss: "Jeremiah", alts: ["yirmeyahu"], hebrewAlts: ["יִרְמְיָה"], pos: "name", chapter: 2, freq: 147 },
   { id: "israel", hebrew: "יִשְׂרָאֵל", translit: "yiśrāʾēl", gloss: "Israel", alts: [], pos: "name", chapter: 2, freq: 2507 },
   { id: "canaan", hebrew: "כְּנַעַן", translit: "kənaʿan", gloss: "Canaan", alts: [], pos: "name", chapter: 2, freq: 93 },
