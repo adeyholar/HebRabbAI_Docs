@@ -24,7 +24,7 @@ function GameMapPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Game mode</p>
         <h1 className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">Chapter path</h1>
         <p className="mt-3 max-w-prose text-muted">
-          Each BBH chapter is a level. Clear Recognize, Gloss, Spell (lenient), then Spell (strict) to unlock the next.
+          Each BBH chapter is a level. Clear Recognize, Gloss, Spell (lenient), then Spell (strict) to unlock the next. Both spell stages need the right consonants and vowels. Lenient still shows the verse; strict does not.
           Chapter 1 starts open.
         </p>
         <div className="mt-4">

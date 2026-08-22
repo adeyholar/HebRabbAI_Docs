@@ -16,7 +16,7 @@ import {
   stageMeta,
   type GameStageId,
 } from "@/lib/game";
-import { consonantsMatch, liveMatchFull } from "@/lib/hebrew";
+import { liveMatchFull } from "@/lib/hebrew";
 import { useStudy } from "@/lib/store";
 import { glossMatches, liveGloss, quizChoices, type VocabItem } from "@/lib/vocab";
 
@@ -218,9 +218,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
   const typedOk =
     stage === "gloss"
       ? glossMatches(item, typed)
-      : stage === "spell-strict"
-        ? liveMatchFull(item.hebrew, typed) === "exact"
-        : consonantsMatch(item.hebrew, typed);
+      : liveMatchFull(item.hebrew, typed) === "exact";
 
   return (
     <>
@@ -391,7 +389,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
             onChange={setTyped}
             target={item.hebrew}
             disabled={revealed}
-            strict={stage === "spell-strict"}
+            strict
           />
           {tries >= 1 && !revealed && (
             <p className="try-flash mt-3 text-center text-lg font-bold uppercase tracking-wide text-danger">
