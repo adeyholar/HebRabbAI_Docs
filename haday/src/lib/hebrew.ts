@@ -100,6 +100,36 @@ export function liveMatch(expected: string, typed: string): "empty" | "prefix" |
   return "off";
 }
 
+/** Keep vowels, dagesh, and shin/sin dots; drop cantillation and whitespace. */
+export function normalizeHebrewFull(s: string): string {
+  return foldFinals(
+    s
+      .normalize("NFC")
+      .replace(/[\u0591-\u05AF\u05BD\u05BF\u05C0\u05C3-\u05C5\u05C6\u05C7]/g, "")
+      .replace(/[\u05F3\u05F4\u05BE]/g, "")
+      .replace(/[־–—]/g, "")
+      .replace(/\s+/g, ""),
+  ).replace(/[^\u05D0-\u05EA\u05B0-\u05BC\u05C1\u05C2]/g, "");
+}
+
+export function liveMatchFull(expected: string, typed: string): "empty" | "prefix" | "exact" | "off" {
+  const want = normalizeHebrewFull(expected);
+  const got = normalizeHebrewFull(typed);
+  if (!got) return "empty";
+  if (got === want) return "exact";
+  if (want.startsWith(got)) return "prefix";
+  return "off";
+}
+
+export function consonantsMatch(expected: string, typed: string): boolean {
+  const want = normalizeHebrew(expected);
+  const got = normalizeHebrew(typed);
+  if (!want || !got) return false;
+  if (got === want) return true;
+  const distance = weightedDistance(want, got);
+  return distance <= 0.9 || (want.length >= 4 && distance / want.length <= 0.28);
+}
+
 export function matchHandwriting(expected: string, read: string): { match: HandMatch; distance: number; expectedN: string; readN: string } {
   const expectedN = normalizeHebrew(expected);
   const readN = normalizeHebrew(read);

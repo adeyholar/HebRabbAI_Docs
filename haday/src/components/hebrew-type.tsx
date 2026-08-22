@@ -1,22 +1,48 @@
 import { cn } from "@/lib/cn";
-import { liveMatch } from "@/lib/hebrew";
+import { liveMatch, liveMatchFull } from "@/lib/hebrew";
 
 const LETTERS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר", "ש", "ת"];
+
+const VOWEL_MARKS: Array<{ mark: string; label: string }> = [
+  { mark: "ְ", label: "shewa" },
+  { mark: "ַ", label: "pathach" },
+  { mark: "ָ", label: "qamets" },
+  { mark: "ֶ", label: "seghol" },
+  { mark: "ֵ", label: "tsere" },
+  { mark: "ִ", label: "hireq" },
+  { mark: "ֹ", label: "holem" },
+  { mark: "ֻ", label: "qibbuts" },
+  { mark: "ּ", label: "dagesh" },
+  { mark: "ׁ", label: "shin" },
+  { mark: "ׂ", label: "sin" },
+  { mark: "ֲ", label: "ḥateph a" },
+];
 
 type Props = {
   value: string;
   onChange: (next: string) => void;
   target: string;
   disabled?: boolean;
+  strict?: boolean;
 };
 
-export function HebrewType({ value, onChange, target, disabled }: Props) {
-  const live = liveMatch(target, value);
-  const hint =
-    live === "empty" ? "Type or tap letters — vowels optional."
-    : live === "exact" ? "Correct."
-    : live === "prefix" ? "Keep going — that prefix is right."
-    : "Not yet — check a letter.";
+export function HebrewType({ value, onChange, target, disabled, strict = false }: Props) {
+  const live = strict ? liveMatchFull(target, value) : liveMatch(target, value);
+  const hint = strict
+    ? live === "empty"
+      ? "Type consonants and vowels — full match."
+      : live === "exact"
+        ? "Fully correct."
+        : live === "prefix"
+          ? "Keep going — that prefix is right."
+          : "Not yet — check a letter or vowel."
+    : live === "empty"
+      ? "Type or tap letters — vowels optional."
+      : live === "exact"
+        ? "Correct."
+        : live === "prefix"
+          ? "Keep going — that prefix is right."
+          : "Not yet — check a letter.";
 
   return (
     <div>
@@ -60,6 +86,22 @@ export function HebrewType({ value, onChange, target, disabled }: Props) {
           </button>
         ))}
       </div>
+      {strict && (
+        <div className="mt-2 grid grid-cols-6 gap-1.5">
+          {VOWEL_MARKS.map((v) => (
+            <button
+              key={v.label}
+              type="button"
+              disabled={disabled}
+              title={v.label}
+              onClick={() => onChange(value + v.mark)}
+              className="min-h-11 rounded-[var(--radius-sm)] bg-surface font-hebrew text-lg font-semibold text-ink shadow-[var(--shadow-border)] disabled:opacity-40"
+            >
+              ב{v.mark}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="mt-2 grid grid-cols-2 gap-1.5">
         <button
           type="button"

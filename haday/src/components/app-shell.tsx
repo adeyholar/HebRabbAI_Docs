@@ -1,14 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, House, Languages, Layers, ListChecks, PenLine } from "lucide-react";
+import { BookOpen, Compass, House, Languages, Layers, ListChecks, Map, PenLine } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { snapshotOf, useStudy } from "@/lib/store";
 import { loadProgress, saveProgress } from "@/lib/progress";
 import { RedirectToSignIn, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { BrandLockup } from "@/components/brand-lockup";
+import { continueTarget } from "@/lib/game";
 
-const NAV = [
+const STUDY_NAV = [
   { to: "/", label: "Home", icon: House },
   { to: "/drill", label: "Drill", icon: Layers },
   { to: "/write", label: "Write", icon: PenLine },
@@ -21,8 +22,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, isPending } = useCurrentUserState();
   const isLogin = pathname === "/login";
+  const isGame = pathname.startsWith("/game");
   const userId = user?.id ?? null;
   const [progressReady, setProgressReady] = useState(false);
+  const game = useStudy((s) => s.game);
+  const cont = continueTarget(game);
 
   useEffect(() => {
     if (isLogin || !userId) {
@@ -91,36 +95,88 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4">
           <BrandLockup linked />
-          <div className="account-chip min-w-0 shrink">
-            <UserButton />
+          <div className="flex min-w-0 items-center gap-2">
+            {isGame ? (
+              <Link to="/" className="hidden min-h-11 items-center text-xs font-semibold uppercase tracking-wide text-muted sm:flex">
+                Study
+              </Link>
+            ) : (
+              <Link to="/game" className="hidden min-h-11 items-center text-xs font-semibold uppercase tracking-wide text-primary sm:flex">
+                Game
+              </Link>
+            )}
+            <div className="account-chip min-w-0 shrink">
+              <UserButton />
+            </div>
           </div>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-6 sm:pb-24">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
-        <ul className="mx-auto grid max-w-3xl grid-cols-6">
-          {NAV.map((item) => {
-            const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
-            const Icon = item.icon;
-            return (
-              <li key={item.to}>
-                <Link
-                  to={item.to}
-                  className={cn(
-                    "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                    active ? "text-primary" : "text-muted",
-                  )}
-                >
-                  <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} />
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      {isGame ? (
+        <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
+          <ul className="mx-auto grid max-w-3xl grid-cols-3">
+            <li>
+              <Link
+                to="/"
+                className={cn(
+                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
+                  pathname === "/" ? "text-primary" : "text-muted",
+                )}
+              >
+                <House className="size-5" strokeWidth={pathname === "/" ? 2.2 : 1.8} />
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/game"
+                className={cn(
+                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
+                  pathname === "/game" || pathname === "/game/" ? "text-primary" : "text-muted",
+                )}
+              >
+                <Map className="size-5" strokeWidth={pathname === "/game" || pathname === "/game/" ? 2.2 : 1.8} />
+                Map
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/game/$chapter/$stage"
+                params={{ chapter: String(cont.chapter), stage: cont.stage }}
+                className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium text-primary"
+              >
+                <Compass className="size-5" strokeWidth={2.2} />
+                Continue
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      ) : (
+        <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
+          <ul className="mx-auto grid max-w-3xl grid-cols-6">
+            {STUDY_NAV.map((item) => {
+              const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+              const Icon = item.icon;
+              return (
+                <li key={item.to}>
+                  <Link
+                    to={item.to}
+                    className={cn(
+                      "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
+                      active ? "text-primary" : "text-muted",
+                    )}
+                  >
+                    <Icon className="size-5" strokeWidth={active ? 2.2 : 1.8} />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }

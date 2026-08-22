@@ -16,7 +16,10 @@ import { Route as DrillRouteImport } from './routes/drill'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as WriteRouteImport } from './routes/write'
+import { Route as GameIndexRouteImport } from './routes/game/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as GameChapterIndexRouteImport } from './routes/game/$chapter/index'
+import { Route as GameChapterStageRouteImport } from './routes/game/$chapter/$stage'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -53,9 +56,24 @@ const WriteRoute = WriteRouteImport.update({
   path: '/write',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GameIndexRoute = GameIndexRouteImport.update({
+  id: '/game/',
+  path: '/game/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameChapterIndexRoute = GameChapterIndexRouteImport.update({
+  id: '/game/$chapter/',
+  path: '/game/$chapter/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameChapterStageRoute = GameChapterStageRouteImport.update({
+  id: '/game/$chapter/$stage',
+  path: '/game/$chapter/$stage',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -67,7 +85,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/write': typeof WriteRoute
+  '/game/': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/game/$chapter/$stage': typeof GameChapterStageRoute
+  '/game/$chapter/': typeof GameChapterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,7 +98,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/write': typeof WriteRoute
+  '/game': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/game/$chapter/$stage': typeof GameChapterStageRoute
+  '/game/$chapter': typeof GameChapterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,7 +112,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/write': typeof WriteRoute
+  '/game/': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/game/$chapter/$stage': typeof GameChapterStageRoute
+  '/game/$chapter/': typeof GameChapterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,7 +127,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/quiz'
     | '/write'
+    | '/game/'
     | '/api/auth/$'
+    | '/game/$chapter/$stage'
+    | '/game/$chapter/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -110,7 +140,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/quiz'
     | '/write'
+    | '/game'
     | '/api/auth/$'
+    | '/game/$chapter/$stage'
+    | '/game/$chapter'
   id:
     | '__root__'
     | '/'
@@ -120,7 +153,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/quiz'
     | '/write'
+    | '/game/'
     | '/api/auth/$'
+    | '/game/$chapter/$stage'
+    | '/game/$chapter/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,7 +167,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   QuizRoute: typeof QuizRoute
   WriteRoute: typeof WriteRoute
+  GameIndexRoute: typeof GameIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  GameChapterStageRoute: typeof GameChapterStageRoute
+  GameChapterIndexRoute: typeof GameChapterIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -185,11 +224,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WriteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/game/': {
+      id: '/game/'
+      path: '/game'
+      fullPath: '/game/'
+      preLoaderRoute: typeof GameIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game/$chapter/': {
+      id: '/game/$chapter/'
+      path: '/game/$chapter'
+      fullPath: '/game/$chapter/'
+      preLoaderRoute: typeof GameChapterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game/$chapter/$stage': {
+      id: '/game/$chapter/$stage'
+      path: '/game/$chapter/$stage'
+      fullPath: '/game/$chapter/$stage'
+      preLoaderRoute: typeof GameChapterStageRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -203,7 +263,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   QuizRoute: QuizRoute,
   WriteRoute: WriteRoute,
+  GameIndexRoute: GameIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  GameChapterStageRoute: GameChapterStageRoute,
+  GameChapterIndexRoute: GameChapterIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

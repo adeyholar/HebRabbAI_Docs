@@ -11,6 +11,13 @@ import {
   type CardState,
   type Rating,
 } from "./srs";
+import {
+  applyStageResult,
+  defaultGame,
+  hydrateGame,
+  type GameSnapshot,
+  type GameStageId,
+} from "./game";
 
 type ProgressMap = Record<string, CardState>;
 export type FocusMode = "due" | "weak";
@@ -23,6 +30,7 @@ export type StudySnapshot = {
   streak: number;
   lastStudyDay: number;
   sessions: number;
+  game: GameSnapshot;
 };
 
 type StudyState = StudySnapshot & {
@@ -31,6 +39,11 @@ type StudyState = StudySnapshot & {
   setWeek: (week: number) => void;
   setDirection: (d: "he-en" | "en-he") => void;
   setFocus: (focus: FocusMode) => void;
+  completeGameStage: (
+    chapter: number,
+    stage: GameStageId,
+    result: { stars: number; score: number; firstTryRate: number },
+  ) => void;
   hydrateRemote: (snap: StudySnapshot, ownerId: string) => void;
   reset: () => void;
 };
@@ -53,6 +66,7 @@ export const useStudy = create<StudyState>()(
       streak: 0,
       lastStudyDay: 0,
       sessions: 0,
+      game: defaultGame(),
       ownerId: null,
       rate: (id, rating) => {
         const now = Date.now();
@@ -68,6 +82,15 @@ export const useStudy = create<StudyState>()(
       setWeek: (week) => set({ week }),
       setDirection: (direction) => set({ direction }),
       setFocus: (focus) => set({ focus }),
+      completeGameStage: (chapter, stage, result) => {
+        const now = Date.now();
+        const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
+        set({
+          game: applyStageResult(get().game, chapter, stage, result),
+          ...streakInfo,
+          sessions: get().lastStudyDay === startOfDay(now) ? get().sessions : get().sessions + 1,
+        });
+      },
       hydrateRemote: (snap, ownerId) =>
         set({
           cards: snap.cards,
@@ -77,6 +100,7 @@ export const useStudy = create<StudyState>()(
           streak: snap.streak,
           lastStudyDay: snap.lastStudyDay,
           sessions: snap.sessions,
+          game: hydrateGame(snap.game),
           ownerId,
         }),
       reset: () =>
@@ -86,9 +110,21 @@ export const useStudy = create<StudyState>()(
           lastStudyDay: 0,
           sessions: 0,
           focus: "due",
+          game: defaultGame(),
         }),
     }),
-    { name: "davar-study-v1", skipHydration: true },
+    {
+      name: "davar-study-v1",
+      skipHydration: true,
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<StudyState>;
+        return {
+          ...current,
+          ...p,
+          game: hydrateGame(p.game),
+        };
+      },
+    },
   ),
 );
 
@@ -101,6 +137,7 @@ export function snapshotOf(state: StudySnapshot): StudySnapshot {
     streak: state.streak,
     lastStudyDay: state.lastStudyDay,
     sessions: state.sessions,
+    game: hydrateGame(state.game),
   };
 }
 

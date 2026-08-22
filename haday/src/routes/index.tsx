@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Compass, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
 import { Panel } from "@/components/panel";
+import { GameContinue } from "@/components/game-continue";
 import { COURSE_WEEKS, VOCAB, itemsForWeek } from "@/lib/vocab";
 import { statsFor, useStudy, weakestOf } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
+import { continueLabel } from "@/lib/game";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -14,6 +17,7 @@ function Home() {
   const week = useStudy((s) => s.week);
   const cards = useStudy((s) => s.cards);
   const streak = useStudy((s) => s.streak);
+  const game = useStudy((s) => s.game);
   const setFocus = useStudy((s) => s.setFocus);
   const reset = useStudy((s) => s.reset);
   const items = itemsForWeek(week);
@@ -32,18 +36,42 @@ function Home() {
           {firstName ? `${firstName}, learn the words that open the text.` : "Learn the words that open the text."}
         </h1>
         <p className="mt-3 max-w-prose text-muted">
-          Flip, write, and quiz high-frequency Biblical Hebrew. Misses float to the front. Week 7 is the midterm pack;
-          Week 15 is the cumulative set.
+          Game mode is a gated chapter path. Study mode is the free toolbox — drill, write, quiz, lex, alef.
         </p>
       </Panel>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          to="/game"
+          className="rounded-[var(--radius-xl)] bg-primary p-5 text-primary-foreground shadow-[var(--shadow-border)]"
+        >
+          <Compass className="size-6" />
+          <p className="mt-3 font-display text-3xl font-bold">Game mode</p>
+          <p className="mt-1 text-sm text-primary-foreground/80">Chapter = level. Four stages. One Continue.</p>
+        </Link>
+        <a
+          href="#study-mode"
+          className="rounded-[var(--radius-xl)] bg-card p-5 text-ink shadow-[var(--shadow-border)]"
+        >
+          <Library className="size-6 text-primary" />
+          <p className="mt-3 font-display text-3xl font-bold">Study mode</p>
+          <p className="mt-1 text-sm text-muted">Drill, write, quiz, lex, and alef — as they are.</p>
+        </a>
+      </div>
+
+      <div className="mt-3">
+        <GameContinue />
+        <p className="sr-only">{continueLabel(game)}</p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="Due" value={s.due} />
         <Stat label="Weak" value={s.weak} />
         <Stat label="Mastered" value={`${s.mastered}/${s.total}`} />
         <Stat label="Streak" value={`${streak}d`} />
       </div>
 
+      <div id="study-mode" className="scroll-mt-20">
       {weakList.length > 0 && (
         <section className="mt-4 rounded-[var(--radius-xl)] bg-card p-5 shadow-[var(--shadow-border)]">
           <div className="flex items-baseline justify-between gap-2">
@@ -89,6 +117,7 @@ function Home() {
       )}
 
       <div className="mt-4 rounded-[var(--radius-xl)] bg-card p-5 shadow-[var(--shadow-border)]">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">Study toolbox</p>
         <WeekSelect />
         <FocusToggle />
         <div className="mt-4">
@@ -179,6 +208,7 @@ function Home() {
           Reset account progress
         </button>
       </Panel>
+      </div>
     </>
   );
 }
