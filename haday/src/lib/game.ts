@@ -30,6 +30,10 @@ export type GameSnapshot = {
   currentStage: GameStageId;
   chapters: Record<string, ChapterRecord>;
   lastPlayDay: number;
+  badges: string[];
+  winStreak: number;
+  bestWinStreak: number;
+  justEarned: string[];
 };
 
 export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
@@ -76,6 +80,10 @@ export function defaultGame(): GameSnapshot {
     currentStage: "recognize",
     chapters: {},
     lastPlayDay: 0,
+    badges: [],
+    winStreak: 0,
+    bestWinStreak: 0,
+    justEarned: [],
   };
 }
 
@@ -98,6 +106,10 @@ export function hydrateGame(raw: unknown): GameSnapshot {
     currentStage,
     chapters,
     lastPlayDay: Number(r.lastPlayDay) || 0,
+    badges: Array.isArray(r.badges) ? r.badges.filter((x) => typeof x === "string") : [],
+    winStreak: Math.max(0, Number(r.winStreak) || 0),
+    bestWinStreak: Math.max(0, Number(r.bestWinStreak) || 0),
+    justEarned: Array.isArray(r.justEarned) ? r.justEarned.filter((x) => typeof x === "string") : [],
   };
 }
 
@@ -231,8 +243,13 @@ export function applyStageResult(
 
   if (wasCleared && result.firstTryRate < 0.4) {
     demoteAfter(next, chapter, stage);
+    next.winStreak = 0;
   } else {
     retally(rec);
+    if (!wasCleared) {
+      next.winStreak = (next.winStreak || 0) + 1;
+      next.bestWinStreak = Math.max(next.bestWinStreak || 0, next.winStreak);
+    }
     if (rec.cleared && chapter >= next.unlockedChapter && chapter < GAME_CHAPTER_MAX) {
       next.unlockedChapter = chapter + 1;
     }

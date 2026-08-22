@@ -5,6 +5,7 @@ import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
 import { Panel } from "@/components/panel";
 import { GameContinue } from "@/components/game-continue";
+import { RewardsBar } from "@/components/rewards-bar";
 import { COURSE_WEEKS, VOCAB, itemsForWeek } from "@/lib/vocab";
 import { statsFor, useStudy, weakestOf } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
@@ -65,6 +66,10 @@ function Home() {
       <div className="mt-3">
         <GameContinue />
         <p className="sr-only">{continueLabel(game)}</p>
+      </div>
+
+      <div className="mt-3">
+        <RewardsBar />
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">

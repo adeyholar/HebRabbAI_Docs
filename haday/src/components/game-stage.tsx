@@ -6,6 +6,7 @@ import { Panel } from "@/components/panel";
 import { VerseCard } from "@/components/verse-card";
 import { cn } from "@/lib/cn";
 import { GradeBanner } from "@/components/grade-banner";
+import { NewBadges } from "@/components/rewards-bar";
 import { playGrade } from "@/lib/sfx";
 import {
   CHAPTER_META,
@@ -180,6 +181,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
             {chapter < 19 ? ` · Chapter ${chapter + 1} unlocked` : " · path complete"}
           </p>
         )}
+        <NewBadges ids={game.justEarned ?? []} />
         <div className="mt-6 flex flex-col gap-2">
           {nextStage && !chapterCleared ? (
             <Link to="/game/$chapter/$stage" params={{ chapter: String(chapter), stage: nextStage.id }}>

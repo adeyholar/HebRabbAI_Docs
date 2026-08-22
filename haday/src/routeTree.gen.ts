@@ -17,6 +17,7 @@ import { Route as DrillRouteImport } from './routes/drill'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as QuizRouteImport } from './routes/quiz'
+import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as WriteRouteImport } from './routes/write'
 import { Route as GameIndexRouteImport } from './routes/game/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -63,6 +64,11 @@ const QuizRoute = QuizRouteImport.update({
   path: '/quiz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RewardsRoute = RewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WriteRoute = WriteRouteImport.update({
   id: '/write',
   path: '/write',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
+  '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
   '/game/': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
+  '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
   '/game': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/guide': typeof GuideRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
+  '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
   '/game/': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/login'
     | '/quiz'
+    | '/rewards'
     | '/write'
     | '/game/'
     | '/api/auth/$'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/login'
     | '/quiz'
+    | '/rewards'
     | '/write'
     | '/game'
     | '/api/auth/$'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/login'
     | '/quiz'
+    | '/rewards'
     | '/write'
     | '/game/'
     | '/api/auth/$'
@@ -192,6 +204,7 @@ export interface RootRouteChildren {
   GuideRoute: typeof GuideRoute
   LoginRoute: typeof LoginRoute
   QuizRoute: typeof QuizRoute
+  RewardsRoute: typeof RewardsRoute
   WriteRoute: typeof WriteRoute
   GameIndexRoute: typeof GameIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuizRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rewards': {
+      id: '/rewards'
+      path: '/rewards'
+      fullPath: '/rewards'
+      preLoaderRoute: typeof RewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/write': {
       id: '/write'
       path: '/write'
@@ -304,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuideRoute: GuideRoute,
   LoginRoute: LoginRoute,
   QuizRoute: QuizRoute,
+  RewardsRoute: RewardsRoute,
   WriteRoute: WriteRoute,
   GameIndexRoute: GameIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

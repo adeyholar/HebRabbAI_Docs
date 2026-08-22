@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Lock } from "lucide-react";
 import { GameContinue } from "@/components/game-continue";
+import { RewardsBar } from "@/components/rewards-bar";
 import { Panel } from "@/components/panel";
 import { cn } from "@/lib/cn";
 import {
@@ -35,8 +36,18 @@ function GameMapPage() {
         </div>
         <p className="mt-3 text-sm text-muted">
           Streak <span className="font-semibold tabular-nums text-ink">{streak}d</span>
+          {game.winStreak > 1 ? (
+            <>
+              {" · "}
+              Wins <span className="font-semibold tabular-nums text-ink">{game.winStreak}</span>
+            </>
+          ) : null}
         </p>
       </Panel>
+
+      <div className="mb-4">
+        <RewardsBar />
+      </div>
 
       <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {Array.from({ length: GAME_CHAPTER_MAX }, (_, i) => i + 1).map((n) => {

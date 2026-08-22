@@ -116,6 +116,20 @@ function GuidePage() {
         </p>
       </Panel>
 
+      <Panel className="mb-3">
+        <h2 className="font-display text-2xl font-bold text-ink">Rewards</h2>
+        <ul className="mt-3 list-disc space-y-2 ps-5 text-sm text-ink">
+          <li>Daily flame: study or play at least once a calendar day. Miss a day and it resets to 1.</li>
+          <li>Win streak: consecutive game stages you clear. A poor replay can break it.</li>
+          <li>Ladder: each BBH chapter is a rung. Clear all four stages to climb. 19 is the summit.</li>
+        </ul>
+        <p className="mt-3 text-sm">
+          <Link to="/rewards" className="font-semibold text-primary">
+            See your rewards
+          </Link>
+        </p>
+      </Panel>
+
       <Panel>
         <h2 className="font-display text-2xl font-bold text-ink">Sound and save</h2>
         <ul className="mt-3 list-disc space-y-2 ps-5 text-sm text-ink">

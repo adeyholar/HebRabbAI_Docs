@@ -18,6 +18,7 @@ import {
   type GameSnapshot,
   type GameStageId,
 } from "./game";
+import { stampRewards } from "./rewards";
 
 type ProgressMap = Record<string, CardState>;
 export type FocusMode = "due" | "weak";
@@ -73,9 +74,11 @@ export const useStudy = create<StudyState>()(
         const prev = hydrateCard(get().cards[id], now);
         const next = applyRating(prev, rating, now);
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
+        const game = stampRewards(get().game, streakInfo.streak);
         set({
           cards: { ...get().cards, [id]: next },
           ...streakInfo,
+          game,
           sessions: get().lastStudyDay === startOfDay(now) ? get().sessions : get().sessions + 1,
         });
       },
@@ -85,8 +88,9 @@ export const useStudy = create<StudyState>()(
       completeGameStage: (chapter, stage, result) => {
         const now = Date.now();
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
+        const game = stampRewards(applyStageResult(get().game, chapter, stage, result), streakInfo.streak);
         set({
-          game: applyStageResult(get().game, chapter, stage, result),
+          game,
           ...streakInfo,
           sessions: get().lastStudyDay === startOfDay(now) ? get().sessions : get().sessions + 1,
         });
@@ -100,7 +104,7 @@ export const useStudy = create<StudyState>()(
           streak: snap.streak,
           lastStudyDay: snap.lastStudyDay,
           sessions: snap.sessions,
-          game: hydrateGame(snap.game),
+          game: stampRewards(hydrateGame(snap.game), snap.streak),
           ownerId,
         }),
       reset: () =>
@@ -121,7 +125,7 @@ export const useStudy = create<StudyState>()(
         return {
           ...current,
           ...p,
-          game: hydrateGame(p.game),
+          game: stampRewards(hydrateGame(p.game), Number(p.streak) || 0),
         };
       },
     },
@@ -137,7 +141,7 @@ export function snapshotOf(state: StudySnapshot): StudySnapshot {
     streak: state.streak,
     lastStudyDay: state.lastStudyDay,
     sessions: state.sessions,
-    game: hydrateGame(state.game),
+    game: stampRewards(hydrateGame(state.game), state.streak),
   };
 }
 
