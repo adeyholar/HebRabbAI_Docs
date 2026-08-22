@@ -22,7 +22,7 @@ export const VOCAB: VocabItem[] = [
   { id: "jerusalem", hebrew: "יְרוּשָׁלַ͏ִם", translit: "yərûšālayim", gloss: "Jerusalem", alts: [], pos: "name", chapter: 2, freq: 643 },
   { id: "aaron", hebrew: "אַהֲרֹן", translit: "ʾahărōn", gloss: "Aaron", alts: [], pos: "name", chapter: 2, freq: 347 },
   { id: "jacob", hebrew: "יַעֲקֹב", translit: "yaʿăqōb", gloss: "Jacob", alts: [], pos: "name", chapter: 2, freq: 349 },
-  { id: "joshua", hebrew: "יְהוֹשׁוּעַ", translit: "yəhôšûaʿ", gloss: "Joshua", alts: [], pos: "name", chapter: 2, freq: 218 },
+  { id: "joshua", hebrew: "יְהוֹשֻׁעַ", translit: "yəhôšuaʿ", gloss: "Joshua", alts: [], pos: "name", chapter: 2, freq: 218 },
   { id: "joseph", hebrew: "יוֹסֵף", translit: "yôsēp", gloss: "Joseph", alts: [], pos: "name", chapter: 2, freq: 213 },
   { id: "abraham", hebrew: "אַבְרָהָם", translit: "ʾabrāhām", gloss: "Abraham", alts: [], pos: "name", chapter: 2, freq: 175 },
   { id: "jeremiah", hebrew: "יִרְמְיָהוּ", translit: "yirməyāhû", gloss: "Jeremiah", alts: ["yirmeyahu"], pos: "name", chapter: 2, freq: 147 },

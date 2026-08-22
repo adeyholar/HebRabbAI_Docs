@@ -16,7 +16,7 @@ export const VERSES: Record<string, VerseEx> = {
   jerusalem: { ref: "Ps 122:6", he: "שַׁאֲלוּ שְׁלוֹם יְרוּשָׁלָ͏ִם", en: "Pray for the peace of Jerusalem.", hit: "יְרוּשָׁלָ͏ִם" },
   aaron: { ref: "Exod 4:14", he: "הֲלֹא אַהֲרֹן אָחִיךָ הַלֵּוִי", en: "Is not Aaron your brother, the Levite?", hit: "אַהֲרֹן" },
   jacob: { ref: "Gen 32:29", he: "לֹא יַעֲקֹב יֵאָמֵר עוֹד שִׁמְךָ כִּי אִם־יִשְׂרָאֵל", en: "Your name shall no longer be said Jacob, but Israel.", hit: "יַעֲקֹב" },
-  joshua: { ref: "Josh 1:1", he: "וַיְהִי אַחֲרֵי מוֹת מֹשֶׁה עֶבֶד יְהוָה וַיֹּאמֶר יְהוָה אֶל־יְהוֹשֻׁעַ", en: "After the death of Moses, servant of YHWH, YHWH spoke to Joshua.", hit: "יְהוֹשֻׁעַ" },
+  joshua: { ref: "Josh 1:1", he: "וַיְהִי אַחֲרֵי מוֹת מֹשֶׁה עֶבֶד יְהוָה וַיֹּאמֶר יְהוָה אֶל־יְהוֹשֻׁעַ", en: "After the death of Moses, servant of YHWH, YHWH spoke to Joshua.", hit: "יְהוֹשֻׁעַ" },
   joseph: { ref: "Gen 39:2", he: "וַיְהִי יְהוָה אֶת־יוֹסֵף וַיְהִי אִישׁ מַצְלִיחַ", en: "YHWH was with Joseph, and he became a man who prospered.", hit: "יוֹסֵף" },
   abraham: { ref: "Gen 17:5", he: "וְלֹא־יִקָּרֵא עוֹד אֶת־שִׁמְךָ אַבְרָם וְהָיָה שִׁמְךָ אַבְרָהָם", en: "You shall no longer be called Abram; your name shall be Abraham.", hit: "אַבְרָהָם" },
   jeremiah: { ref: "Jer 1:1", he: "דִּבְרֵי יִרְמְיָהוּ בֶּן־חִלְקִיָּהוּ", en: "The words of Jeremiah son of Hilkiah.", hit: "יִרְמְיָהוּ" },
