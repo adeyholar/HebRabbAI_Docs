@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { hydrateCard, type CardState } from "@/lib/srs";
 import { hydrateGame, type GameSnapshot } from "@/lib/game";
+import { scoreboard } from "@/lib/rewards";
 
 export type ProgressPayload = {
   cards: Record<string, CardState>;
@@ -52,13 +53,15 @@ export const saveProgress = createServerFn({ method: "POST" })
     const streak = Number.isFinite(data.streak) ? data.streak : 0;
     const lastStudyDay = Number.isFinite(data.lastStudyDay) ? data.lastStudyDay : 0;
     const sessions = Number.isFinite(data.sessions) ? data.sessions : 0;
-    const game = JSON.stringify(hydrateGame(data.game));
+    const gameSnap = hydrateGame(data.game);
+    const game = JSON.stringify(gameSnap);
+    const board = scoreboard(gameSnap, streak);
     await sql`
       insert into study_progress (
-        user_id, cards, week, direction, focus, streak, last_study_day, sessions, game, updated_at
+        user_id, cards, week, direction, focus, streak, last_study_day, sessions, game, points, level, updated_at
       ) values (
         ${context.userId}, ${cards}, ${week}, ${direction}, ${focus},
-        ${streak}, ${lastStudyDay}, ${sessions}, ${game}, now()
+        ${streak}, ${lastStudyDay}, ${sessions}, ${game}, ${board.points}, ${board.level}, now()
       )
       on conflict (user_id) do update set
         cards = excluded.cards,
@@ -69,6 +72,8 @@ export const saveProgress = createServerFn({ method: "POST" })
         last_study_day = excluded.last_study_day,
         sessions = excluded.sessions,
         game = excluded.game,
+        points = excluded.points,
+        level = excluded.level,
         updated_at = now()
     `;
     return { ok: true as const };

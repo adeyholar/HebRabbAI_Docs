@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CircleHelp, Compass, House, Languages, Layers, ListChecks, Map, PenLine, Trophy, Users } from "lucide-react";
+import { BookOpen, CircleHelp, Compass, House, Languages, Layers, ListChecks, Map, Medal, PenLine, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { snapshotOf, useStudy } from "@/lib/store";
 import { loadProgress, saveProgress } from "@/lib/progress";
@@ -136,6 +136,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             >
               <Trophy className="size-5" strokeWidth={pathname === "/rewards" ? 2.2 : 1.8} />
+            </Link>
+            <Link
+              to="/leaderboard"
+              aria-label="Class leaderboard"
+              className={cn(
+                "flex size-11 items-center justify-center rounded-[var(--radius-md)]",
+                pathname === "/leaderboard" ? "text-primary" : "text-muted",
+              )}
+            >
+              <Medal className="size-5" strokeWidth={pathname === "/leaderboard" ? 2.2 : 1.8} />
             </Link>
             {isAdmin && (
               <Link

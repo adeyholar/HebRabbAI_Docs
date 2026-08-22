@@ -15,6 +15,7 @@ import { Route as AlphabetRouteImport } from './routes/alphabet'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as DrillRouteImport } from './routes/drill'
 import { Route as GuideRouteImport } from './routes/guide'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as RewardsRouteImport } from './routes/rewards'
@@ -52,6 +53,11 @@ const DrillRoute = DrillRouteImport.update({
 const GuideRoute = GuideRouteImport.update({
   id: '/guide',
   path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/browse': typeof BrowseRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/drill'
     | '/guide'
+    | '/leaderboard'
     | '/login'
     | '/quiz'
     | '/rewards'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/drill'
     | '/guide'
+    | '/leaderboard'
     | '/login'
     | '/quiz'
     | '/rewards'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/browse'
     | '/drill'
     | '/guide'
+    | '/leaderboard'
     | '/login'
     | '/quiz'
     | '/rewards'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   BrowseRoute: typeof BrowseRoute
   DrillRoute: typeof DrillRoute
   GuideRoute: typeof GuideRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   QuizRoute: typeof QuizRoute
   RewardsRoute: typeof RewardsRoute
@@ -254,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/guide'
       fullPath: '/guide'
       preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -322,6 +342,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrowseRoute: BrowseRoute,
   DrillRoute: DrillRoute,
   GuideRoute: GuideRoute,
+  LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   QuizRoute: QuizRoute,
   RewardsRoute: RewardsRoute,
