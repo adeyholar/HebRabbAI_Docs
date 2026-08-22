@@ -148,6 +148,10 @@ export const VERSES: Record<string, VerseEx> = {
   "aph-also": { ref: "Gen 40:16", he: "וַיֹּאמֶר אֶל־יוֹסֵף אַף־אֲנִי בַּחֲלוֹמִי", en: "He said to Joseph, “I also was in my dream.”", hit: "אַף" },
   gibbor: { ref: "Ps 24:8", he: "מִי זֶה מֶלֶךְ הַכָּבוֹד יְהוָה עִזּוּז וְגִבּוֹר", en: "Who is this king of glory? YHWH, strong and mighty.", hit: "וְגִבּוֹר" },
   pen: { ref: "Gen 3:3", he: "לֹא תֹאכְלוּ מִמֶּנּוּ וְלֹא תִגְּעוּ בּוֹ פֶּן־תְּמֻתוּן", en: "You shall not eat from it, nor touch it, lest you die.", hit: "פֶּן" },
+  natah: { ref: "Exod 9:22", he: "וַיֹּאמֶר יְהוָה אֶל־מֹשֶׁה נְטֵה אֶת־יָדְךָ עַל־הַשָּׁמַיִם וִיהִי בָרָד", en: "YHWH said to Moses, “Stretch out your hand toward the heavens, that there may be hail.”", hit: "נְטֵה" },
+  kaph: { ref: "Ps 24:4", he: "נְקִי כַפַּיִם וּבַר־לֵבָב", en: "The one clean of palms and pure of heart.", hit: "כַפַּיִם" },
+  rea: { ref: "Lev 19:18", he: "וְאָהַבְתָּ לְרֵעֲךָ כָּמוֹךָ", en: "You shall love your neighbor as yourself.", hit: "לְרֵעֲךָ" },
+  neged: { ref: "Exod 19:2", he: "וַיִּחַן־שָׁם יִשְׂרָאֵל נֶגֶד הָהָר", en: "Israel camped there in front of the mountain.", hit: "נֶגֶד" },
 
   we: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "וְ" },
   ha: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
