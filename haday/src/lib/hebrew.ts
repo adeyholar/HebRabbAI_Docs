@@ -29,6 +29,16 @@ export function foldShureq(s: string): string {
   return s.replaceAll("וּ", "ֻ");
 }
 
+/** Hireq in ירושלים sits between lamed and mem. Typing it on ם is the same as on ל. */
+function foldJerusalemHireq(s: string): string {
+  return s.replace(/([\u05DC][\u05B7\u05B8])(\u05DD)\u05B4/g, "$1\u05B4$2");
+}
+
+/** Lexical form is patah; pausal/qamets on that lamed is the same name. */
+function foldJerusalemPatah(s: string): string {
+  return s.replace(/\u05DC\u05B4\u05B8\u05DD/g, "\u05DC\u05B4\u05B7\u05DD");
+}
+
 function canonMarks(s: string): string {
   const cons = /[\u05D0-\u05EA]/;
   const chars = [...s];
@@ -144,15 +154,19 @@ export function liveMatch(expected: string, typed: string): "empty" | "prefix" |
 
 /** Keep vowels, dagesh, and shin/sin dots; drop cantillation and whitespace. */
 export function normalizeHebrewFull(s: string): string {
-  return canonMarks(
-    foldShureq(
-      s
-        .normalize("NFC")
-        .replace(/[\u0591-\u05AF\u05BD\u05BF\u05C0\u05C3-\u05C5\u05C6\u05C7]/g, "")
-        .replace(/[\u05F3\u05F4\u05BE]/g, "")
-        .replace(/[־–—]/g, "")
-        .replace(/\s+/g, ""),
-    ).replace(/[^\u05D0-\u05EA\u05B0-\u05BC\u05C1\u05C2]/g, ""),
+  return foldJerusalemPatah(
+    canonMarks(
+    foldJerusalemHireq(
+      foldShureq(
+        s
+          .normalize("NFC")
+          .replace(/[\u0591-\u05AF\u05BD\u05BF\u05C0\u05C3-\u05C5\u05C6\u05C7]/g, "")
+          .replace(/[\u05F3\u05F4\u05BE]/g, "")
+          .replace(/[־–—]/g, "")
+          .replace(/\s+/g, ""),
+      ).replace(/[^\u05D0-\u05EA\u05B0-\u05BC\u05C1\u05C2]/g, ""),
+    ),
+    ),
   );
 }
 

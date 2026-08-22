@@ -13,7 +13,7 @@ export const VERSES: Record<string, VerseEx> = {
   judah: { ref: "Gen 49:8", he: "יְהוּדָה אַתָּה יוֹדוּךָ אַחֶיךָ", en: "Judah, your brothers will praise you.", hit: "יְהוּדָה" },
   moses: { ref: "Exod 3:4", he: "וַיֹּאמֶר הִנֵּנִי וַיֹּאמֶר מֹשֶׁה מֹשֶׁה", en: "He said, “Here I am.” And he said, “Moses, Moses.”", hit: "מֹשֶׁה" },
   egypt: { ref: "Exod 20:2", he: "אָנֹכִי יְהוָה אֱלֹהֶיךָ אֲשֶׁר הוֹצֵאתִיךָ מֵאֶרֶץ מִצְרַיִם", en: "I am YHWH your God, who brought you out from the land of Egypt.", hit: "מִצְרַיִם" },
-  jerusalem: { ref: "Ps 122:6", he: "שַׁאֲלוּ שְׁלוֹם יְרוּשָׁלָ͏ִם", en: "Pray for the peace of Jerusalem.", hit: "יְרוּשָׁלָ͏ִם" },
+  jerusalem: { ref: "Ps 122:6", he: "שַׁאֲלוּ שְׁלוֹם יְרוּשָׁלַ͏ִם", en: "Pray for the peace of Jerusalem.", hit: "יְרוּשָׁלַ͏ִם" },
   aaron: { ref: "Exod 4:14", he: "הֲלֹא אַהֲרֹן אָחִיךָ הַלֵּוִי", en: "Is not Aaron your brother, the Levite?", hit: "אַהֲרֹן" },
   jacob: { ref: "Gen 32:29", he: "לֹא יַעֲקֹב יֵאָמֵר עוֹד שִׁמְךָ כִּי אִם־יִשְׂרָאֵל", en: "Your name shall no longer be said Jacob, but Israel.", hit: "יַעֲקֹב" },
   joshua: { ref: "Josh 1:1", he: "וַיְהִי אַחֲרֵי מוֹת מֹשֶׁה עֶבֶד יְהוָה וַיֹּאמֶר יְהוָה אֶל־יְהוֹשֻׁעַ", en: "After the death of Moses, servant of YHWH, YHWH spoke to Joshua.", hit: "יְהוֹשֻׁעַ" },
