@@ -8,6 +8,8 @@ import { glossMatches, liveGloss, itemsForWeek, quizChoices, type VocabItem } fr
 import { useStudy, weightedQuizDeck, weakQueue } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { Panel } from "@/components/panel";
+import { GradeBanner } from "@/components/grade-banner";
+import { playGrade } from "@/lib/sfx";
 
 export const Route = createFileRoute("/quiz")({ component: QuizPage });
 
@@ -151,14 +153,17 @@ function QuizPage() {
                     if (c === item.gloss) {
                       setPicked(c);
                       mark(true);
+                      playGrade(true);
                       return;
                     }
                     if (!missedChoice) {
                       setMissedChoice(c);
+                      playGrade(false);
                       return;
                     }
                     setPicked(c);
                     mark(false);
+                    playGrade(false);
                   }}
                   className={cn(
                     "w-full min-h-12 rounded-[var(--radius-md)] px-4 py-3 text-left text-sm font-medium shadow-[var(--shadow-border)]",
@@ -176,9 +181,15 @@ function QuizPage() {
           })}
         </ul>
         {missedChoice && !picked && (
-          <p className="try-flash mt-4 text-center text-xl font-bold uppercase tracking-wide text-danger sm:text-2xl">
-            One more try
-          </p>
+          <>
+            <GradeBanner className="mt-4" ok={false} />
+            <p className="try-flash mt-2 text-center text-lg font-bold uppercase tracking-wide text-danger">
+              One more try
+            </p>
+          </>
+        )}
+        {picked && (
+          <GradeBanner className="mt-4" ok={picked === item.gloss} />
         )}
         </>
       ) : (
@@ -191,6 +202,7 @@ function QuizPage() {
               return;
             }
             const ok = glossMatches(item, typed);
+            playGrade(ok);
             if (ok) {
               setRevealed(true);
               mark(true);
@@ -217,33 +229,31 @@ function QuizPage() {
             autoCapitalize="off"
             autoCorrect="off"
           />
-          {!revealed && (
-            <p
-              className={cn(
-                "mt-2 text-sm font-medium",
-                liveGloss(item, typed) === "exact" && "text-good",
-                liveGloss(item, typed) === "off" && "text-danger",
-                (liveGloss(item, typed) === "empty" || liveGloss(item, typed) === "prefix") && "text-muted",
-              )}
-            >
-              {liveGloss(item, typed) === "exact"
-                ? "Correct — tap Check to lock it."
-                : liveGloss(item, typed) === "prefix"
-                  ? "Keep going."
-                  : liveGloss(item, typed) === "off"
-                    ? typeTries >= 1
-                      ? "Still off — one more try used after Check."
-                      : "Not yet."
-                    : "Type the English gloss."}
-            </p>
+          {!revealed && (liveGloss(item, typed) === "exact" || liveGloss(item, typed) === "off") && (
+            <GradeBanner
+              className="mt-3"
+              size="live"
+              ok={liveGloss(item, typed) === "exact"}
+            />
+          )}
+          {!revealed && liveGloss(item, typed) === "prefix" && (
+            <p className="mt-2 text-center text-sm font-medium text-muted">Keep going.</p>
+          )}
+          {!revealed && liveGloss(item, typed) === "empty" && (
+            <p className="mt-2 text-center text-sm font-medium text-muted">Type the English gloss.</p>
           )}
           {typeTries >= 1 && !revealed && (
-            <p className="mt-1 text-sm text-danger">Missed once. Correct it, then Check again.</p>
+            <p className="try-flash mt-2 text-center text-lg font-bold uppercase tracking-wide text-danger">
+              One more try
+            </p>
           )}
           {revealed && (
-            <p className={`mt-3 text-sm ${glossMatches(item, typed) ? "text-good" : "text-danger"}`}>
-              {glossMatches(item, typed) ? "Correct." : `Answer: ${item.gloss}`}
-            </p>
+            <div className="mt-3">
+              <GradeBanner ok={glossMatches(item, typed)} />
+              {!glossMatches(item, typed) && (
+                <p className="mt-2 text-center text-sm text-muted">Answer: {item.gloss}</p>
+              )}
+            </div>
           )}
           <Button className="mt-3 w-full" type="submit">
             {revealed ? "Next" : typeTries >= 1 ? "Check retry" : "Check"}

@@ -13,6 +13,8 @@ import { queueForFocus, useStudy } from "@/lib/store";
 import { itemsForWeek, POS_LABEL, type VocabItem } from "@/lib/vocab";
 import { takeWriteCheck, writeChecksLeft, WRITE_DAILY_LIMIT } from "@/lib/write-cap";
 import { cn } from "@/lib/cn";
+import { GradeBanner } from "@/components/grade-banner";
+import { playGrade } from "@/lib/sfx";
 
 type WriteMode = "write" | "memorize";
 type InputMethod = "pad" | "type";
@@ -135,6 +137,7 @@ function WritePage() {
     const nextTries = tries + 1;
     setTries(nextTries);
     setResult({ match, read, note });
+    playGrade(match === "exact" || match === "close");
     if (match === "exact" || match === "close" || nextTries >= 2) {
       commitRate(match, nextTries);
     }
@@ -306,7 +309,7 @@ function WritePage() {
 
           {inputMethod === "type" ? (
             <div className="mt-4 rounded-[var(--radius-xl)] bg-card p-4 shadow-[var(--shadow-border)]">
-              <HebrewType value={typed} onChange={setTyped} target={item.hebrew} disabled={locked} />
+              <HebrewType value={typed} onChange={setTyped} target={item.hebrew} disabled={locked} hideHint={Boolean(result)} />
               <Button className="mt-3 w-full" onClick={checkType} disabled={locked || !typed.trim()}>
                 Check
               </Button>
@@ -367,19 +370,20 @@ function ResultPanel({
   onNext: () => void;
   onRetry: () => void;
 }) {
-  const tone =
-    result.match === "exact" ? "text-good" : result.match === "close" ? "text-primary" : "text-danger";
+  const ok = result.match === "exact" || result.match === "close";
   const label =
-    result.match === "exact" ? "Correct."
-    : result.match === "close" ? "Close — count it."
-    : result.match === "empty" ? "Nothing readable."
-    : canRetry ? "Not yet — one retry."
-    : "Not yet.";
+    result.match === "exact" ? "Correct"
+    : result.match === "close" ? "Close — count it"
+    : result.match === "empty" ? "Nothing readable"
+    : "Not correct";
   const coach = hideAnswer ? null : dageshCoach(item.hebrew);
 
   return (
     <div className="mt-4 rounded-[var(--radius-xl)] bg-card p-5 shadow-[var(--shadow-border)]">
-      <p className={cn("font-display text-2xl font-bold", tone)}>{label}</p>
+      <GradeBanner ok={ok} label={label} />
+      {canRetry && !ok && (
+        <p className="mt-2 text-center text-sm font-medium text-danger">One retry left</p>
+      )}
       {!hideAnswer && (
         <p className="mt-1 text-sm text-muted">
           Target <span className="he-word text-lg text-fg">{item.hebrew}</span>

@@ -13,6 +13,8 @@ import {
 } from "@/lib/alphabet";
 import { shuffle } from "@/lib/vocab";
 import { cn } from "@/lib/cn";
+import { GradeBanner } from "@/components/grade-banner";
+import { playGrade } from "@/lib/sfx";
 
 export const Route = createFileRoute("/alphabet")({ component: AlphabetPage });
 
@@ -213,13 +215,16 @@ function FoundationQuiz() {
                   if (id === prompt.id) {
                     setPicked(id);
                     setRight((r) => r + 1);
+                    playGrade(true);
                     return;
                   }
                   if (!missedId) {
                     setMissedId(id);
+                    playGrade(false);
                     return;
                   }
                   setPicked(id);
+                  playGrade(false);
                 }}
                 className={cn(
                   "w-full min-h-12 rounded-[var(--radius-md)] px-3 py-3 text-sm font-medium shadow-[var(--shadow-border)]",
@@ -242,9 +247,15 @@ function FoundationQuiz() {
         })}
       </ul>
       {missedId && !picked && (
-        <p className="try-flash mt-4 text-center text-xl font-bold uppercase tracking-wide text-danger sm:text-2xl">
-          One more try
-        </p>
+        <>
+          <GradeBanner className="mt-4" ok={false} />
+          <p className="try-flash mt-2 text-center text-lg font-bold uppercase tracking-wide text-danger">
+            One more try
+          </p>
+        </>
+      )}
+      {picked && (
+        <GradeBanner className="mt-4" ok={picked === prompt.id} />
       )}
       {picked && (
         <Button

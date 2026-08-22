@@ -1,5 +1,6 @@
 import { cn } from "@/lib/cn";
 import { liveMatch, liveMatchFull } from "@/lib/hebrew";
+import { GradeBanner } from "@/components/grade-banner";
 
 const LETTERS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר", "ש", "ת"];
 
@@ -24,25 +25,26 @@ type Props = {
   target: string;
   disabled?: boolean;
   strict?: boolean;
+  hideHint?: boolean;
 };
 
-export function HebrewType({ value, onChange, target, disabled, strict = false }: Props) {
+export function HebrewType({ value, onChange, target, disabled, strict = false, hideHint = false }: Props) {
   const live = strict ? liveMatchFull(target, value) : liveMatch(target, value);
   const hint = strict
     ? live === "empty"
       ? "Type consonants and vowels — full match."
       : live === "exact"
-        ? "Fully correct."
+        ? "Correct"
         : live === "prefix"
           ? "Keep going — that prefix is right."
-          : "Not yet — check a letter or vowel."
+          : "Not correct"
     : live === "empty"
       ? "Type or tap letters — vowels optional."
       : live === "exact"
-        ? "Correct."
+        ? "Correct"
         : live === "prefix"
           ? "Keep going — that prefix is right."
-          : "Not yet — check a letter.";
+          : "Not correct";
 
   return (
     <div>
@@ -63,16 +65,12 @@ export function HebrewType({ value, onChange, target, disabled, strict = false }
           live === "off" && value && "ring-2 ring-danger",
         )}
       />
-      <p
-        className={cn(
-          "mt-2 text-center text-sm font-medium",
-          live === "exact" && "text-good",
-          live === "off" && "text-danger",
-          (live === "empty" || live === "prefix") && "text-muted",
-        )}
-      >
-        {hint}
-      </p>
+      {!disabled && !hideHint && (live === "exact" || live === "off") && (
+        <GradeBanner className="mt-3" ok={live === "exact"} label={hint} size="live" />
+      )}
+      {!disabled && !hideHint && live !== "exact" && live !== "off" && (
+        <p className="mt-2 text-center text-sm font-medium text-muted">{hint}</p>
+      )}
       <div className="mt-3 grid grid-cols-6 gap-1.5" dir="rtl">
         {LETTERS.map((ch) => (
           <button

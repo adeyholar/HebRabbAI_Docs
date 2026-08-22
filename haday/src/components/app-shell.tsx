@@ -7,6 +7,7 @@ import { loadProgress, saveProgress } from "@/lib/progress";
 import { RedirectToSignIn, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { BrandLockup } from "@/components/brand-lockup";
+import { SfxToggle } from "@/components/sfx-toggle";
 import { continueTarget } from "@/lib/game";
 
 const STUDY_NAV = [
@@ -105,6 +106,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Game
               </Link>
             )}
+            <SfxToggle />
             <div className="account-chip min-w-0 shrink">
               <UserButton />
             </div>

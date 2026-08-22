@@ -5,6 +5,8 @@ import { HebrewType } from "@/components/hebrew-type";
 import { Panel } from "@/components/panel";
 import { VerseCard } from "@/components/verse-card";
 import { cn } from "@/lib/cn";
+import { GradeBanner } from "@/components/grade-banner";
+import { playGrade } from "@/lib/sfx";
 import {
   CHAPTER_META,
   GAME_STAGES,
@@ -115,6 +117,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
   }
 
   function checkTyped(ok: boolean) {
+    playGrade(ok);
     if (ok) {
       setRevealed(true);
       setPicked("ok");
@@ -274,14 +277,17 @@ export function GameStagePlay({ chapter, stage }: Props) {
                     onClick={() => {
                       if (c === item.gloss) {
                         setPicked(c);
+                        playGrade(true);
                         return;
                       }
                       if (!missedChoice) {
                         setMissedChoice(c);
                         setTries(1);
+                        playGrade(false);
                         return;
                       }
                       setPicked(c);
+                      playGrade(false);
                     }}
                     className={cn(
                       "w-full min-h-12 rounded-[var(--radius-md)] px-4 py-3 text-left text-sm font-medium shadow-[var(--shadow-border)]",
@@ -299,14 +305,20 @@ export function GameStagePlay({ chapter, stage }: Props) {
             })}
           </ul>
           {missedChoice && !picked && (
-            <p className="try-flash mt-4 text-center text-xl font-bold uppercase tracking-wide text-danger sm:text-2xl">
-              One more try
-            </p>
+            <>
+              <GradeBanner className="mt-4" ok={false} />
+              <p className="try-flash mt-2 text-center text-lg font-bold uppercase tracking-wide text-danger">
+                One more try
+              </p>
+            </>
           )}
           {picked && (
-            <Button className="mt-4 w-full" onClick={advanceAfterReveal}>
-              Next
-            </Button>
+            <>
+              <GradeBanner className="mt-4" ok={picked === item.gloss} />
+              <Button className="mt-4 w-full" onClick={advanceAfterReveal}>
+                Next
+              </Button>
+            </>
           )}
         </>
       ) : stage === "gloss" ? (
@@ -334,35 +346,27 @@ export function GameStagePlay({ chapter, stage }: Props) {
             autoCapitalize="off"
             autoCorrect="off"
           />
-          {!revealed && (
-            <p
-              className={cn(
-                "mt-2 text-sm font-medium",
-                liveGloss(item, typed) === "exact" && "text-good",
-                liveGloss(item, typed) === "off" && "text-danger",
-                (liveGloss(item, typed) === "empty" || liveGloss(item, typed) === "prefix") && "text-muted",
-              )}
-            >
-              {liveGloss(item, typed) === "exact"
-                ? "Correct — tap Check to lock it."
-                : liveGloss(item, typed) === "prefix"
-                  ? "Keep going."
-                  : liveGloss(item, typed) === "off"
-                    ? tries >= 1
-                      ? "Still off."
-                      : "Not yet."
-                    : "Type the English gloss — no list."}
-            </p>
+          {!revealed && (liveGloss(item, typed) === "exact" || liveGloss(item, typed) === "off") && (
+            <GradeBanner className="mt-3" size="live" ok={liveGloss(item, typed) === "exact"} />
+          )}
+          {!revealed && liveGloss(item, typed) === "prefix" && (
+            <p className="mt-2 text-center text-sm font-medium text-muted">Keep going.</p>
+          )}
+          {!revealed && liveGloss(item, typed) === "empty" && (
+            <p className="mt-2 text-center text-sm font-medium text-muted">Type the English gloss — no list.</p>
           )}
           {tries >= 1 && !revealed && (
-            <p className="try-flash mt-2 text-center text-xl font-bold uppercase tracking-wide text-danger">
+            <p className="try-flash mt-2 text-center text-lg font-bold uppercase tracking-wide text-danger">
               One more try
             </p>
           )}
           {revealed && (
-            <p className={`mt-3 text-sm ${typedOk ? "text-good" : "text-danger"}`}>
-              {typedOk ? "Correct." : `Answer: ${item.gloss}`}
-            </p>
+            <div className="mt-3">
+              <GradeBanner ok={typedOk} />
+              {!typedOk && (
+                <p className="mt-2 text-center text-sm text-muted">Answer: {item.gloss}</p>
+              )}
+            </div>
           )}
           <Button className="mt-3 w-full" type="submit">
             {revealed ? "Next" : tries >= 1 ? "Check retry" : "Check"}
@@ -388,14 +392,19 @@ export function GameStagePlay({ chapter, stage }: Props) {
             strict={stage === "spell-strict"}
           />
           {tries >= 1 && !revealed && (
-            <p className="try-flash mt-3 text-center text-xl font-bold uppercase tracking-wide text-danger">
+            <p className="try-flash mt-3 text-center text-lg font-bold uppercase tracking-wide text-danger">
               One more try
             </p>
           )}
-          {revealed && !typedOk && (
-            <p className="mt-3 text-center text-sm text-danger">
-              Answer: <span className="he-word text-xl text-ink">{item.hebrew}</span>
-            </p>
+          {revealed && (
+            <div className="mt-3">
+              <GradeBanner ok={typedOk} />
+              {!typedOk && (
+                <p className="mt-2 text-center text-sm text-muted">
+                  Answer: <span className="he-word text-xl text-ink">{item.hebrew}</span>
+                </p>
+              )}
+            </div>
           )}
           <Button className="mt-3 w-full" type="submit" disabled={!revealed && !typed.trim()}>
             {revealed ? "Next" : tries >= 1 ? "Check retry" : "Check"}
