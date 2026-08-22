@@ -80,6 +80,11 @@ export const VERSES: Record<string, VerseEx> = {
   sus: { ref: "Exod 15:1", he: "סוּס וְרֹכְבוֹ רָמָה בַיָּם", en: "Horse and its rider he hurled into the sea.", hit: "סוּס" },
   sefer: { ref: "Josh 1:8", he: "לֹא־יָמוּשׁ סֵפֶר הַתּוֹרָה הַזֶּה מִפִּיךָ", en: "This book of the instruction shall not depart from your mouth.", hit: "סֵפֶר" },
   tsaba: { ref: "Ps 24:10", he: "יְהוָה צְבָאוֹת הוּא מֶלֶךְ הַכָּבוֹד סֶלָה", en: "YHWH of hosts — he is the king of glory.", hit: "צְבָאוֹת" },
+  yeled: { ref: "Isa 9:5", he: "כִּי־יֶלֶד יֻלַּד־לָנוּ בֵּן נִתַּן־לָנוּ", en: "For a child is born to us, a son is given to us.", hit: "יֶלֶד" },
+  maqom: { ref: "Gen 28:17", he: "וַיִּירָא וַיֹּאמַר מַה־נּוֹרָא הַמָּקוֹם הַזֶּה", en: "He was afraid and said, “How fearsome is this place.”", hit: "הַמָּקוֹם" },
+  neum: { ref: "Gen 22:16", he: "וַיֹּאמֶר בִּי נִשְׁבַּעְתִּי נְאֻם־יְהוָה", en: "He said, “By myself I have sworn, declares YHWH.”", hit: "נְאֻם" },
+  anan: { ref: "Exod 13:21", he: "וַיהוָה הֹלֵךְ לִפְנֵיהֶם יוֹמָם בְּעַמּוּד עָנָן", en: "YHWH went before them by day in a pillar of cloud.", hit: "עָנָן" },
+  sar: { ref: "Exod 2:14", he: "וַיֹּאמֶר מִי שָׂמְךָ לְאִישׁ שַׂר וְשֹׁפֵט עָלֵינוּ", en: "He said, “Who made you a man, a prince and a judge over us?”", hit: "שַׂר" },
 
   we: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "וְ" },
   ha: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
