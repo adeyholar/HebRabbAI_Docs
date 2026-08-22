@@ -157,6 +157,11 @@ export const VERSES: Record<string, VerseEx> = {
   kisse: { ref: "Isa 6:1", he: "וָאֶרְאֶה אֶת־אֲדֹנָי יֹשֵׁב עַל־כִּסֵּא רָם וְנִשָּׂא", en: "I saw the Lord sitting on a throne, high and lifted up.", hit: "כִּסֵּא" },
   mispar: { ref: "Ps 147:4", he: "מוֹנֶה מִסְפָּר לַכּוֹכָבִים לְכֻלָּם שֵׁמוֹת יִקְרָא", en: "He counts the number of the stars; he calls them all by names.", hit: "מִסְפָּר" },
   shemesh: { ref: "Gen 15:12", he: "וַיְהִי הַשֶּׁמֶשׁ לָבוֹא וְתַרְדֵּמָה נָפְלָה עַל־אַבְרָם", en: "As the sun was going down, a deep sleep fell upon Abram.", hit: "הַשֶּׁמֶשׁ" },
+  "raah-pasture": { ref: "Ps 23:1", he: "מִזְמוֹר לְדָוִד יְהוָה רֹעִי לֹא אֶחְסָר", en: "A psalm of David. YHWH is my shepherd; I shall not lack.", hit: "רֹעִי" },
+  baal: { ref: "Exod 21:3", he: "אִם־בְּעַל אִשָּׁה הוּא וְיָצְאָה אִשְׁתּוֹ עִמּוֹ", en: "If he is the husband of a wife, then his wife shall go out with him.", hit: "בְּעַל" },
+  shebet: { ref: "Gen 49:10", he: "לֹא־יָסוּר שֵׁבֶט מִיהוּדָה וּמְחֹקֵק מִבֵּין רַגְלָיו", en: "The scepter shall not depart from Judah, nor the ruler’s staff from between his feet.", hit: "שֵׁבֶט" },
+  baad: { ref: "Gen 7:16", he: "וַיִּסְגֹּר יְהוָה בַּעֲדוֹ", en: "And YHWH shut him in.", hit: "בַּעֲדוֹ" },
+  yaan: { ref: "Num 20:12", he: "וַיֹּאמֶר יְהוָה אֶל־מֹשֶׁה וְאֶל־אַהֲרֹן יַעַן לֹא־הֶאֱמַנְתֶּם בִּי", en: "YHWH said to Moses and to Aaron, “Because you did not trust in me.”", hit: "יַעַן" },
 
   we: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "וְ" },
   ha: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
