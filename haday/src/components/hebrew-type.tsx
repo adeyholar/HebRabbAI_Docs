@@ -88,7 +88,7 @@ function PadSection({
 }: {
   title: string;
   hint?: string;
-  cols: "cons" | "four" | "five";
+  cols: "cons" | "three" | "four" | "five";
   rtl?: boolean;
   children: ReactNode;
 }) {
@@ -103,6 +103,7 @@ function PadSection({
         className={cn(
           "grid gap-1.5",
           cols === "cons" && "grid-cols-6",
+          cols === "three" && "grid-cols-3",
           cols === "four" && "grid-cols-4",
           cols === "five" && "grid-cols-5",
         )}
@@ -175,9 +176,43 @@ export function HebrewType({ value, onChange, target, disabled, strict = false, 
         <p className="mt-2 text-center text-sm font-medium text-muted">{hint}</p>
       )}
 
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
+        <button
+          type="button"
+          disabled={disabled || !value}
+          onClick={() => onChange(dropLastGrapheme(value))}
+          className="min-h-11 rounded-[var(--radius-sm)] bg-card text-sm font-medium text-ink shadow-[var(--shadow-border)] disabled:opacity-40"
+        >
+          Backspace
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          aria-label="Dagesh"
+          onClick={() => add("ּ")}
+          className="flex min-h-11 items-center justify-center rounded-[var(--radius-sm)] bg-card shadow-[var(--shadow-border)] disabled:opacity-40"
+        >
+          <span className="he-word text-3xl leading-none">◌ּ</span>
+        </button>
+        <button
+          type="button"
+          disabled={disabled || !value}
+          onClick={() => onChange("")}
+          className="min-h-11 rounded-[var(--radius-sm)] bg-card text-sm font-medium text-ink shadow-[var(--shadow-border)] disabled:opacity-40"
+        >
+          Clear
+        </button>
+      </div>
+
       <PadSection title="Consonants" cols="cons" rtl>
         {CONSONANT_KEYS.map((k) => (
           <PadKey key={k.name + k.glyph} glyph={k.glyph} name={k.name} disabled={disabled} onClick={() => add(k.glyph)} />
+        ))}
+      </PadSection>
+
+      <PadSection title="Marks" hint="Tap after the letter" cols="three">
+        {MARKS.map((k) => (
+          <PadKey key={k.id} glyph={k.show} name={k.name} disabled={disabled} onClick={() => add(k.insert)} />
         ))}
       </PadSection>
 
@@ -193,8 +228,8 @@ export function HebrewType({ value, onChange, target, disabled, strict = false, 
         ))}
       </PadSection>
 
-      <PadSection title="Reduced + marks" cols="four">
-        {REDUCED.concat(MARKS).map((k) => (
+      <PadSection title="Reduced" cols="three">
+        {REDUCED.map((k) => (
           <PadKey key={k.id} glyph={k.show} name={k.name} disabled={disabled} onClick={() => add(k.insert)} />
         ))}
       </PadSection>
@@ -205,24 +240,6 @@ export function HebrewType({ value, onChange, target, disabled, strict = false, 
         ))}
       </PadSection>
 
-      <div className="mt-2 grid grid-cols-2 gap-1.5">
-        <button
-          type="button"
-          disabled={disabled || !value}
-          onClick={() => onChange(dropLastGrapheme(value))}
-          className="min-h-11 rounded-[var(--radius-sm)] bg-card text-sm font-medium text-ink shadow-[var(--shadow-border)] disabled:opacity-40"
-        >
-          Backspace
-        </button>
-        <button
-          type="button"
-          disabled={disabled || !value}
-          onClick={() => onChange("")}
-          className="min-h-11 rounded-[var(--radius-sm)] bg-card text-sm font-medium text-ink shadow-[var(--shadow-border)] disabled:opacity-40"
-        >
-          Clear
-        </button>
-      </div>
     </div>
   );
 }
