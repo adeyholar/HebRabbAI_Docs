@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { GAME_CHAPTER_MAX, chapterRecord, type GameSnapshot } from "@/lib/game";
 import { BADGES, badgeMeta, scoreboard } from "@/lib/rewards";
+import { HonorBadge } from "@/components/honor-badge";
 import { useStudy } from "@/lib/store";
 
 const ICONS = {
@@ -34,9 +35,13 @@ export function RewardsBar() {
           All rewards
         </Link>
       </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <HonorBadge honor={board.honor} />
+        <span className="text-sm text-muted">Level {board.level} of {board.total}</span>
+      </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <DashStat label="Level" value={String(board.level)} hint={board.title} />
+        <DashStat label="Level" value={String(board.level)} hint={board.honor.short} />
         <DashStat label="Points" value={board.points.toLocaleString()} hint={`${board.stars} stars`} />
         <DashStat label="Streak" value={`${streak}d`} hint={game.winStreak > 1 ? `${game.winStreak} wins` : "daily"} />
       </div>

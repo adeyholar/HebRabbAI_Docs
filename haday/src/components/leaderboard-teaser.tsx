@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { HonorBadge } from "@/components/honor-badge";
 import { listLeaderboard, type BoardRow } from "@/lib/leaderboard";
 
 export function LeaderboardTeaser() {
@@ -41,20 +42,22 @@ export function LeaderboardTeaser() {
       <ol className="mt-3 space-y-2">
         {top.map((row) => (
           <li key={`${row.rank}-${row.name}`} className="flex items-baseline justify-between gap-2 text-sm">
-            <span className="min-w-0 truncate text-ink">
-              <span className="me-2 font-display font-bold tabular-nums text-primary">{row.rank}</span>
-              {row.name}
-              {row.you ? <span className="ms-1.5 text-xs font-medium uppercase tracking-wide text-primary">You</span> : null}
+            <span className="flex min-w-0 items-center gap-1.5 truncate text-ink">
+              <span className="me-1 font-display font-bold tabular-nums text-primary">{row.rank}</span>
+              <span className="truncate">{row.name}</span>
+              <HonorBadge honor={{ title: row.honor, short: row.honorShort }} compact className="min-h-6 px-2" />
+              {row.you ? <span className="text-xs font-medium uppercase tracking-wide text-primary">You</span> : null}
             </span>
             <span className="shrink-0 tabular-nums text-muted">{row.points.toLocaleString()} pts</span>
           </li>
         ))}
         {youHidden && you && (
-          <li className="flex items-baseline justify-between gap-2 border-t border-border pt-2 text-sm">
-            <span className="min-w-0 truncate text-ink">
-              <span className="me-2 font-display font-bold tabular-nums text-primary">{you.rank}</span>
-              {you.name}
-              <span className="ms-1.5 text-xs font-medium uppercase tracking-wide text-primary">You</span>
+          <li className="flex items-center justify-between gap-2 border-t border-border pt-2 text-sm">
+            <span className="flex min-w-0 items-center gap-1.5 truncate text-ink">
+              <span className="me-1 font-display font-bold tabular-nums text-primary">{you.rank}</span>
+              <span className="truncate">{you.name}</span>
+              <HonorBadge honor={{ title: you.honor, short: you.honorShort }} compact className="min-h-6 px-2" />
+              <span className="text-xs font-medium uppercase tracking-wide text-primary">You</span>
             </span>
             <span className="shrink-0 tabular-nums text-muted">{you.points.toLocaleString()} pts</span>
           </li>

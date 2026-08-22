@@ -10,6 +10,8 @@ export type BoardRow = {
   points: number;
   level: number;
   streak: number;
+  honor: string;
+  honorShort: string;
   you: boolean;
 };
 
@@ -48,12 +50,16 @@ export const listLeaderboard = createServerFn({ method: "GET" })
     const scored = rows.map((r) => {
       let points = Number(r.points) || 0;
       let level = Number(r.level) || 1;
+      let honor = "Hearer of the Word";
+      let honorShort = "Hearer";
       const streak = Number(r.streak) || 0;
       if (r.game) {
         try {
           const board = scoreboard(hydrateGame(JSON.parse(r.game) as unknown), streak);
           points = board.points;
           level = board.level;
+          honor = board.honor.title;
+          honorShort = board.honor.short;
         } catch {
           /* keep cached */
         }
@@ -64,6 +70,8 @@ export const listLeaderboard = createServerFn({ method: "GET" })
         points,
         level,
         streak,
+        honor,
+        honorShort,
       };
     });
 
@@ -86,6 +94,8 @@ export const listLeaderboard = createServerFn({ method: "GET" })
         points: row.points,
         level: row.level,
         streak: row.streak,
+        honor: row.honor,
+        honorShort: row.honorShort,
         you: row.id === context.userId,
       };
     });

@@ -10,6 +10,8 @@ import { BrandLockup } from "@/components/brand-lockup";
 import { SfxToggle } from "@/components/sfx-toggle";
 import { continueTarget } from "@/lib/game";
 import { getAdminStatus } from "@/lib/admin";
+import { scoreboard } from "@/lib/rewards";
+import { HonorBadge } from "@/components/honor-badge";
 
 const STUDY_NAV = [
   { to: "/", label: "Home", icon: House },
@@ -29,6 +31,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [progressReady, setProgressReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const game = useStudy((s) => s.game);
+  const streak = useStudy((s) => s.streak);
+  const honor = scoreboard(game, streak).honor;
   const cont = continueTarget(game);
 
   useEffect(() => {
@@ -160,6 +164,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             )}
             <SfxToggle />
+            <HonorBadge honor={honor} compact className="hidden max-w-[7.5rem] sm:inline-flex" />
             <div className="account-chip min-w-0 shrink">
               <UserButton />
             </div>

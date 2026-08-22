@@ -122,7 +122,7 @@ function GuidePage() {
           <li>Daily flame: study or play at least once a calendar day. Miss a day and it resets to 1.</li>
           <li>Win streak: consecutive game stages you clear. A poor replay can break it.</li>
           <li>Ladder: each BBH chapter is a rung. Clear all four stages to climb. 19 is the summit.</li>
-          <li>Class leaderboard: ranked by points. Names only. Open the medal in the header.</li>
+          <li>Honor rank: Hearer → Catechumen → … → Masorete. It sits beside your name and on the class board. Clear a chapter to rise.</li>
         </ul>
         <p className="mt-3 text-sm">
           <Link to="/rewards" className="font-semibold text-primary">

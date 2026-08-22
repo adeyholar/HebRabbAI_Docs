@@ -20,6 +20,37 @@ export function badgeMeta(id: string) {
   return BADGES.find((b) => b.id === id);
 }
 
+/** Earned by chapters cleared. 0 = just begun; 19 = summit (Masorete). */
+export const HONOR_RANKS = [
+  { title: "Hearer of the Word", short: "Hearer" },
+  { title: "Catechumen", short: "Catechumen" },
+  { title: "Neophyte", short: "Neophyte" },
+  { title: "Disciple", short: "Disciple" },
+  { title: "Follower of the Way", short: "The Way" },
+  { title: "Lector", short: "Lector" },
+  { title: "Cantor", short: "Cantor" },
+  { title: "Scribe", short: "Scribe" },
+  { title: "Steward of the Word", short: "Steward" },
+  { title: "Watchman", short: "Watchman" },
+  { title: "Interpreter", short: "Interpreter" },
+  { title: "Exegete", short: "Exegete" },
+  { title: "Homilist", short: "Homilist" },
+  { title: "Teacher", short: "Teacher" },
+  { title: "Elder", short: "Elder" },
+  { title: "Shepherd", short: "Shepherd" },
+  { title: "Sage", short: "Sage" },
+  { title: "Doctor of Scripture", short: "Doctor" },
+  { title: "Theologian of the Text", short: "Theologian" },
+  { title: "Masorete", short: "Masorete" },
+] as const;
+
+export type HonorRank = (typeof HONOR_RANKS)[number];
+
+export function honorForCleared(cleared: number): HonorRank & { step: number } {
+  const step = Math.min(HONOR_RANKS.length - 1, Math.max(0, Math.floor(cleared)));
+  return { ...HONOR_RANKS[step], step };
+}
+
 export function chaptersCleared(game: GameSnapshot): number {
   let n = 0;
   for (let c = 1; c <= GAME_CHAPTER_MAX; c++) {
@@ -106,10 +137,12 @@ export function scoreboard(game: GameSnapshot, dailyStreak: number) {
     game.winStreak * 8;
   const chapterPct = Math.round((chapterStagesDone / GAME_STAGES.length) * 100);
   const overallPct = Math.round((rung.cleared / GAME_CHAPTER_MAX) * 100);
-  const title = rung.cleared >= GAME_CHAPTER_MAX ? "Summit" : `Chapter ${rung.current}`;
+  const honor = honorForCleared(rung.cleared);
+  const title = rung.cleared >= GAME_CHAPTER_MAX ? honor.title : `Chapter ${rung.current}`;
   return {
     level: rung.current,
     title,
+    honor,
     points,
     stars,
     stages,

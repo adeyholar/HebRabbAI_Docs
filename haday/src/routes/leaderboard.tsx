@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Panel } from "@/components/panel";
+import { HonorBadge } from "@/components/honor-badge";
 import { cn } from "@/lib/cn";
 import { listLeaderboard, type BoardRow } from "@/lib/leaderboard";
 
@@ -37,6 +38,8 @@ function LeaderboardPage() {
         {you && (
           <p className="mt-3 text-sm text-ink">
             You are <span className="font-semibold">#{you.rank}</span>
+            {" · "}
+            {you.honor}
             {" · "}
             {you.points.toLocaleString()} pts · Level {you.level}
           </p>
@@ -75,9 +78,10 @@ function LeaderboardPage() {
                 {row.rank}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-ink">
-                  {row.name}
-                  {row.you ? <span className="ms-2 text-xs font-medium uppercase tracking-wide text-primary">You</span> : null}
+                <p className="flex min-w-0 flex-wrap items-center gap-2 font-semibold text-ink">
+                  <span className="truncate">{row.name}</span>
+                  <HonorBadge honor={{ title: row.honor, short: row.honorShort }} compact />
+                  {row.you ? <span className="text-xs font-medium uppercase tracking-wide text-primary">You</span> : null}
                 </p>
                 <p className="text-sm text-muted">
                   Level {row.level}
