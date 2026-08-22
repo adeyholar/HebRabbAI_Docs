@@ -1,4 +1,4 @@
-/** Strip niqqud, cantillation, and map final letters to their medial forms. */
+/** Strip niqqud and cantillation. Final letters are kept as-is. */
 export function stripNiqqud(s: string): string {
   return s
     .normalize("NFC")
@@ -20,8 +20,20 @@ export function foldFinals(s: string): string {
   return [...s].map((ch) => FINALS[ch] ?? ch).join("");
 }
 
+export function lettersOnly(s: string): string {
+  return stripNiqqud(s).replace(/[^\u05D0-\u05EA]/g, "");
+}
+
 export function normalizeHebrew(s: string): string {
-  return foldFinals(stripNiqqud(s)).replace(/[^\u05D0-\u05EA]/g, "");
+  return lettersOnly(s);
+}
+
+/** True when consonants match except a medial was used in place of a final (or the reverse). */
+export function isFinalFormMismatch(expected: string, typed: string): boolean {
+  const want = lettersOnly(expected);
+  const got = lettersOnly(typed);
+  if (!want || !got) return false;
+  return foldFinals(want) === foldFinals(got) && want !== got;
 }
 
 export function levenshtein(a: string, b: string): number {
@@ -102,14 +114,13 @@ export function liveMatch(expected: string, typed: string): "empty" | "prefix" |
 
 /** Keep vowels, dagesh, and shin/sin dots; drop cantillation and whitespace. */
 export function normalizeHebrewFull(s: string): string {
-  return foldFinals(
-    s
-      .normalize("NFC")
-      .replace(/[\u0591-\u05AF\u05BD\u05BF\u05C0\u05C3-\u05C5\u05C6\u05C7]/g, "")
-      .replace(/[\u05F3\u05F4\u05BE]/g, "")
-      .replace(/[־–—]/g, "")
-      .replace(/\s+/g, ""),
-  ).replace(/[^\u05D0-\u05EA\u05B0-\u05BC\u05C1\u05C2]/g, "");
+  return s
+    .normalize("NFC")
+    .replace(/[\u0591-\u05AF\u05BD\u05BF\u05C0\u05C3-\u05C5\u05C6\u05C7]/g, "")
+    .replace(/[\u05F3\u05F4\u05BE]/g, "")
+    .replace(/[־–—]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/[^\u05D0-\u05EA\u05B0-\u05BC\u05C1\u05C2]/g, "");
 }
 
 export function liveMatchFull(expected: string, typed: string): "empty" | "prefix" | "exact" | "off" {
@@ -125,6 +136,7 @@ export function consonantsMatch(expected: string, typed: string): boolean {
   const want = normalizeHebrew(expected);
   const got = normalizeHebrew(typed);
   if (!want || !got) return false;
+  if (isFinalFormMismatch(expected, typed)) return false;
   if (got === want) return true;
   const distance = weightedDistance(want, got);
   return distance <= 0.9 || (want.length >= 4 && distance / want.length <= 0.28);
@@ -134,6 +146,9 @@ export function matchHandwriting(expected: string, read: string): { match: HandM
   const expectedN = normalizeHebrew(expected);
   const readN = normalizeHebrew(read);
   if (!readN) return { match: "empty", distance: expectedN.length, expectedN, readN };
+  if (isFinalFormMismatch(expected, read)) {
+    return { match: "wrong", distance: 1, expectedN, readN };
+  }
   const distance = weightedDistance(expectedN, readN);
   if (distance === 0) return { match: "exact", distance, expectedN, readN };
   const close = distance <= 0.9 || (expectedN.length >= 4 && distance / expectedN.length <= 0.28);

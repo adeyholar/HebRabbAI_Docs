@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { liveMatch, liveMatchFull } from "@/lib/hebrew";
+import { isFinalFormMismatch, liveMatch, liveMatchFull } from "@/lib/hebrew";
 import { GradeBanner } from "@/components/grade-banner";
 import { CONSONANTS } from "@/lib/alphabet";
 
@@ -124,6 +124,7 @@ type Props = {
 
 export function HebrewType({ value, onChange, target, disabled, strict = false, hideHint = false }: Props) {
   const live = strict ? liveMatchFull(target, value) : liveMatch(target, value);
+  const offLabel = isFinalFormMismatch(target, value) ? "Use the final form" : "Not correct";
   const hint = strict
     ? live === "empty"
       ? "Consonant first, then its vowel. Full match."
@@ -131,14 +132,14 @@ export function HebrewType({ value, onChange, target, disabled, strict = false, 
         ? "Correct"
         : live === "prefix"
           ? "Keep going — that prefix is right."
-          : "Not correct"
+          : offLabel
     : live === "empty"
       ? "Consonant first, then its vowel. Vowels optional to match."
       : live === "exact"
         ? "Correct"
         : live === "prefix"
           ? "Keep going — that prefix is right."
-          : "Not correct";
+          : offLabel;
 
   function add(chunk: string) {
     if (disabled) return;
