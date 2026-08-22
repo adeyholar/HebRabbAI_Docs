@@ -43,7 +43,7 @@ export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   8: { title: "Pronouns", blurb: "I, you, this, who, why" },
   9: { title: "More nouns", blurb: "People, bread, glory, behold" },
   10: { title: "Construct nouns", blurb: "Hand, covenant, field, death" },
-  11: { title: "Midterm verbs", blurb: "Remember, keep, serve" },
+  11: { title: "Numbers", blurb: "One to ten, cubit, first" },
   12: { title: "Cult verbs", blurb: "Offer, atone, be holy" },
   13: { title: "Conflict", blurb: "Fight, save, judge, reign" },
   14: { title: "Finish & count", blurb: "Complete, number, buy" },
