@@ -47,7 +47,7 @@ export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   12: { title: "Qal verbs", blurb: "Say, be, go, eat, not" },
   13: { title: "More Qal", blurb: "Bless, know, write, keep" },
   14: { title: "Come & go", blurb: "Enter, rise, return, put" },
-  15: { title: "Move & dwell", blurb: "Go up, dwell, return" },
+  15: { title: "Live & serve", blurb: "Live, cut, answer, life" },
   16: { title: "Command", blurb: "Speak, command, declare" },
   17: { title: "Trust", blurb: "Trust, understand, wait" },
   18: { title: "Affect", blurb: "Love, fear, rejoice, mourn" },
