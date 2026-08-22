@@ -136,6 +136,8 @@ export const VERSES: Record<string, VerseEx> = {
   "zakar-v": { ref: "Exod 20:8", he: "זָכוֹר אֶת־יוֹם הַשַּׁבָּת לְקַדְּשׁוֹ", en: "Remember the sabbath day, to keep it holy.", hit: "זָכוֹר" },
   kaved: { ref: "Exod 20:12", he: "כַּבֵּד אֶת־אָבִיךָ וְאֶת־אִמֶּךָ", en: "Honor your father and your mother.", hit: "כַּבֵּד" },
   koh: { ref: "Exod 4:22", he: "וְאָמַרְתָּ אֶל־פַּרְעֹה כֹּה אָמַר יְהוָה", en: "You shall say to Pharaoh, “Thus says YHWH.”", hit: "כֹּה" },
+  sim: { ref: "Gen 4:15", he: "וַיָּשֶׂם יְהוָה לְקַיִן אוֹת לְבִלְתִּי הַכּוֹת־אֹתוֹ כָּל־מֹצְאוֹ", en: "YHWH put a mark on Cain, so that no one who found him would strike him.", hit: "וַיָּשֶׂם" },
+  poh: { ref: "Gen 19:12", he: "וַיֹּאמְרוּ הָאֲנָשִׁים אֶל־לוֹט עֹד מִי־לְךָ פֹה", en: "The men said to Lot, “Whom else do you have here?”", hit: "פֹה" },
 
   we: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "וְ" },
   ha: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
