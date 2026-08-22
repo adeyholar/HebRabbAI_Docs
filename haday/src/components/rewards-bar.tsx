@@ -2,7 +2,7 @@ import { Flame, Flag, Footprints, Medal, Mountain, Star, Trophy } from "lucide-r
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { GAME_CHAPTER_MAX, chapterRecord, type GameSnapshot } from "@/lib/game";
-import { BADGES, badgeMeta, ladderRung } from "@/lib/rewards";
+import { BADGES, badgeMeta, scoreboard } from "@/lib/rewards";
 import { useStudy } from "@/lib/store";
 
 const ICONS = {
@@ -22,23 +22,38 @@ const ICONS = {
 export function RewardsBar() {
   const game = useStudy((s) => s.game);
   const streak = useStudy((s) => s.streak);
-  const rung = ladderRung(game);
+  const board = scoreboard(game, streak);
   const earned = new Set(game.badges);
-  const shown = BADGES.filter((b) => earned.has(b.id)).slice(-4);
+  const shown = BADGES.filter((b) => earned.has(b.id)).slice(0, 4);
 
   return (
     <div className="rounded-[var(--radius-xl)] bg-card p-5 shadow-[var(--shadow-border)]">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-display text-xl font-bold text-ink">Ladder</h2>
+        <h2 className="font-display text-xl font-bold text-ink">Your climb</h2>
         <Link to="/rewards" className="text-sm font-medium text-primary">
           All rewards
         </Link>
       </div>
-      <p className="mt-1 text-sm text-muted">
-        Rung {rung.current} of {rung.total}
-        {rung.cleared ? ` · ${rung.cleared} chapter${rung.cleared === 1 ? "" : "s"} cleared` : ""}
-        {game.winStreak > 1 ? ` · ${game.winStreak} stage win streak` : ""}
-      </p>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <DashStat label="Level" value={String(board.level)} hint={board.title} />
+        <DashStat label="Points" value={board.points.toLocaleString()} hint={`${board.stars} stars`} />
+        <DashStat label="Streak" value={`${streak}d`} hint={game.winStreak > 1 ? `${game.winStreak} wins` : "daily"} />
+      </div>
+
+      <div className="mt-4">
+        <ProgressRow
+          label={`This level · ${board.chapterStagesDone}/${board.chapterStagesTotal} stages`}
+          pct={board.chapterPct}
+        />
+        <ProgressRow
+          label={`Path · ${board.cleared}/${board.total} chapters`}
+          pct={board.overallPct}
+          className="mt-3"
+        />
+        <p className="mt-2 text-sm text-muted">{board.next}</p>
+      </div>
+
       <LadderStrip game={game} />
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <span className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] bg-surface px-3 text-sm font-semibold text-ink">
@@ -58,6 +73,33 @@ export function RewardsBar() {
             </span>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function DashStat({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="rounded-[var(--radius-md)] bg-surface px-3 py-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-1 font-display text-3xl font-bold tabular-nums text-ink">{value}</p>
+      <p className="mt-0.5 truncate text-xs text-muted">{hint}</p>
+    </div>
+  );
+}
+
+function ProgressRow({ label, pct, className }: { label: string; pct: number; className?: string }) {
+  return (
+    <div className={className}>
+      <div className="mb-1.5 flex items-center justify-between text-sm">
+        <span className="text-muted">{label}</span>
+        <span className="tabular-nums text-ink">{pct}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-surface">
+        <div
+          className="h-full rounded-full bg-primary transition-[width] duration-[var(--motion-fast)]"
+          style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+        />
       </div>
     </div>
   );

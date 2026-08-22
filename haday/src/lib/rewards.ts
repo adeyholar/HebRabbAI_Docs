@@ -45,6 +45,14 @@ export function hasThreeStar(game: GameSnapshot): boolean {
   return false;
 }
 
+export function totalStars(game: GameSnapshot): number {
+  let n = 0;
+  for (let c = 1; c <= GAME_CHAPTER_MAX; c++) {
+    n += chapterRecord(game, c).stars;
+  }
+  return n;
+}
+
 export function evaluateBadges(game: GameSnapshot, dailyStreak: number): BadgeId[] {
   const ch = chaptersCleared(game);
   const stages = stagesCleared(game);
@@ -81,4 +89,41 @@ export function stampRewards(game: GameSnapshot, dailyStreak: number): GameSnaps
   const prev = new Set(game.badges);
   const justEarned = next.filter((id) => !prev.has(id));
   return { ...game, badges: next, justEarned };
+}
+
+export function scoreboard(game: GameSnapshot, dailyStreak: number) {
+  const rung = ladderRung(game);
+  const rec = chapterRecord(game, rung.current);
+  const chapterStagesDone = GAME_STAGES.filter((s) => rec.stages[s.id].cleared).length;
+  const stages = stagesCleared(game);
+  const stars = totalStars(game);
+  const points =
+    stars * 10 +
+    stages * 20 +
+    rung.cleared * 50 +
+    game.badges.length * 30 +
+    dailyStreak * 5 +
+    game.winStreak * 8;
+  const chapterPct = Math.round((chapterStagesDone / GAME_STAGES.length) * 100);
+  const overallPct = Math.round((rung.cleared / GAME_CHAPTER_MAX) * 100);
+  const title = rung.cleared >= GAME_CHAPTER_MAX ? "Summit" : `Chapter ${rung.current}`;
+  return {
+    level: rung.current,
+    title,
+    points,
+    stars,
+    stages,
+    chapterStagesDone,
+    chapterStagesTotal: GAME_STAGES.length,
+    chapterPct,
+    overallPct,
+    cleared: rung.cleared,
+    total: GAME_CHAPTER_MAX,
+    next:
+      rung.cleared >= GAME_CHAPTER_MAX
+        ? "Path complete"
+        : rec.cleared
+          ? `Unlock chapter ${Math.min(GAME_CHAPTER_MAX, rung.current + 1)}`
+          : `${GAME_STAGES.length - chapterStagesDone} stage${GAME_STAGES.length - chapterStagesDone === 1 ? "" : "s"} to clear this level`,
+  };
 }

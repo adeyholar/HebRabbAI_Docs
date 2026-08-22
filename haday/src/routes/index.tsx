@@ -44,6 +44,10 @@ function Home() {
         </p>
       </Panel>
 
+      <div className="mb-4">
+        <RewardsBar />
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <Link
           to="/game"
@@ -66,10 +70,6 @@ function Home() {
       <div className="mt-3">
         <GameContinue />
         <p className="sr-only">{continueLabel(game)}</p>
-      </div>
-
-      <div className="mt-3">
-        <RewardsBar />
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">

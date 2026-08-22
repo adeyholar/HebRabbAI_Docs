@@ -18,6 +18,7 @@ import {
   type GameStageId,
 } from "@/lib/game";
 import { liveMatchAny } from "@/lib/hebrew";
+import { scoreboard } from "@/lib/rewards";
 import { useStudy } from "@/lib/store";
 import { glossMatches, liveGloss, quizChoices, type VocabItem } from "@/lib/vocab";
 
@@ -42,6 +43,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
   const completeGameStage = useStudy((s) => s.completeGameStage);
   const rate = useStudy((s) => s.rate);
   const game = useStudy((s) => s.game);
+  const streak = useStudy((s) => s.streak);
   const pool = useMemo(() => chapterPool(chapter), [chapter]);
   const [queue, setQueue] = useState<VocabItem[]>(() => shuffleCopy(pool));
   const [total] = useState(pool.length);
@@ -162,6 +164,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
     const nextStage = GAME_STAGES[idx + 1];
     const next = continueTarget(game);
     const chapterCleared = Boolean(game.chapters[String(chapter)]?.cleared);
+    const board = scoreboard(game, streak);
     return (
       <Panel className="text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
@@ -174,6 +177,8 @@ export function GameStagePlay({ chapter, stage }: Props) {
         </p>
         <p className="mt-2 text-sm text-muted">
           {Math.round((firstSeen ? firstHits / firstSeen : 1) * 100)}% first-try · {firstHits}/{firstSeen} clean
+          {" · "}
+          Level {board.level} · {board.points.toLocaleString()} pts
         </p>
         {chapterCleared && (
           <p className="mt-3 text-sm font-medium text-good">
