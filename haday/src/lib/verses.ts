@@ -133,6 +133,9 @@ export const VERSES: Record<string, VerseEx> = {
   ak: { ref: "Gen 9:4", he: "אַךְ־בָּשָׂר בְּנַפְשׁוֹ דָמוֹ לֹא תֹאכֵלוּ", en: "Only flesh with its life, its blood, you shall not eat.", hit: "אַךְ" },
   bal: { ref: "Ps 16:8", he: "שִׁוִּיתִי יְהוָה לְנֶגְדִּי תָמִיד כִּי מִימִינִי בַּל־אֶמּוֹט", en: "I have set YHWH before me continually; because he is at my right hand, I shall not be shaken.", hit: "בַּל" },
   tamid: { ref: "Exod 25:30", he: "וְנָתַתָּ עַל־הַשֻּׁלְחָן לֶחֶם פָּנִים לְפָנַי תָּמִיד", en: "You shall set the bread of the Presence on the table before me continually.", hit: "תָּמִיד" },
+  "zakar-v": { ref: "Exod 20:8", he: "זָכוֹר אֶת־יוֹם הַשַּׁבָּת לְקַדְּשׁוֹ", en: "Remember the sabbath day, to keep it holy.", hit: "זָכוֹר" },
+  kaved: { ref: "Exod 20:12", he: "כַּבֵּד אֶת־אָבִיךָ וְאֶת־אִמֶּךָ", en: "Honor your father and your mother.", hit: "כַּבֵּד" },
+  koh: { ref: "Exod 4:22", he: "וְאָמַרְתָּ אֶל־פַּרְעֹה כֹּה אָמַר יְהוָה", en: "You shall say to Pharaoh, “Thus says YHWH.”", hit: "כֹּה" },
 
   we: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "וְ" },
   ha: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
@@ -267,7 +270,6 @@ export const VERSES: Record<string, VerseEx> = {
   bara: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "בָּרָא" },
   banah: { ref: "Gen 2:22", he: "וַיִּבֶן יְהוָה אֱלֹהִים אֶת־הַצֵּלָע ... לְאִשָּׁה", en: "YHWH God built the rib … into a woman.", hit: "וַיִּבֶן" },
   katab: { ref: "Exod 24:4", he: "וַיִּכְתֹּב מֹשֶׁה אֵת כָּל־דִּבְרֵי יְהוָה", en: "Moses wrote down all the words of YHWH.", hit: "וַיִּכְתֹּב" },
-  "zakar-v": { ref: "Exod 2:24", he: "וַיִּזְכֹּר אֱלֹהִים אֶת־בְּרִיתוֹ אֶת־אַבְרָהָם", en: "God remembered his covenant with Abraham.", hit: "וַיִּזְכֹּר" },
   abad: { ref: "Exod 3:12", he: "תַּעַבְדוּן אֶת־הָאֱלֹהִים עַל הָהָר הַזֶּה", en: "You shall serve God on this mountain.", hit: "תַּעַבְדוּן" },
   malak: { ref: "Ps 93:1", he: "יְהוָה מָלָךְ גֵּאוּת לָבֵשׁ", en: "YHWH reigns; he is clothed with majesty.", hit: "מָלָךְ" },
   hata: { ref: "Exod 32:31", he: "אָנָּא חָטָא הָעָם הַזֶּה חֲטָאָה גְדֹלָה", en: "Alas, this people has sinned a great sin.", hit: "חָטָא" },

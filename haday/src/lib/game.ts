@@ -45,7 +45,7 @@ export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
   10: { title: "Construct nouns", blurb: "Hand, covenant, field, death" },
   11: { title: "Numbers", blurb: "One to ten, cubit, first" },
   12: { title: "Qal verbs", blurb: "Say, be, go, eat, not" },
-  13: { title: "Conflict", blurb: "Fight, save, judge, reign" },
+  13: { title: "More Qal", blurb: "Bless, know, write, keep" },
   14: { title: "Finish & count", blurb: "Complete, number, buy" },
   15: { title: "Move & dwell", blurb: "Go up, dwell, return" },
   16: { title: "Command", blurb: "Speak, command, declare" },
