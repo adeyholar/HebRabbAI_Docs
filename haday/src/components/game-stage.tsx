@@ -16,7 +16,7 @@ import {
   stageMeta,
   type GameStageId,
 } from "@/lib/game";
-import { liveMatchFull } from "@/lib/hebrew";
+import { liveMatchAny } from "@/lib/hebrew";
 import { useStudy } from "@/lib/store";
 import { glossMatches, liveGloss, quizChoices, type VocabItem } from "@/lib/vocab";
 
@@ -218,7 +218,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
   const typedOk =
     stage === "gloss"
       ? glossMatches(item, typed)
-      : liveMatchFull(item.hebrew, typed) === "exact";
+      : liveMatchAny(item.hebrew, typed, item.hebrewAlts, true) === "exact";
 
   return (
     <>
@@ -388,6 +388,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
             value={typed}
             onChange={setTyped}
             target={item.hebrew}
+            alts={item.hebrewAlts}
             disabled={revealed}
             strict
           />

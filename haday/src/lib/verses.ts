@@ -23,6 +23,11 @@ export const VERSES: Record<string, VerseEx> = {
   isaac: { ref: "Gen 21:3", he: "וַיִּקְרָא אַבְרָהָם אֶת־שֶׁם־בְּנוֹ הַנּוֹלַד־לוֹ יִצְחָק", en: "Abraham named the son born to him Isaac.", hit: "יִצְחָק" },
   canaan: { ref: "Gen 12:5", he: "וַיֵּצְאוּ לָלֶכֶת אַרְצָה כְּנַעַן וַיָּבֹאוּ אַרְצָה כְּנָעַן", en: "They set out to go to the land of Canaan, and they came to the land of Canaan.", hit: "כְּנַעַן" },
   samuel: { ref: "1 Sam 3:10", he: "וַיֹּאמֶר שְׁמוּאֵל דַּבֵּר כִּי שֹׁמֵעַ עַבְדֶּךָ", en: "Samuel said, “Speak, for your servant is listening.”", hit: "שְׁמוּאֵל" },
+  esau: { ref: "Gen 25:25", he: "וַיֵּצֵא הָרִאשׁוֹן אַדְמוֹנִי כֻּלּוֹ כְּאַדֶּרֶת שֵׂעָר וַיִּקְרְאוּ שְׁמוֹ עֵשָׂו", en: "The first came out red, all of him like a hairy cloak, and they named him Esau.", hit: "עֵשָׂו" },
+  pharaoh: { ref: "Exod 5:1", he: "וְאַחַר בָּאוּ מֹשֶׁה וְאַהֲרֹן וַיֹּאמְרוּ אֶל־פַּרְעֹה", en: "Afterward Moses and Aaron came and said to Pharaoh.", hit: "פַּרְעֹה" },
+  zion: { ref: "Ps 125:1", he: "הַבֹּטְחִים בַּיהוָה כְּהַר־צִיּוֹן לֹא־יִמּוֹט", en: "Those who trust in YHWH are like Mount Zion, which cannot be moved.", hit: "צִיּוֹן" },
+  saul: { ref: "1 Sam 9:2", he: "וּלוֹ הָיָה בֵן וּשְׁמוֹ שָׁאוּל בָּחוּר וָטוֹב", en: "He had a son whose name was Saul, a young man and good.", hit: "שָׁאוּל" },
+  solomon: { ref: "Prov 1:1", he: "מִשְׁלֵי שְׁלֹמֹה בֶן־דָּוִד מֶלֶךְ יִשְׂרָאֵל", en: "The proverbs of Solomon son of David, king of Israel.", hit: "שְׁלֹמֹה" },
 
   elohim: { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "אֱלֹהִים" },
   ben: { ref: "Gen 22:2", he: "קַח־נָא אֶת־בִּנְךָ אֶת־יְחִידְךָ אֲשֶׁר־אָהַבְתָּ", en: "Take your son, your only one, whom you love.", hit: "בִּנְךָ" },

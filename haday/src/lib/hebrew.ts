@@ -261,6 +261,23 @@ export function liveMatchFull(expected: string, typed: string): "empty" | "prefi
   return "prefix";
 }
 
+export function liveMatchAny(
+  expected: string,
+  typed: string,
+  alts: string[] | undefined,
+  strict: boolean,
+): "empty" | "prefix" | "exact" | "off" {
+  if (!typed) return "empty";
+  const fn = strict ? liveMatchFull : liveMatch;
+  let prefix = false;
+  for (const t of [expected, ...(alts ?? [])]) {
+    const r = fn(t, typed);
+    if (r === "exact") return "exact";
+    if (r === "prefix") prefix = true;
+  }
+  return prefix ? "prefix" : "off";
+}
+
 export function consonantsMatch(expected: string, typed: string): boolean {
   const want = normalizeHebrew(expected);
   const got = normalizeHebrew(typed);

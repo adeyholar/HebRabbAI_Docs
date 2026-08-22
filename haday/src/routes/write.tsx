@@ -309,7 +309,7 @@ function WritePage() {
 
           {inputMethod === "type" ? (
             <div className="mt-4 rounded-[var(--radius-xl)] bg-card p-4 shadow-[var(--shadow-border)]">
-              <HebrewType value={typed} onChange={setTyped} target={item.hebrew} disabled={locked} hideHint={Boolean(result)} />
+              <HebrewType value={typed} onChange={setTyped} target={item.hebrew} alts={item.hebrewAlts} disabled={locked} hideHint={Boolean(result)} />
               <Button className="mt-3 w-full" onClick={checkType} disabled={locked || !typed.trim()}>
                 Check
               </Button>

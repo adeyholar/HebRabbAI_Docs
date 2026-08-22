@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { liveMatch, liveMatchFull, pointingHint } from "@/lib/hebrew";
+import { liveMatchAny, pointingHint } from "@/lib/hebrew";
 import { GradeBanner } from "@/components/grade-banner";
 import { CONSONANTS } from "@/lib/alphabet";
 
@@ -116,13 +116,14 @@ type Props = {
   value: string;
   onChange: (next: string) => void;
   target: string;
+  alts?: string[];
   disabled?: boolean;
   strict?: boolean;
   hideHint?: boolean;
 };
 
-export function HebrewType({ value, onChange, target, disabled, strict = false, hideHint = false }: Props) {
-  const live = strict ? liveMatchFull(target, value) : liveMatch(target, value);
+export function HebrewType({ value, onChange, target, alts, disabled, strict = false, hideHint = false }: Props) {
+  const live = liveMatchAny(target, value, alts, strict);
   const extra = live === "off" ? pointingHint(target, value) : null;
   const offLabel = extra === "Use the final form" ? extra : "Not correct";
   const hint = strict

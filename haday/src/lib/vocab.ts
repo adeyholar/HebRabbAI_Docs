@@ -6,28 +6,34 @@ export type VocabItem = {
   translit: string;
   gloss: string;
   alts: string[];
+  hebrewAlts?: string[];
   pos: Pos;
   chapter: number;
   freq: number;
 };
 
 export const VOCAB: VocabItem[] = [
-  // Ch 2 — frequent names
-  { id: "yhwh", hebrew: "יהוה", translit: "YHWH", gloss: "Yahweh, the LORD", alts: ["the lord", "yahweh", "lord", "hashem"], pos: "name", chapter: 2, freq: 6828 },
-  { id: "israel", hebrew: "יִשְׂרָאֵל", translit: "yiśrāʾēl", gloss: "Israel", alts: [], pos: "name", chapter: 2, freq: 2507 },
+  // Ch 2 — BBH 3rd ed. proper names
+  { id: "abraham", hebrew: "אַבְרָהָם", translit: "ʾabrāhām", gloss: "Abraham", alts: [], pos: "name", chapter: 2, freq: 175 },
+  { id: "aaron", hebrew: "אַהֲרֹן", translit: "ʾahărōn", gloss: "Aaron", alts: [], pos: "name", chapter: 2, freq: 347 },
   { id: "david", hebrew: "דָּוִד", translit: "dāwīd", gloss: "David", alts: [], pos: "name", chapter: 2, freq: 1075 },
   { id: "judah", hebrew: "יְהוּדָה", translit: "yəhûdâ", gloss: "Judah", alts: [], pos: "name", chapter: 2, freq: 820 },
-  { id: "moses", hebrew: "מֹשֶׁה", translit: "mōšeh", gloss: "Moses", alts: [], pos: "name", chapter: 2, freq: 766 },
-  { id: "egypt", hebrew: "מִצְרַיִם", translit: "miṣrayim", gloss: "Egypt", alts: [], pos: "name", chapter: 2, freq: 682 },
-  { id: "jerusalem", hebrew: "יְרוּשָׁלַ͏ִם", translit: "yərûšālayim", gloss: "Jerusalem", alts: [], pos: "name", chapter: 2, freq: 643 },
-  { id: "aaron", hebrew: "אַהֲרֹן", translit: "ʾahărōn", gloss: "Aaron", alts: [], pos: "name", chapter: 2, freq: 347 },
-  { id: "jacob", hebrew: "יַעֲקֹב", translit: "yaʿăqōb", gloss: "Jacob", alts: [], pos: "name", chapter: 2, freq: 349 },
-  { id: "joshua", hebrew: "יְהוֹשֻׁעַ", translit: "yəhôšuaʿ", gloss: "Joshua", alts: [], pos: "name", chapter: 2, freq: 218 },
+  { id: "yhwh", hebrew: "יהוה", translit: "YHWH", gloss: "Yahweh, the LORD", alts: ["the lord", "yahweh", "lord", "hashem", "yhwh"], pos: "name", chapter: 2, freq: 6828 },
+  { id: "joshua", hebrew: "יְהוֹשׁוּעַ", translit: "yəhôšuaʿ", gloss: "Joshua", alts: [], hebrewAlts: ["יְהוֹשֻׁעַ"], pos: "name", chapter: 2, freq: 218 },
   { id: "joseph", hebrew: "יוֹסֵף", translit: "yôsēp", gloss: "Joseph", alts: [], pos: "name", chapter: 2, freq: 213 },
-  { id: "abraham", hebrew: "אַבְרָהָם", translit: "ʾabrāhām", gloss: "Abraham", alts: [], pos: "name", chapter: 2, freq: 175 },
-  { id: "jeremiah", hebrew: "יִרְמְיָהוּ", translit: "yirməyāhû", gloss: "Jeremiah", alts: ["yirmeyahu"], pos: "name", chapter: 2, freq: 147 },
+  { id: "jacob", hebrew: "יַעֲקֹב", translit: "yaʿăqōb", gloss: "Jacob", alts: [], pos: "name", chapter: 2, freq: 349 },
   { id: "isaac", hebrew: "יִצְחָק", translit: "yiṣḥāq", gloss: "Isaac", alts: [], pos: "name", chapter: 2, freq: 108 },
+  { id: "jerusalem", hebrew: "יְרוּשָׁלַםִ", translit: "yərûšālayim", gloss: "Jerusalem", alts: [], hebrewAlts: ["יְרוּשָׁלַיִם", "יְרוּשָׁלַ͏ִם"], pos: "name", chapter: 2, freq: 643 },
+  { id: "jeremiah", hebrew: "יִרְמְיָהוּ", translit: "yirməyāhû", gloss: "Jeremiah", alts: ["yirmeyahu"], hebrewAlts: ["יִרְמְיָה"], pos: "name", chapter: 2, freq: 147 },
+  { id: "israel", hebrew: "יִשְׂרָאֵל", translit: "yiśrāʾēl", gloss: "Israel", alts: [], pos: "name", chapter: 2, freq: 2507 },
   { id: "canaan", hebrew: "כְּנַעַן", translit: "kənaʿan", gloss: "Canaan", alts: [], pos: "name", chapter: 2, freq: 93 },
+  { id: "egypt", hebrew: "מִצְרַיִם", translit: "miṣrayim", gloss: "Egypt", alts: [], pos: "name", chapter: 2, freq: 682 },
+  { id: "moses", hebrew: "מֹשֶׁה", translit: "mōšeh", gloss: "Moses", alts: [], pos: "name", chapter: 2, freq: 766 },
+  { id: "esau", hebrew: "עֵשָׂו", translit: "ʿēśāw", gloss: "Esau", alts: [], pos: "name", chapter: 2, freq: 99 },
+  { id: "pharaoh", hebrew: "פַּרְעֹה", translit: "parʿōh", gloss: "Pharaoh", alts: [], pos: "name", chapter: 2, freq: 274 },
+  { id: "zion", hebrew: "צִיּוֹן", translit: "ṣiyyôn", gloss: "Zion", alts: ["tsion"], pos: "name", chapter: 2, freq: 154 },
+  { id: "saul", hebrew: "שָׁאוּל", translit: "šāʾûl", gloss: "Saul", alts: ["shaul"], pos: "name", chapter: 2, freq: 406 },
+  { id: "solomon", hebrew: "שְׁלֹמֹה", translit: "šəlōmōh", gloss: "Solomon", alts: ["shlomo"], pos: "name", chapter: 2, freq: 293 },
   { id: "samuel", hebrew: "שְׁמוּאֵל", translit: "šəmûʾēl", gloss: "Samuel", alts: [], pos: "name", chapter: 2, freq: 140 },
 
   // Ch 3 — core nouns
