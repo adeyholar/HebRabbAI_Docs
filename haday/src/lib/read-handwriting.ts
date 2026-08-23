@@ -13,7 +13,13 @@ export const readHandwriting = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ data }): Promise<ReadHandwritingResult> => {
     const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY;
-    if (!apiKey) return { ok: false, error: "Handwriting check is unavailable right now." };
+    if (!apiKey) {
+      return {
+        ok: false,
+        error:
+          "The ink reader is not connected on this site (no cloud key). Letter exams now check the shape on the pad. For full words, type the Hebrew instead.",
+      };
+    }
     if (!data.image || data.image.length < 32) return { ok: false, error: "Empty drawing." };
     if (data.image.length > MAX_IMAGE_CHARS) return { ok: false, error: "Drawing is too large. Clear and try a simpler stroke." };
 

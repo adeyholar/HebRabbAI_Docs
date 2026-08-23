@@ -157,6 +157,12 @@ function WritePage() {
     try {
       const res = await readHandwriting({ data: { image, expected: item.hebrew } });
       if (!res.ok) {
+        const offline = /not connected|unavailable/i.test(res.error);
+        if (offline) {
+          setResult({ match: "empty", read: "", note: res.error });
+          playGrade(false);
+          return;
+        }
         applyCheck("wrong", "", res.error);
         return;
       }
@@ -374,6 +380,7 @@ function ResultPanel({
   const label =
     result.match === "exact" ? "Correct"
     : result.match === "close" ? "Close — count it"
+    : /not connected|unavailable/i.test(result.note ?? "") ? "Reader offline"
     : result.match === "empty" ? "Nothing readable"
     : "Not correct";
   const coach = hideAnswer ? null : dageshCoach(item.hebrew);
