@@ -396,9 +396,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
           {revealed && (
             <div className="mt-3">
               <GradeBanner ok={typedOk} />
-              {!typedOk && (
-                <p className="mt-2 text-center text-sm text-muted">Answer: {item.gloss}</p>
-              )}
+              <p className="mt-2 text-center text-sm text-muted">BBH: {item.gloss}</p>
             </div>
           )}
           <Button className="mt-3 w-full" type="submit">

@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { type VocabItem } from "./vocab";
-import { shuffle } from "./vocab";
+import { ALL_GAME_WEEK, shuffle, type VocabItem } from "./vocab";
 import {
   applyRating,
   hydrateCard,
@@ -62,7 +61,7 @@ export const useStudy = create<StudyState>()(
   persist(
     (set, get) => ({
       cards: {},
-      week: 1,
+      week: ALL_GAME_WEEK,
       direction: "he-en",
       focus: "due",
       streak: 0,
