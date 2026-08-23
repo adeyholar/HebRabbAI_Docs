@@ -44,7 +44,9 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
     const strokes = pad.current?.getStrokes() ?? [];
     if (!image && !strokes.length) return;
     setBusy(true);
-    const next = await checkGlyphInk(image || "data:image/png;base64,", expected, mode, strokes);
+    const next = await checkGlyphInk(image || "data:image/png;base64,", expected, mode, strokes, {
+      trace: Boolean(ghost),
+    });
     setLeft(writeChecksLeft());
     if (next.counted !== false) setTries((n) => n + 1);
     setResult(next);
