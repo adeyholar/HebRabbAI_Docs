@@ -91,6 +91,34 @@ export function LetterWrite() {
     resetPad();
   }
 
+  function pickLetter(c: HebrewLetter) {
+    const idx = letterDeck.findIndex((d) => d.id === c.id);
+    if (idx >= 0) setI(idx);
+    else {
+      setLetterDeck((deck) => {
+        if (!deck.length) return [c];
+        const next = [...deck];
+        next[Math.min(i, next.length - 1)] = c;
+        return next;
+      });
+    }
+    resetPad();
+  }
+
+  function pickVowel(v: HebrewVowel) {
+    const idx = vowelDeck.findIndex((d) => d.id === v.id);
+    if (idx >= 0) setI(idx);
+    else {
+      setVowelDeck((deck) => {
+        if (!deck.length) return [v];
+        const next = [...deck];
+        next[Math.min(i, next.length - 1)] = v;
+        return next;
+      });
+    }
+    resetPad();
+  }
+
   function next(ok: boolean) {
     const key = letter ? alefKey("letter", letter.id) : vowel ? alefKey("vowel", vowel.id) : null;
     if (key) rate(key, ok ? "good" : "again");
@@ -181,23 +209,9 @@ export function LetterWrite() {
       />
 
       {kind === "letter" ? (
-        <LetterGrid
-          current={letter}
-          deck={letterDeck}
-          onPick={(idx) => {
-            setI(idx);
-            resetPad();
-          }}
-        />
+        <LetterGrid current={letter} onPick={pickLetter} />
       ) : (
-        <VowelGrid
-          current={vowel}
-          deck={vowelDeck}
-          onPick={(idx) => {
-            setI(idx);
-            resetPad();
-          }}
-        />
+        <VowelGrid current={vowel} onPick={pickVowel} />
       )}
     </div>
   );
@@ -220,72 +234,62 @@ function KindBtn({ on, onClick, label }: { on: boolean; onClick: () => void; lab
 
 function LetterGrid({
   current,
-  deck,
   onPick,
 }: {
   current?: HebrewLetter;
-  deck: HebrewLetter[];
-  onPick: (i: number) => void;
+  onPick: (c: HebrewLetter) => void;
 }) {
   return (
     <>
       <ul dir="rtl" className="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-8">
-        {WRITE_LETTERS.map((c) => {
-          const idx = deck.findIndex((d) => d.id === c.id);
-          return (
-            <li key={c.id}>
-              <button
-                type="button"
-                onClick={() => onPick(idx < 0 ? 0 : idx)}
-                className={cn(
-                  "flex size-12 w-full items-center justify-center rounded-[var(--radius-md)] he-word text-2xl",
-                  current?.id === c.id ? "bg-ink text-parchment" : "bg-card shadow-[var(--shadow-border)]",
-                )}
-                title={c.name}
-              >
-                {c.letter}
-              </button>
-            </li>
-          );
-        })}
+        {WRITE_LETTERS.map((c) => (
+          <li key={c.id}>
+            <button
+              type="button"
+              onClick={() => onPick(c)}
+              className={cn(
+                "flex size-12 w-full items-center justify-center rounded-[var(--radius-md)] he-word text-2xl",
+                current?.id === c.id ? "bg-ink text-parchment" : "bg-card shadow-[var(--shadow-border)]",
+              )}
+              title={c.name}
+            >
+              {c.letter}
+            </button>
+          </li>
+        ))}
       </ul>
-      <p className="mt-2 text-center text-xs text-muted">Tap a letter to jump. Finals are in the last row.</p>
+      <p className="mt-2 text-center text-xs text-muted">Tap any letter to practice it. Finals are in the last row.</p>
     </>
   );
 }
 
 function VowelGrid({
   current,
-  deck,
   onPick,
 }: {
   current?: HebrewVowel;
-  deck: HebrewVowel[];
-  onPick: (i: number) => void;
+  onPick: (v: HebrewVowel) => void;
 }) {
   return (
     <ul className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-      {VOWELS.map((v) => {
-        const idx = deck.findIndex((d) => d.id === v.id);
-        return (
-          <li key={v.id}>
-            <button
-              type="button"
-              onClick={() => onPick(idx < 0 ? 0 : idx)}
-              className={cn(
-                "flex min-h-14 w-full flex-col items-center justify-center rounded-[var(--radius-md)] px-1",
-                current?.id === v.id ? "bg-ink text-parchment" : "bg-card text-ink shadow-[var(--shadow-border)]",
-              )}
-              title={v.name}
-            >
-              <span className="he-word text-2xl">{v.mark}</span>
-              <span className={cn("text-[10px] font-medium", current?.id === v.id ? "text-parchment/80" : "text-muted")}>
-                {v.name}
-              </span>
-            </button>
-          </li>
-        );
-      })}
+      {VOWELS.map((v) => (
+        <li key={v.id}>
+          <button
+            type="button"
+            onClick={() => onPick(v)}
+            className={cn(
+              "flex min-h-14 w-full flex-col items-center justify-center rounded-[var(--radius-md)] px-1",
+              current?.id === v.id ? "bg-ink text-parchment" : "bg-card text-ink shadow-[var(--shadow-border)]",
+            )}
+            title={v.name}
+          >
+            <span className="he-word text-2xl">{v.mark}</span>
+            <span className={cn("text-[10px] font-medium", current?.id === v.id ? "text-parchment/80" : "text-muted")}>
+              {v.name}
+            </span>
+          </button>
+        </li>
+      ))}
     </ul>
   );
 }

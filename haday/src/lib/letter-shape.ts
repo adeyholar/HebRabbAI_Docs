@@ -186,7 +186,27 @@ function stick(f: Feat): boolean {
 type Scorer = (f: Feat) => number;
 
 const SCORES: Record<string, Scorer> = {
-  א: (f) => (f.n >= 2 ? 0.4 : 0.08) + (f.path > 50 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.5 : 0.15),
+  א: (f) => (f.path > 40 && !roundLoop(f) && !stick(f) ? 0.4 : 0.1) + (f.n >= 2 ? 0.2 : 0.1) + (f.hasSlash || f.hasFork ? 0.15 : 0) + (roundLoop(f) || stick(f) ? -0.5 : 0.1),
+  ה: (f) =>
+    (f.path > 40 && !roundLoop(f) && !stick(f) && !f.hasFork ? 0.45 : 0.1) +
+    (f.hasTopBar || f.topShare > 0.22 ? 0.25 : 0.1) +
+    (f.n >= 1 ? 0.15 : 0) +
+    (roundLoop(f) || stick(f) || f.hasFork ? -0.45 : 0.1),
+  ח: (f) =>
+    (f.path > 40 && !roundLoop(f) && !stick(f) ? 0.4 : 0.1) +
+    (f.hasTopBar || f.square ? 0.25 : 0.1) +
+    (f.n >= 1 ? 0.15 : 0) +
+    (roundLoop(f) || stick(f) || f.hasFork ? -0.4 : 0.1),
+  ת: (f) =>
+    (f.path > 40 && !roundLoop(f) && !stick(f) ? 0.35 : 0.1) +
+    (f.hasTopBar || f.square || f.wide ? 0.2 : 0) +
+    (f.n >= 1 ? 0.15 : 0) +
+    (roundLoop(f) || stick(f) || f.hasFork ? -0.4 : 0.1),
+  ע: (f) =>
+    (f.hasFork && !f.tall ? 0.35 : 0) +
+    (f.n >= 2 ? 0.15 : 0) +
+    (f.closed < 0.55 ? 0.1 : 0) +
+    (stick(f) || roundLoop(f) || f.hasTopBar ? -0.4 : 0.1),
   ב: (f) =>
     (f.closed < 0.55 ? 0.25 : -0.2) +
     (f.leftShare < 0.42 ? 0.3 : 0) +
@@ -194,7 +214,6 @@ const SCORES: Record<string, Scorer> = {
     (roundLoop(f) || stick(f) ? -0.45 : 0.1),
   ג: (f) => (f.n <= 2 ? 0.25 : 0) + (f.closed < 0.5 ? 0.25 : 0) + (f.endY > 0.5 ? 0.2 : 0) + (roundLoop(f) ? -0.5 : 0.1),
   ד: (f) => (f.wide || f.square ? 0.2 : 0) + (f.topShare > 0.28 ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
-  ה: (f) => (f.n >= 2 ? 0.45 : 0.05) + (f.closed < 0.65 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.45 : 0.1),
   ו: (f) => (stick(f) && !f.hasTopBar ? 0.55 : f.tall && !f.hasTopBar ? 0.3 : 0) + (f.n === 1 ? 0.2 : 0) + (f.small ? -0.25 : 0.1) + (roundLoop(f) || f.hasTopBar ? -0.45 : 0.1),
   ז: (f) =>
     (f.hasTopBar ? 0.5 : f.topShare > 0.22 ? 0.2 : 0) +
@@ -208,7 +227,6 @@ const SCORES: Record<string, Scorer> = {
     (f.hasFork ? -0.55 : 0.1) +
     (f.n === 1 ? 0.1 : 0) +
     (roundLoop(f) || f.small || f.hasTopBar ? -0.5 : 0.1),
-  ח: (f) => (f.n >= 2 ? 0.4 : 0.08) + (f.square ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
   ט: (f) => (f.closed > 0.35 ? 0.4 : 0.1) + (f.square ? 0.2 : 0) + (f.n <= 3 ? 0.15 : 0) + (stick(f) ? -0.4 : 0.1),
   י: (f) => (f.small ? 0.6 : 0) + (f.n === 1 ? 0.2 : 0) + (f.path < 120 ? 0.15 : -0.2) + (f.tall && !f.small ? -0.4 : 0) + (roundLoop(f) ? -0.5 : 0.05),
   כ: (f) =>
@@ -227,7 +245,6 @@ const SCORES: Record<string, Scorer> = {
     (f.n === 1 ? 0.15 : f.n === 2 && !f.hasSlash ? 0.05 : -0.35) +
     (f.square ? 0.1 : 0) +
     (f.hasSlash || f.closed < 0.45 ? -0.55 : 0.1),
-  ע: (f) => (f.n <= 3 ? 0.2 : 0) + (f.closed < 0.7 ? 0.2 : 0) + (f.endY > 0.45 ? 0.15 : 0) + (stick(f) || (roundLoop(f) && f.n === 1) ? -0.4 : 0.15),
   פ: (f) => (f.closed < 0.6 ? 0.25 : -0.1) + (f.n <= 2 ? 0.2 : 0) + (f.tall ? -0.3 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
   ף: (f) => (f.tall ? 0.3 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (f.wide || roundLoop(f) || f.small ? -0.35 : 0.1),
   צ: (f) => (f.hasFork ? 0.4 : 0.1) + (f.n <= 3 ? 0.15 : 0) + (f.closed < 0.55 ? 0.15 : 0) + (f.tall ? -0.2 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
@@ -240,7 +257,6 @@ const SCORES: Record<string, Scorer> = {
   ק: (f) => (f.tall || f.endY > 0.7 ? 0.25 : 0) + (f.descender > 0.02 || f.belowShare > 0.05 ? 0.35 : -0.2) + (f.n <= 2 ? 0.15 : 0) + (roundLoop(f) ? -0.4 : 0.1),
   ר: (f) => (f.n === 1 ? 0.25 : 0.1) + (f.closed < 0.5 ? 0.25 : 0) + (f.startY < 0.4 || f.topShare > 0.28 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
   ש: (f) => (f.n >= 1 ? 0.15 : 0) + (f.wide || f.square ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.n >= 2 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.45 : 0.1),
-  ת: (f) => (f.n <= 3 ? 0.2 : 0) + (f.square || f.wide ? 0.2 : 0) + (f.endX > 0.5 || f.n >= 2 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
 };
 
 function scoreOf(id: string, f: Feat): number {
@@ -311,10 +327,13 @@ export function verifyLetterInk(
       return { match: "exact", read: "ץ", score: Math.max(mine, 0.7) };
     }
     if (want === "צ" && f.hasFork && !f.tall) return { match: "close", read: "צ", score: Math.max(mine, 0.5) };
-    if (mine >= 0.5 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
-    if (mine >= 0.34 && (mine + 0.1 >= best || isNear(want, bestId))) return { match: "close", read: want, score: mine };
-    if (best >= 0.5 && best > mine + 0.08) return { match: "wrong", read: bestId, score: mine };
-    if (mine < 0.34) return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine };
+    if (["ה", "ח", "ת", "א", "ד", "ר"].includes(want) && f.path > 35 && !roundLoop(f) && !stick(f) && !f.hasSlash) {
+      return { match: mine >= 0.45 ? "exact" : "close", read: want, score: Math.max(mine, 0.5) };
+    }
+    if (mine >= 0.36) return { match: mine >= 0.55 ? "exact" : "close", read: want, score: mine };
+    if (best >= 0.62 && best > mine + 0.22 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine };
+    if (f.path > 35 && mine >= 0.22) return { match: "close", read: want, score: mine };
+    return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine };
   }
 
   if (mine >= 0.55 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
