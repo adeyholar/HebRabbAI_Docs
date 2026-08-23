@@ -35,7 +35,7 @@ function GuidePage() {
             </Link>
             <span className="text-ink"> — </span>
             pick a course week or a Game chapter — same BBH 3rd-ed. lemmas as Game — then Drill, Write, Quiz, or Lex.
-            Alef has a Write tab: trace or scribble each letter; HaDay reads the ink and marks it.
+            Alef has a Write tab (letters and vowels) and Quiz modes that let you scribble the glyph; HaDay reads the ink.
           </li>
         </ul>
       </Panel>

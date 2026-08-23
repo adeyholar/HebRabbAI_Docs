@@ -97,13 +97,23 @@ export const VOWEL_GROUPS: Array<{ id: VowelKind; title: string; blurb: string }
   { id: "yod", title: "Vowel letters with yod", blurb: "Unchangeable long vowels with yod." },
 ];
 
-export type QuizKind = "letter-name" | "letter-translit" | "translit-letter" | "vowel-name" | "vowel-sound" | "vowel-translit";
+export type QuizKind =
+  | "letter-name"
+  | "letter-translit"
+  | "translit-letter"
+  | "letter-scribble"
+  | "vowel-name"
+  | "vowel-sound"
+  | "vowel-translit"
+  | "vowel-scribble";
 
 export const QUIZ_KINDS: Array<{ id: QuizKind; label: string; hint: string }> = [
   { id: "letter-name", label: "Letter names", hint: "See the consonant, pick the name" },
   { id: "letter-translit", label: "Letter → translit", hint: "See the letter, pick ʾ b g …" },
   { id: "translit-letter", label: "Translit → letter", hint: "See the translit, pick the letter" },
+  { id: "letter-scribble", label: "Write letter", hint: "See the name, scribble the consonant" },
   { id: "vowel-name", label: "Vowel names", hint: "See the mark, pick Qamets, Tsere…" },
   { id: "vowel-sound", label: "Vowel sounds", hint: "See the mark, pick how it sounds" },
   { id: "vowel-translit", label: "Vowel translit", hint: "See the mark, pick ā a ē …" },
+  { id: "vowel-scribble", label: "Write vowel", hint: "See the name, scribble the mark on ב" },
 ];

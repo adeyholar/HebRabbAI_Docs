@@ -315,6 +315,29 @@ export function matchLetter(expected: string, read: string): { match: HandMatch;
   return { match: "wrong", readN: got };
 }
 
+export function foldVowelGlyph(s: string): string {
+  return s.normalize("NFC").replace(/[^\u05D0-\u05EA\u05B0-\u05BC\u05C1\u05C2]/g, "");
+}
+
+function vowelBits(s: string): { marks: string; matres: string } {
+  const marks = [...s].filter((ch) => /[\u05B0-\u05BC]/.test(ch)).join("");
+  const matres = [...s].filter((ch) => ch === "ו" || ch === "י" || ch === "ה").join("");
+  return { marks, matres };
+}
+
+/** Vowel-on-bet (or vowel letter). Patah ≠ qamets; shureq ≠ qibbuts; shin-dot not involved. */
+export function matchVowel(expected: string, read: string): { match: HandMatch; readN: string } {
+  const want = foldVowelGlyph(expected);
+  const got = foldVowelGlyph(read);
+  if (!got) return { match: "empty", readN: "" };
+  if (got === want) return { match: "exact", readN: got };
+  const a = vowelBits(want);
+  const b = vowelBits(got);
+  if (a.marks === b.marks && a.matres === b.matres && (a.marks || a.matres)) return { match: "exact", readN: got };
+  if (a.marks === b.marks && a.marks && !a.matres && b.matres === "ו") return { match: "close", readN: got };
+  return { match: "wrong", readN: got };
+}
+
 export function matchHandwriting(expected: string, read: string): { match: HandMatch; distance: number; expectedN: string; readN: string } {
   const expectedN = normalizeHebrew(expected);
   const readN = normalizeHebrew(read);

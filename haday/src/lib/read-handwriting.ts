@@ -9,7 +9,7 @@ type Err = { ok: false; error: string };
 export type ReadHandwritingResult = Ok | Err;
 
 export const readHandwriting = createServerFn({ method: "POST" })
-  .validator((input: { image: string; expected: string; mode?: "word" | "letter" }) => input)
+  .validator((input: { image: string; expected: string; mode?: "word" | "letter" | "vowel" }) => input)
   .middleware([authMiddleware])
   .handler(async ({ data }): Promise<ReadHandwritingResult> => {
     const apiKey = process.env.XAI_API_KEY;
@@ -17,10 +17,11 @@ export const readHandwriting = createServerFn({ method: "POST" })
     if (!data.image || data.image.length < 32) return { ok: false, error: "Empty drawing." };
     if (data.image.length > MAX_IMAGE_CHARS) return { ok: false, error: "Drawing is too large. Clear and try a simpler stroke." };
 
-    const letterMode = data.mode === "letter";
-    const target = letterMode ? data.expected.trim() : normalizeHebrew(data.expected);
-    const prompt = letterMode
-      ? `You are checking a student's single Biblical Hebrew letter on a white pad (black ink).
+    const mode = data.mode === "letter" || data.mode === "vowel" ? data.mode : "word";
+    const target = mode === "word" ? normalizeHebrew(data.expected) : data.expected.trim();
+    const prompt =
+      mode === "letter"
+        ? `You are checking a student's single Biblical Hebrew letter on a white pad (black ink).
 
 The assigned letter is: ${target || "(unknown)"}
 
@@ -37,7 +38,25 @@ close = messy but recognizable as that letter (or missing only the shin/sin dot)
 different = another letter, unreadable, or the wrong final/regular form.
 If nothing readable: {"hebrew":"","verdict":"different"}.
 Do not translate.`
-      : `You are checking a student's Biblical Hebrew handwriting on a white pad (black ink, right-to-left).
+        : mode === "vowel"
+          ? `You are checking a student's Biblical Hebrew vowel on a white pad (black ink).
+
+The assigned vowel is written: ${target || "(unknown)"}
+
+Students write the vowel on the consonant bet (ב) unless the vowel uses a vowel letter (he, waw, or yod).
+
+1. Transcribe exactly what you see, including ב or ו/י/ה and the niqqud (and dagesh if present). Example shapes: בָ qamets, בַ patah, בֵ tsere, בֶ segol, בִ hireq, בֹ holem, בֻ qibbuts, בְ shewa, בוּ shureq, בוֹ holem-waw.
+2. These pairs are different vowels: qamets בָ vs patah בַ; tsere בֵ vs segol בֶ; shureq בוּ vs qibbuts בֻ; holem בֹ vs holem-waw בוֹ.
+
+Reply JSON only:
+{"hebrew":"...glyph...","verdict":"exact"|"close"|"different"}
+
+exact = the assigned vowel (carrier letter may be bet).
+close = messy but the same vowel.
+different = another vowel or unreadable.
+If nothing readable: {"hebrew":"","verdict":"different"}.
+Do not translate.`
+          : `You are checking a student's Biblical Hebrew handwriting on a white pad (black ink, right-to-left).
 
 The assigned lemma (consonants only) is: ${target || "(unknown)"}
 

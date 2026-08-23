@@ -14,6 +14,7 @@ import {
 import { shuffle } from "@/lib/vocab";
 import { cn } from "@/lib/cn";
 import { GradeBanner } from "@/components/grade-banner";
+import { GlyphInk } from "@/components/glyph-ink";
 import { LetterWrite } from "@/components/letter-write";
 import { playGrade } from "@/lib/sfx";
 
@@ -28,7 +29,7 @@ function AlphabetPage() {
       <Panel>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Alef-bet</h1>
         <p className="mt-1 text-sm text-muted">
-          Consonants right to left, vowel charts, and a writing pad that checks your letter.
+          Consonants right to left, vowel charts, and a pad that checks letters and vowels.
         </p>
         <div className="mt-4 flex gap-2">
           {(["letters", "vowels", "write", "drill"] as const).map((t) => (
@@ -114,14 +115,17 @@ function FoundationQuiz() {
 
   const letterDeck = useMemo(() => shuffle(CONSONANTS), [seed, kind]);
   const vowelDeck = useMemo(() => shuffle(VOWELS), [seed, kind]);
+  const isScribble = kind === "letter-scribble" || kind === "vowel-scribble";
   const isLetter = kind.startsWith("letter") || kind === "translit-letter";
   const total = isLetter ? letterDeck.length : vowelDeck.length;
+  const [inkKey, setInkKey] = useState(0);
 
   useEffect(() => {
     setI(0);
     setPicked(null);
     setRight(0);
     setMissedId(null);
+    setInkKey((n) => n + 1);
     setReady(true);
   }, [seed, kind]);
 
@@ -131,6 +135,7 @@ function FoundationQuiz() {
 
   const prompt = isLetter ? letter : vowel;
   const options = useMemo(() => {
+    if (isScribble) return [];
     if (isLetter) {
       if (!letter) return [];
       const others = shuffle(CONSONANTS.filter((c) => c.id !== letter.id)).slice(0, 3);
@@ -147,7 +152,7 @@ function FoundationQuiz() {
       if (others.length === 3) break;
     }
     return shuffle([vowel, ...others]);
-  }, [kind, letter, vowel, isLetter]);
+  }, [kind, letter, vowel, isLetter, isScribble]);
 
   function optionLabel(item: HebrewLetter | HebrewVowel): string {
     if ("letter" in item) {
@@ -161,6 +166,24 @@ function FoundationQuiz() {
   }
 
   function promptNode() {
+    if (kind === "letter-scribble" && letter) {
+      return (
+        <>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Scribble this letter</p>
+          <p className="mt-2 font-display text-3xl font-bold text-ink">{letter.name}</p>
+          <p className="mt-1 text-sm text-muted">{letter.sound}</p>
+        </>
+      );
+    }
+    if (kind === "vowel-scribble" && vowel) {
+      return (
+        <>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Scribble this vowel on ב</p>
+          <p className="mt-2 font-display text-3xl font-bold text-ink">{vowel.name}</p>
+          <p className="mt-1 text-sm text-muted">{vowel.sound}</p>
+        </>
+      );
+    }
     if (isLetter && letter) {
       if (kind === "translit-letter") {
         return <p className="font-mono text-5xl font-bold text-ink">{letter.translit}</p>;
@@ -203,6 +226,20 @@ function FoundationQuiz() {
           <p className="mt-2 text-sm text-muted">{vowel.kind} · {vowel.vowelClass}-class</p>
         )}
       </div>
+      {isScribble && prompt && (
+        <GlyphInk
+          key={`${kind}-${i}-${inkKey}`}
+          expected={"letter" in prompt ? prompt.letter : prompt.mark}
+          mode={kind === "vowel-scribble" ? "vowel" : "letter"}
+          onPass={(ok) => {
+            if (ok) setRight((r) => r + 1);
+            setI((n) => n + 1);
+            setInkKey((n) => n + 1);
+          }}
+        />
+      )}
+      {!isScribble && (
+        <>
       <ul className="mt-4 grid grid-cols-2 gap-2">
         {options.map((o) => {
           const id = o.id;
@@ -270,6 +307,8 @@ function FoundationQuiz() {
         >
           Next
         </Button>
+      )}
+        </>
       )}
     </div>
   );
