@@ -24,7 +24,7 @@ export function badgeMeta(id: string) {
 export const HONOR_RANKS = [
   { title: "Hearer of the Word", short: "Hearer" },
   { title: "Catechumen", short: "Catechumen" },
-  { title: "Neophyte", short: "Neophyte" },
+  { title: "Proselyte", short: "Proselyte" },
   { title: "Disciple", short: "Disciple" },
   { title: "Follower of the Way", short: "The Way" },
   { title: "Lector", short: "Lector" },
