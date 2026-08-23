@@ -9,6 +9,7 @@ export type InkPadHandle = {
   clear: () => void;
   undo: () => void;
   toImage: () => string | null;
+  getStrokes: () => { x: number; y: number }[][];
 };
 
 type Props = {
@@ -166,7 +167,7 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       ctx.lineJoin = "round";
       ctx.strokeStyle = "#111111";
       ctx.fillStyle = "#111111";
-      ctx.lineWidth = Math.max(5.5, 6.2);
+      ctx.lineWidth = Math.max(8, 10);
       const tx = (x: number) => (x - minX + pad) * scale;
       const ty = (y: number) => (y - minY + pad) * scale;
       for (const stroke of strokesRef.current) {
@@ -185,6 +186,7 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       }
       return out.toDataURL("image/png");
     },
+    getStrokes: () => strokesRef.current.map((s) => s.map((p) => ({ x: p.x, y: p.y }))),
   }));
 
   return (

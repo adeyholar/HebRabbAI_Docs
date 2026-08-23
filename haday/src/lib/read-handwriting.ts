@@ -12,7 +12,7 @@ export const readHandwriting = createServerFn({ method: "POST" })
   .validator((input: { image: string; expected: string; mode?: "word" | "letter" | "vowel" }) => input)
   .middleware([authMiddleware])
   .handler(async ({ data }): Promise<ReadHandwritingResult> => {
-    const apiKey = process.env.XAI_API_KEY;
+    const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY;
     if (!apiKey) return { ok: false, error: "Handwriting check is unavailable right now." };
     if (!data.image || data.image.length < 32) return { ok: false, error: "Empty drawing." };
     if (data.image.length > MAX_IMAGE_CHARS) return { ok: false, error: "Drawing is too large. Clear and try a simpler stroke." };

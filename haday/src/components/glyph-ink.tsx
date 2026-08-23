@@ -8,7 +8,7 @@ import { writeChecksLeft } from "@/lib/write-cap";
 import { type HandMatch } from "@/lib/hebrew";
 import { cn } from "@/lib/cn";
 
-type Result = { match: HandMatch; read: string; note?: string };
+type Result = { match: HandMatch; read: string; note?: string; counted?: boolean };
 
 type Props = {
   expected: string;
@@ -25,7 +25,9 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
   const [tries, setTries] = useState(0);
   const [left, setLeft] = useState(writeChecksLeft);
 
-  const locked = result ? result.match === "exact" || result.match === "close" || tries >= 2 : false;
+  const locked = result
+    ? result.match === "exact" || result.match === "close" || (tries >= 2 && result.counted !== false && result.match !== "empty")
+    : false;
   const ok = result ? result.match === "exact" || result.match === "close" : false;
 
   function clear() {
@@ -40,9 +42,9 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
     const image = pad.current?.toImage();
     if (!image) return;
     setBusy(true);
-    const next = await checkGlyphInk(image, expected, mode);
+    const next = await checkGlyphInk(image, expected, mode, pad.current?.getStrokes());
     setLeft(writeChecksLeft());
-    setTries((n) => n + 1);
+    if (next.counted !== false) setTries((n) => n + 1);
     setResult(next);
     playGrade(next.match === "exact" || next.match === "close");
     setBusy(false);
@@ -72,7 +74,7 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
           Clear
         </Button>
       </div>
-      {result && (
+      {result && result.match !== "empty" && (
         <div className="mt-3">
           <GradeBanner ok={ok} />
           <p className="mt-2 text-center text-sm text-muted">
@@ -83,6 +85,9 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
                 : `Not that ${mode}. Target: ${expected}${result.read ? ` · I read ${result.read}` : ""}`}
           </p>
         </div>
+      )}
+      {result && result.match === "empty" && (
+        <p className="mt-3 text-center text-sm text-muted">{result.note}</p>
       )}
       {!result && (
         <Button className="mt-3 w-full" onClick={() => void check()} disabled={empty || busy}>
