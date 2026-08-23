@@ -15,7 +15,6 @@ export async function checkGlyphInk(
   if (mode === "letter") {
     const local = verifyLetterInk(strokes ?? [], expected, { trace: opts?.trace, height: opts?.height });
     if (local.match === "exact" || local.match === "close" || local.match === "wrong") {
-      takeWriteCheck();
       return { match: local.match, read: local.read, counted: true };
     }
   }

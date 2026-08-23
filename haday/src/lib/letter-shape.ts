@@ -25,6 +25,7 @@ type Feat = {
   hasTopBar: boolean;
   descender: number;
   belowShare: number;
+  hasSlash: boolean;
 };
 
 function dist(a: InkPoint, b: InkPoint): number {
@@ -35,6 +36,13 @@ function pathOf(s: InkStroke): number {
   let n = 0;
   for (let i = 1; i < s.length; i++) n += dist(s[i - 1], s[i]);
   return n;
+}
+
+function strokeStraight(s: InkStroke): boolean {
+  if (s.length < 2) return false;
+  const chord = dist(s[0], s[s.length - 1]);
+  const p = pathOf(s);
+  return chord > 18 && p > 0 && chord / p > 0.78;
 }
 
 function analyze(strokes: InkStroke[], height = 0): Feat | null {
@@ -105,6 +113,18 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     }
   }
   const belowShare = pts.length ? below / pts.length : 0;
+  const span = Math.max(w, h);
+  let hasSlash = false;
+  for (const s of clean) {
+    if (s === longest) continue;
+    if (strokeStraight(s) && pathOf(s) > span * 0.32) hasSlash = true;
+  }
+  if (clean.length === 1 && longest.length > 8) {
+    const mid = longest[Math.floor(longest.length / 2)];
+    const chord = dist(longest[0], longest[longest.length - 1]);
+    if (chord > span * 0.45 && closed < 0.35) hasSlash = hasSlash || chord / pathOf(longest) > 0.55;
+    void mid;
+  }
   return {
     n: clean.length,
     w,
@@ -126,6 +146,7 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     hasTopBar,
     descender,
     belowShare,
+    hasSlash,
   };
 }
 
@@ -140,7 +161,7 @@ function baseLetter(expected: string): string {
 }
 
 function roundLoop(f: Feat): boolean {
-  return f.circ > 0.26 && f.closed > 0.3 && f.square;
+  return f.circ > 0.34 && f.closed > 0.5 && f.square && !f.hasSlash && f.n <= 2;
 }
 function boxLoop(f: Feat): boolean {
   return f.closed > 0.45 && f.square && f.circ < 0.8;
@@ -184,10 +205,10 @@ const SCORES: Record<string, Scorer> = {
   ם: (f) => (boxLoop(f) || (f.closed > 0.5 && f.square) ? 0.55 : f.closed > 0.35 ? 0.25 : 0) + (f.square ? 0.2 : 0) + (f.circ > 0.8 ? -0.3 : 0.1) + (stick(f) ? -0.5 : 0.1),
   נ: (f) => (f.n <= 2 ? 0.25 : 0) + (f.closed < 0.5 ? 0.25 : 0) + (!f.small && !f.tall ? 0.15 : 0) + (roundLoop(f) || (f.tall && f.n === 1) ? -0.4 : 0.1),
   ס: (f) =>
-    (roundLoop(f) ? 0.55 : f.closed > 0.4 && f.circ > 0.18 ? 0.35 : 0) +
-    (f.square ? 0.2 : 0) +
-    (f.n <= 2 ? 0.15 : 0) +
-    (stick(f) || f.small ? -0.5 : 0.1),
+    (roundLoop(f) && !f.hasSlash ? 0.65 : 0) +
+    (f.n === 1 ? 0.15 : f.n === 2 && !f.hasSlash ? 0.05 : -0.35) +
+    (f.square ? 0.1 : 0) +
+    (f.hasSlash || f.closed < 0.45 ? -0.55 : 0.1),
   ע: (f) => (f.n <= 3 ? 0.2 : 0) + (f.closed < 0.7 ? 0.2 : 0) + (f.endY > 0.45 ? 0.15 : 0) + (stick(f) || (roundLoop(f) && f.n === 1) ? -0.4 : 0.15),
   פ: (f) => (f.closed < 0.6 ? 0.25 : -0.1) + (f.n <= 2 ? 0.2 : 0) + (f.tall ? -0.3 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
   ף: (f) => (f.tall ? 0.3 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (f.wide || roundLoop(f) || f.small ? -0.35 : 0.1),
@@ -233,6 +254,9 @@ export function verifyLetterInk(
   const ROUND = new Set(["ס", "ם", "ט"]);
   if (roundLoop(f) && !ROUND.has(want)) return { match: "wrong", read: "ס", score: 0.15 };
   if (f.small && want !== "י" && f.path < 70) return { match: "wrong", read: "י", score: 0.15 };
+  if (want === "ס" && (f.hasSlash || f.closed < 0.48 || f.circ < 0.3 || f.n > 2)) {
+    return { match: "wrong", read: f.hasSlash ? "" : "", score: 0.1 };
+  }
 
   const lined = (opts?.height ?? 0) > 40;
   const dropped = f.descender >= 0.04 || f.belowShare >= 0.1;
