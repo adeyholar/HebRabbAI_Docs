@@ -170,7 +170,7 @@ function FoundationQuiz() {
   }
 
   if (!ready) {
-    return <p className="mt-8 text-sm text-muted">Shuffling a round…</p>;
+    return <p className="mt-8 text-sm text-muted">Dealing a round…</p>;
   }
 
   if (done || !prompt) {

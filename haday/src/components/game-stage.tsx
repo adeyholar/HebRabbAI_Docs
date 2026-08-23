@@ -233,7 +233,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
             </Button>
           </Link>
           <Button className="w-full" variant="outline" onClick={replayStage}>
-            New shuffled round
+            New round
           </Button>
         </div>
       </Panel>

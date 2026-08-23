@@ -87,7 +87,7 @@ function QuizPage() {
     return (
       <>
         <WeekSelect />
-        <p className="mt-8 text-sm text-muted">Shuffling a round…</p>
+        <p className="mt-8 text-sm text-muted">Dealing a round…</p>
       </>
     );
   }
