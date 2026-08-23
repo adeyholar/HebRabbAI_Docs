@@ -132,6 +132,7 @@ export function ClosedBook({ onPractice }: { onPractice: (tab: "write" | "drill"
         key={item.key}
         expected={item.glyph}
         mode={item.kind}
+        allowSample={false}
         onPass={(ok) => grade(ok, item)}
       />
     </div>

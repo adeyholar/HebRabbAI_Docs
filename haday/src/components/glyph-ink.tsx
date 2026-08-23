@@ -14,16 +14,21 @@ type Props = {
   expected: string;
   mode: "letter" | "vowel";
   ghost?: string;
+  trace?: boolean;
+  allowSample?: boolean;
   onPass: (ok: boolean) => void;
 };
 
-export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
+export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = true, onPass }: Props) {
   const pad = useRef<InkPadHandle>(null);
   const [empty, setEmpty] = useState(true);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [tries, setTries] = useState(0);
   const [left, setLeft] = useState(writeChecksLeft);
+  const [sample, setSample] = useState(allowSample && trace);
+  const sampleGlyph = ghost || expected;
+  const showSample = allowSample && sample;
 
   const locked = result
     ? result.match === "exact" || result.match === "close" || (tries >= 2 && result.counted !== false && result.match !== "empty")
@@ -45,7 +50,7 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
     if (!image && !strokes.length) return;
     setBusy(true);
     const next = await checkGlyphInk(image || "data:image/png;base64,", expected, mode, strokes, {
-      trace: Boolean(ghost),
+      trace,
     });
     setLeft(writeChecksLeft());
     if (next.counted !== false) setTries((n) => n + 1);
@@ -63,19 +68,40 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
   return (
     <div>
       <div className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] bg-card shadow-[var(--shadow-border)]">
-        {ghost && (
-          <p className="pointer-events-none absolute inset-0 z-0 grid place-items-center select-none he-word text-[7.5rem] leading-none text-ink/15">
-            {ghost}
+        {showSample && sampleGlyph && (
+          <p className="pointer-events-none absolute inset-0 z-0 grid place-items-center select-none he-word text-[8rem] leading-none text-ink/30">
+            {sampleGlyph}
           </p>
         )}
         <InkPad
           ref={pad}
           disabled={locked || busy}
           onChange={setEmpty}
-          className={cn("relative z-10 h-56 shadow-none", ghost && "bg-transparent")}
+          className={cn("relative z-10 h-56 shadow-none", showSample && "bg-transparent")}
         />
       </div>
-      <p className="mt-1 text-center text-xs text-muted">{left} checks left today</p>
+      {allowSample && (
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setSample((v) => !v)}
+            className={cn(
+              "min-h-11 flex-1 rounded-[var(--radius-md)] px-3 text-sm font-medium shadow-[var(--shadow-border)]",
+              sample ? "bg-ink text-parchment" : "bg-card text-ink",
+            )}
+          >
+            {sample ? "Expected on" : "Show expected"}
+          </button>
+        </div>
+      )}
+      <p className="mt-1 text-center text-xs text-muted">
+        {allowSample
+          ? showSample
+            ? "Faint model on the pad — follow it, then check."
+            : "Show expected puts the target on the pad."
+          : null}{" "}
+        {left} checks left today
+      </p>
       <div className="mt-2 flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => pad.current?.undo()} disabled={locked || busy}>
           Undo

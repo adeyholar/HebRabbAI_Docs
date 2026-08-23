@@ -264,6 +264,7 @@ function FoundationQuiz() {
           key={`${kind}-${i}-${inkKey}`}
           expected={"letter" in prompt ? prompt.letter : prompt.mark}
           mode={kind === "vowel-scribble" ? "vowel" : "letter"}
+          allowSample={false}
           onPass={(ok) => {
             const key = isLetter && letter ? alefKey("letter", letter.id) : vowel ? alefKey("vowel", vowel.id) : null;
             if (key) rate(key, ok ? "good" : "again");

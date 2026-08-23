@@ -176,9 +176,9 @@ const SCORES: Record<string, Scorer> = {
     (stick(f) || f.small ? -0.5 : 0.1),
   ע: (f) => (f.n <= 3 ? 0.2 : 0) + (f.closed < 0.7 ? 0.2 : 0) + (f.endY > 0.45 ? 0.15 : 0) + (stick(f) || (roundLoop(f) && f.n === 1) ? -0.4 : 0.15),
   פ: (f) => (f.closed < 0.6 ? 0.25 : -0.1) + (f.n <= 2 ? 0.2 : 0) + (f.tall ? -0.3 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
-  ף: (f) => (f.tall ? 0.4 : 0) + (f.n <= 2 ? 0.2 : 0) + (roundLoop(f) || f.small ? -0.45 : 0.15),
+  ף: (f) => (f.tall ? 0.45 : 0) + (f.n <= 2 ? 0.15 : 0) + (f.wide || !f.tall ? -0.35 : 0.1) + (roundLoop(f) || f.small ? -0.45 : 0.1),
   צ: (f) => (f.n <= 3 ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.tall ? -0.25 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
-  ץ: (f) => (f.tall ? 0.4 : 0) + (f.n <= 2 ? 0.2 : 0) + (roundLoop(f) || f.small ? -0.45 : 0.15),
+  ץ: (f) => (f.tall ? 0.45 : 0) + (f.n <= 2 ? 0.15 : 0) + (f.wide || !f.tall ? -0.35 : 0.1) + (roundLoop(f) || f.small ? -0.45 : 0.1),
   ק: (f) => (f.tall || f.endY > 0.7 ? 0.35 : 0) + (f.n <= 2 ? 0.2 : 0) + (roundLoop(f) ? -0.4 : 0.15),
   ר: (f) => (f.n === 1 ? 0.25 : 0.1) + (f.closed < 0.5 ? 0.25 : 0) + (f.startY < 0.4 || f.topShare > 0.28 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
   ש: (f) => (f.n >= 1 ? 0.15 : 0) + (f.wide || f.square ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.n >= 2 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.45 : 0.1),
@@ -232,10 +232,11 @@ export function verifyLetterInk(
   const mine = scoreOf(want, f);
 
   if (opts?.trace) {
-    if (mine >= 0.35 || f.hasTopBar && want === "ז") return { match: mine >= 0.5 ? "exact" : "close", read: want, score: Math.max(mine, 0.45) };
-    if (f.path > 28 && !(stick(f) && !f.hasTopBar && !["ו", "ן", "ך", "י", "ל", "ק"].includes(want))) {
-      return { match: "close", read: want, score: Math.max(mine, 0.4) };
-    }
+    if (want === "ז" && f.hasTopBar && mine >= 0.22) return { match: "close", read: want, score: Math.max(mine, 0.45) };
+    if (mine >= 0.5 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
+    if (mine >= 0.34 && (mine + 0.1 >= best || isNear(want, bestId))) return { match: "close", read: want, score: mine };
+    if (best >= 0.5 && best > mine + 0.08) return { match: "wrong", read: bestId, score: mine };
+    if (mine < 0.34) return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine };
   }
 
   if (mine >= 0.55 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };

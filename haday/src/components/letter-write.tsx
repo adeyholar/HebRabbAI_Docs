@@ -175,7 +175,8 @@ export function LetterWrite() {
         key={`${kind}-${i}-${padKey}`}
         expected={glyph}
         mode={kind}
-        ghost={mode === "trace" ? glyph : undefined}
+        trace={mode === "trace"}
+        ghost={glyph}
         onPass={(ok) => next(ok)}
       />
 
