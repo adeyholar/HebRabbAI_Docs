@@ -27,10 +27,33 @@ type ProgressRow = {
   game: string | null;
 };
 
+let extrasReady: Promise<void> | null = null;
+
+/** Additive columns from later migrations — apply at runtime if deploy skipped migrate. */
+export async function ensureProgressExtras() {
+  extrasReady ??= (async () => {
+    const sql = await getSql();
+    await sql.query(
+      "alter table study_progress add column if not exists game text not null default '{}'",
+    );
+    await sql.query(
+      "alter table study_progress add column if not exists points integer not null default 0",
+    );
+    await sql.query(
+      "alter table study_progress add column if not exists level integer not null default 1",
+    );
+  })().catch((err) => {
+    extrasReady = null;
+    throw err;
+  });
+  return extrasReady;
+}
+
 export const loadProgress = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<ProgressPayload | null> => {
     const sql = await getSql();
+    await ensureProgressExtras();
     const rows = await sql<ProgressRow>`
       select cards, week, direction, focus, streak, last_study_day, sessions, game
       from study_progress
@@ -46,6 +69,7 @@ export const saveProgress = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context, data }) => {
     const sql = await getSql();
+    await ensureProgressExtras();
     const cards = JSON.stringify(data.cards ?? {});
     const week = Number.isFinite(data.week) ? data.week : 1;
     const direction = data.direction === "en-he" ? "en-he" : "he-en";

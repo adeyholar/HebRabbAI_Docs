@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { hydrateGame } from "@/lib/game";
-import { scoreboard } from "@/lib/rewards";
+import { ensureProgressExtras } from "@/lib/progress";
+import { honorForCleared, scoreboard } from "@/lib/rewards";
 
 export type BoardRow = {
   rank: number;
@@ -18,51 +19,70 @@ export type BoardRow = {
 function publicName(raw: string | null | undefined): string {
   const name = (raw ?? "").trim();
   if (!name) return "Classmate";
-  const parts = name.split(/\s+/);
+  const parts = name.split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0];
-  return `${parts[0]} ${parts[1].charAt(0).toUpperCase()}.`;
+  const last = parts[1] ?? "";
+  return last ? `${parts[0]} ${last.charAt(0).toUpperCase()}.` : parts[0];
+}
+
+function parseGame(raw: unknown): unknown {
+  if (!raw) return {};
+  if (typeof raw === "object") return raw;
+  if (typeof raw !== "string") return {};
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return {};
+  }
 }
 
 export const listLeaderboard = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<BoardRow[]> => {
     const sql = await getSql();
-    const rows = await sql<{
+    try {
+      await ensureProgressExtras();
+    } catch (err) {
+      console.error("[leaderboard] schema", err);
+    }
+
+    let rows: {
       id: string;
-      name: string;
+      name: string | null;
       streak: number | null;
       game: string | null;
-      points: number | null;
-      level: number | null;
-    }>`
-      select
-        u.id,
-        u.name,
-        p.streak,
-        p.game,
-        p.points,
-        p.level
-      from "user" u
-      left join study_progress p on p.user_id = u.id
-      order by u."createdAt" asc
-    `;
+    }[] = [];
+    try {
+      rows = await sql`
+        select
+          u.id,
+          u.name,
+          p.streak,
+          p.game
+        from "user" u
+        left join study_progress p on p.user_id = u.id
+        order by u."createdAt" asc
+      `;
+    } catch (err) {
+      console.error("[leaderboard] query", err);
+      return [];
+    }
 
+    const fallback = honorForCleared(0);
     const scored = rows.map((r) => {
-      let points = Number(r.points) || 0;
-      let level = Number(r.level) || 1;
-      let honor = "Hearer of the Word";
-      let honorShort = "Hearer";
       const streak = Number(r.streak) || 0;
-      if (r.game) {
-        try {
-          const board = scoreboard(hydrateGame(JSON.parse(r.game) as unknown), streak);
-          points = board.points;
-          level = board.level;
-          honor = board.honor.title;
-          honorShort = board.honor.short;
-        } catch {
-          /* keep cached */
-        }
+      let points = 0;
+      let level = 1;
+      let honor = fallback.title;
+      let honorShort = fallback.short;
+      try {
+        const board = scoreboard(hydrateGame(parseGame(r.game)), streak);
+        points = board.points;
+        level = board.level;
+        honor = board.honor?.title ?? honor;
+        honorShort = board.honor?.short ?? honorShort;
+      } catch (err) {
+        console.error("[leaderboard] score", r.id, err);
       }
       return {
         id: r.id,

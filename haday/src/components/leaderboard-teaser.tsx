@@ -10,7 +10,7 @@ export function LeaderboardTeaser() {
     let cancelled = false;
     listLeaderboard()
       .then((data) => {
-        if (!cancelled) setRows(data);
+        if (!cancelled) setRows(Array.isArray(data) ? data : []);
       })
       .catch(() => {
         if (!cancelled) setRows([]);

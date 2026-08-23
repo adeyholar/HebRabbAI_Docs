@@ -2,28 +2,39 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Panel } from "@/components/panel";
 import { HonorBadge } from "@/components/honor-badge";
+import { Button } from "@/components/ui/button";
+import { AppErrorComponent } from "@/lib/error-component";
 import { cn } from "@/lib/cn";
 import { listLeaderboard, type BoardRow } from "@/lib/leaderboard";
 
-export const Route = createFileRoute("/leaderboard")({ component: LeaderboardPage });
+export const Route = createFileRoute("/leaderboard")({
+  component: LeaderboardPage,
+  errorComponent: AppErrorComponent,
+});
 
 function LeaderboardPage() {
   const [rows, setRows] = useState<BoardRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setError(null);
+    setRows(null);
     listLeaderboard()
       .then((data) => {
-        if (!cancelled) setRows(data);
+        if (cancelled) return;
+        setRows(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load the board.");
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Could not load the board.");
+        setRows([]);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tick]);
 
   const you = rows?.find((r) => r.you);
 
@@ -39,7 +50,7 @@ function LeaderboardPage() {
           <p className="mt-3 text-sm text-ink">
             You are <span className="font-semibold">#{you.rank}</span>
             {" · "}
-            {you.honor}
+            {you.honor || "Hearer of the Word"}
             {" · "}
             {you.points.toLocaleString()} pts · Level {you.level}
           </p>
@@ -47,8 +58,11 @@ function LeaderboardPage() {
       </Panel>
 
       {error && (
-        <Panel>
+        <Panel className="mb-4">
           <p className="text-sm text-danger">{error}</p>
+          <Button className="mt-3" variant="outline" onClick={() => setTick((n) => n + 1)}>
+            Try again
+          </Button>
         </Panel>
       )}
 
@@ -58,7 +72,7 @@ function LeaderboardPage() {
         </Panel>
       )}
 
-      {rows && rows.length === 0 && (
+      {rows && rows.length === 0 && !error && (
         <Panel>
           <p className="text-sm text-muted">No classmates yet. Sign in and play to take first place.</p>
         </Panel>
@@ -80,7 +94,10 @@ function LeaderboardPage() {
               <div className="min-w-0 flex-1">
                 <p className="flex min-w-0 flex-wrap items-center gap-2 font-semibold text-ink">
                   <span className="truncate">{row.name}</span>
-                  <HonorBadge honor={{ title: row.honor, short: row.honorShort }} compact />
+                  <HonorBadge
+                    honor={{ title: row.honor || "Hearer of the Word", short: row.honorShort || "Hearer" }}
+                    compact
+                  />
                   {row.you ? <span className="text-xs font-medium uppercase tracking-wide text-primary">You</span> : null}
                 </p>
                 <p className="text-sm text-muted">
@@ -89,7 +106,7 @@ function LeaderboardPage() {
                 </p>
               </div>
               <span className="shrink-0 font-display text-xl font-bold tabular-nums text-ink">
-                {row.points.toLocaleString()}
+                {(row.points || 0).toLocaleString()}
               </span>
             </li>
           ))}
