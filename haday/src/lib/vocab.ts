@@ -1,3 +1,5 @@
+import { CONSONANTS } from "./alphabet";
+
 export type Pos = "noun" | "verb" | "adj" | "prep" | "particle" | "name" | "pron";
 
 export type VocabItem = {
@@ -507,6 +509,59 @@ export const VOCAB: VocabItem[] = [
 
 export const CHAPTERS = Array.from({ length: 18 }, (_, i) => i + 2);
 
+/** Same BBH 3rd-ed. lemmas Game uses (Ch. 2–19). Extra Ch. 20 dump is not in this set. */
+export function bbhVocab(): VocabItem[] {
+  return VOCAB.filter((v) => v.chapter >= 2 && v.chapter <= 19);
+}
+
+export function alphabetVocab(): VocabItem[] {
+  return CONSONANTS.map((l) => ({
+    id: `ch1-${l.id}`,
+    hebrew: l.letter,
+    translit: l.translit,
+    gloss: l.name,
+    alts: [l.name.toLowerCase(), l.id, l.sound, l.translit].filter(Boolean),
+    pos: "particle" as const,
+    chapter: 1,
+    freq: 0,
+  }));
+}
+
+export const GAME_CHAPTER_TITLES: Record<number, string> = {
+  1: "Alphabet",
+  2: "Names",
+  3: "Nouns",
+  4: "More nouns",
+  5: "Article & nouns",
+  6: "Prepositions",
+  7: "Adjectives",
+  8: "Pronouns",
+  9: "More nouns",
+  10: "Construct nouns",
+  11: "Numbers",
+  12: "Qal verbs",
+  13: "More Qal",
+  14: "Come & go",
+  15: "Live & serve",
+  16: "Redeem",
+  17: "Love & judge",
+  18: "Choose & seek",
+  19: "Trust & work",
+};
+
+/** week 30 = all Game chapters; 31–49 = Game Ch. 1–19 */
+export const ALL_GAME_WEEK = 30;
+export const GAME_CHAPTER_WEEK_BASE = 30;
+
+export function weekForGameChapter(chapter: number): number {
+  return GAME_CHAPTER_WEEK_BASE + chapter;
+}
+
+export function itemsForChapter(chapter: number): VocabItem[] {
+  if (chapter === 1) return alphabetVocab();
+  return VOCAB.filter((v) => v.chapter === chapter);
+}
+
 export function weekForChapter(chapter: number): number {
   if (chapter <= 2) return 1;
   if (chapter === 3) return 2;
@@ -530,7 +585,7 @@ export const COURSE_WEEKS = [
   { week: 4, label: "Week 4", chapters: [6, 7], hint: "Prepositions & adjectives" },
   { week: 5, label: "Week 5", chapters: [8, 9], hint: "Pronouns, particles, nouns" },
   { week: 6, label: "Week 6", chapters: [10, 11], hint: "Construct nouns & numbers" },
-  { week: 7, label: "Week 7", chapters: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11], hint: "Midterm · Ch. 1–11" },
+  { week: 7, label: "Week 7", chapters: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11], hint: "Midterm · Ch. 2–11" },
   { week: 8, label: "Week 8", chapters: [12, 13], hint: "Core Qal verbs" },
   { week: 9, label: "Week 9", chapters: [14], hint: "Come, go, rise, return" },
   { week: 10, label: "Week 10", chapters: [15], hint: "Live, serve, answer" },
@@ -538,20 +593,34 @@ export const COURSE_WEEKS = [
   { week: 12, label: "Week 12", chapters: [17], hint: "Love, judge, tent, sun" },
   { week: 13, label: "Week 13", chapters: [18], hint: "Choose, seek, peace" },
   { week: 14, label: "Week 14", chapters: [19], hint: "Trust, work, iniquity" },
-  { week: 15, label: "Week 15", chapters: CHAPTERS, hint: "Cumulative final" },
+  { week: 15, label: "Week 15", chapters: CHAPTERS, hint: "All Game · Ch. 2–19" },
 ] as const;
 
 export function itemsForChapters(chapters: number[]): VocabItem[] {
   const set = new Set(chapters);
-  return VOCAB.filter((v) => set.has(v.chapter));
+  const out = VOCAB.filter((v) => set.has(v.chapter));
+  if (set.has(1)) return [...alphabetVocab(), ...out];
+  return out;
 }
 
 export function itemsForWeek(week: number): VocabItem[] {
+  if (week === ALL_GAME_WEEK || week === 15) return bbhVocab();
+  if (week >= 31 && week <= 49) return itemsForChapter(week - GAME_CHAPTER_WEEK_BASE);
   const w = COURSE_WEEKS.find((x) => x.week === week);
   if (!w) return [];
-  if (week === 7) return VOCAB.filter((v) => v.chapter <= 11);
-  if (week === 15) return VOCAB;
+  if (week === 7) return VOCAB.filter((v) => v.chapter >= 2 && v.chapter <= 11);
   return itemsForChapters([...w.chapters]);
+}
+
+export function studySetMeta(week: number): { label: string; hint: string } {
+  if (week === ALL_GAME_WEEK) return { label: "All Game", hint: "Corrected BBH Ch. 2–19" };
+  if (week >= 31 && week <= 49) {
+    const ch = week - GAME_CHAPTER_WEEK_BASE;
+    return { label: `Chapter ${ch}`, hint: GAME_CHAPTER_TITLES[ch] ?? "Game chapter" };
+  }
+  const w = COURSE_WEEKS.find((x) => x.week === week);
+  if (w) return { label: w.label, hint: w.hint };
+  return { label: "Study set", hint: "" };
 }
 
 export function normalizeGloss(s: string): string {

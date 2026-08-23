@@ -4,7 +4,7 @@ import { WeekSelect } from "@/components/week-select";
 import { VerseCard } from "@/components/verse-card";
 import { Panel } from "@/components/panel";
 import { AppErrorComponent } from "@/lib/error-component";
-import { POS_LABEL, VOCAB, itemsForWeek, type Pos } from "@/lib/vocab";
+import { POS_LABEL, bbhVocab, itemsForWeek, type Pos } from "@/lib/vocab";
 import { hydrateCard, isMastered, isWeak } from "@/lib/srs";
 import { useStudy } from "@/lib/store";
 import { cn } from "@/lib/cn";
@@ -50,7 +50,9 @@ function BrowsePage() {
     <>
       <Panel>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Lexicon</h1>
-        <p className="mt-1 text-sm text-muted">{VOCAB.length} high-frequency lemmas. Tap a word for a Tanakh example.</p>
+        <p className="mt-1 text-sm text-muted">
+          {bbhVocab().length} BBH lemmas, same list as Game (Ch. 2–19). Tap a word for a Tanakh example.
+        </p>
         <div className="mt-4">
           <WeekSelect />
         </div>

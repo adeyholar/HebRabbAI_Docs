@@ -7,7 +7,7 @@ import { Panel } from "@/components/panel";
 import { GameContinue } from "@/components/game-continue";
 import { LeaderboardTeaser } from "@/components/leaderboard-teaser";
 import { RewardsBar } from "@/components/rewards-bar";
-import { COURSE_WEEKS, VOCAB, itemsForWeek } from "@/lib/vocab";
+import { COURSE_WEEKS, bbhVocab, itemsForWeek, studySetMeta } from "@/lib/vocab";
 import { statsFor, useStudy, weakestOf } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { continueLabel } from "@/lib/game";
@@ -24,8 +24,8 @@ function Home() {
   const reset = useStudy((s) => s.reset);
   const items = itemsForWeek(week);
   const s = statsFor(items, cards);
-  const all = statsFor(VOCAB, cards);
-  const meta = COURSE_WEEKS.find((w) => w.week === week)!;
+  const all = statsFor(bbhVocab(), cards);
+  const meta = studySetMeta(week);
   const pct = s.total ? Math.round((s.mastered / s.total) * 100) : 0;
   const weakList = weakestOf(items, cards, 5);
   const firstName = user?.displayName?.split(" ")[0];
@@ -207,9 +207,7 @@ function Home() {
 
       <Panel className="mt-8">
         <p className="text-xs text-muted">
-          Full lexicon {VOCAB.length} lemmas · {all.mastered} mastered · {all.weak} weak overall. High-frequency Biblical
-          Hebrew with standard dictionary glosses — a study companion, not a reprint of any textbook list. Progress is
-          saved to this account.
+          Full lexicon {bbhVocab().length} BBH lemmas (Ch. 2–19, same as Game) · {all.mastered} mastered · {all.weak} weak overall.
         </p>
         <button
           type="button"

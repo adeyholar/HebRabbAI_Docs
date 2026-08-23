@@ -34,7 +34,7 @@ function GuidePage() {
               Study mode
             </Link>
             <span className="text-ink"> — </span>
-            pick a week and use Drill, Write, Quiz, Lex, or Alef in any order.
+            pick a course week or a Game chapter — same BBH 3rd-ed. lemmas as Game — then Drill, Write, Quiz, or Lex.
           </li>
         </ul>
       </Panel>

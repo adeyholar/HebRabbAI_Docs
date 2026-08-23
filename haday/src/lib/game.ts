@@ -1,5 +1,4 @@
-import { CONSONANTS } from "@/lib/alphabet";
-import { VOCAB, type VocabItem } from "@/lib/vocab";
+import { VOCAB, alphabetVocab, type VocabItem } from "@/lib/vocab";
 
 export const GAME_CHAPTER_MAX = 19;
 
@@ -267,21 +266,8 @@ export function applyStageResult(
 
 export function chapterPool(chapter: number): VocabItem[] {
   const n = clampChapter(chapter);
-  if (n === 1) return alphabetItems();
+  if (n === 1) return alphabetVocab();
   return VOCAB.filter((v) => v.chapter === n);
-}
-
-function alphabetItems(): VocabItem[] {
-  return CONSONANTS.map((l) => ({
-    id: `ch1-${l.id}`,
-    hebrew: l.letter,
-    translit: l.translit,
-    gloss: l.name,
-    alts: [l.name.toLowerCase(), l.id, l.sound, l.translit].filter(Boolean),
-    pos: "particle",
-    chapter: 1,
-    freq: 0,
-  }));
 }
 
 export function runOrdinal(n: number): string {
