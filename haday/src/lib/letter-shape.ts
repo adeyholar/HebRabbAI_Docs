@@ -26,6 +26,7 @@ type Feat = {
   descender: number;
   belowShare: number;
   hasSlash: boolean;
+  hasFork: boolean;
 };
 
 function dist(a: InkPoint, b: InkPoint): number {
@@ -125,6 +126,17 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     if (chord > span * 0.45 && closed < 0.35) hasSlash = hasSlash || chord / pathOf(longest) > 0.55;
     void mid;
   }
+  let topL = 0;
+  let topR = 0;
+  for (const p of pts) {
+    const xn = (p.x - minX) / w;
+    const yn = (p.y - minY) / h;
+    if (yn < 0.5) {
+      if (xn < 0.38) topL += 1;
+      if (xn > 0.62) topR += 1;
+    }
+  }
+  const hasFork = topL >= 4 && topR >= 4;
   return {
     n: clean.length,
     w,
@@ -147,6 +159,7 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     descender,
     belowShare,
     hasSlash,
+    hasFork,
   };
 }
 
@@ -189,7 +202,12 @@ const SCORES: Record<string, Scorer> = {
     (f.closed < 0.5 ? 0.15 : 0) +
     (roundLoop(f) ? -0.45 : 0.1) +
     (stick(f) && !f.hasTopBar ? -0.35 : 0.05),
-  ן: (f) => (stick(f) && !f.hasTopBar ? 0.4 : f.tall && f.n === 1 && !f.hasTopBar ? 0.2 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.35 : -0.3) + (f.n === 1 ? 0.1 : 0) + (roundLoop(f) || f.small || f.hasTopBar ? -0.5 : 0.1),
+  ן: (f) =>
+    (stick(f) && !f.hasTopBar && !f.hasFork ? 0.4 : f.tall && f.n === 1 && !f.hasTopBar && !f.hasFork ? 0.2 : 0) +
+    (f.descender > 0.04 || f.belowShare > 0.1 ? 0.25 : 0) +
+    (f.hasFork ? -0.55 : 0.1) +
+    (f.n === 1 ? 0.1 : 0) +
+    (roundLoop(f) || f.small || f.hasTopBar ? -0.5 : 0.1),
   ח: (f) => (f.n >= 2 ? 0.4 : 0.08) + (f.square ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
   ט: (f) => (f.closed > 0.35 ? 0.4 : 0.1) + (f.square ? 0.2 : 0) + (f.n <= 3 ? 0.15 : 0) + (stick(f) ? -0.4 : 0.1),
   י: (f) => (f.small ? 0.6 : 0) + (f.n === 1 ? 0.2 : 0) + (f.path < 120 ? 0.15 : -0.2) + (f.tall && !f.small ? -0.4 : 0) + (roundLoop(f) ? -0.5 : 0.05),
@@ -212,8 +230,13 @@ const SCORES: Record<string, Scorer> = {
   ע: (f) => (f.n <= 3 ? 0.2 : 0) + (f.closed < 0.7 ? 0.2 : 0) + (f.endY > 0.45 ? 0.15 : 0) + (stick(f) || (roundLoop(f) && f.n === 1) ? -0.4 : 0.15),
   פ: (f) => (f.closed < 0.6 ? 0.25 : -0.1) + (f.n <= 2 ? 0.2 : 0) + (f.tall ? -0.3 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
   ף: (f) => (f.tall ? 0.3 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (f.wide || roundLoop(f) || f.small ? -0.35 : 0.1),
-  צ: (f) => (f.n <= 3 ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.tall ? -0.25 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15) + (f.descender > 0.1 ? -0.2 : 0),
-  ץ: (f) => (f.tall ? 0.3 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (f.wide || roundLoop(f) || f.small ? -0.35 : 0.1),
+  צ: (f) => (f.hasFork ? 0.4 : 0.1) + (f.n <= 3 ? 0.15 : 0) + (f.closed < 0.55 ? 0.15 : 0) + (f.tall ? -0.2 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
+  ץ: (f) =>
+    (f.hasFork ? 0.55 : 0) +
+    (f.tall || f.descender > 0.03 ? 0.25 : 0.1) +
+    (f.descender > 0.04 || f.belowShare > 0.1 ? 0.15 : 0) +
+    (f.hasFork ? 0.1 : -0.4) +
+    (roundLoop(f) || f.small || !f.hasFork ? -0.2 : 0.1),
   ק: (f) => (f.tall || f.endY > 0.7 ? 0.25 : 0) + (f.descender > 0.02 || f.belowShare > 0.05 ? 0.35 : -0.2) + (f.n <= 2 ? 0.15 : 0) + (roundLoop(f) ? -0.4 : 0.1),
   ר: (f) => (f.n === 1 ? 0.25 : 0.1) + (f.closed < 0.5 ? 0.25 : 0) + (f.startY < 0.4 || f.topShare > 0.28 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
   ש: (f) => (f.n >= 1 ? 0.15 : 0) + (f.wide || f.square ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.n >= 2 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.45 : 0.1),
@@ -232,8 +255,7 @@ const NEAR: string[][] = [
   ["ד", "ר", "ז"],
   ["ה", "ח", "ת"],
   ["מ", "ם", "ס", "ט"],
-  ["נ", "ג"],
-  ["ך", "ל", "ק"],
+  ["צ", "ץ"],
 ];
 
 function isNear(a: string, b: string): boolean {
@@ -285,6 +307,10 @@ export function verifyLetterInk(
 
   if (opts?.trace) {
     if (want === "ז" && f.hasTopBar && mine >= 0.22) return { match: "close", read: want, score: Math.max(mine, 0.45) };
+    if (want === "ץ" && f.hasFork && (f.tall || f.descender > 0.02)) {
+      return { match: "exact", read: "ץ", score: Math.max(mine, 0.7) };
+    }
+    if (want === "צ" && f.hasFork && !f.tall) return { match: "close", read: "צ", score: Math.max(mine, 0.5) };
     if (mine >= 0.5 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
     if (mine >= 0.34 && (mine + 0.1 >= best || isNear(want, bestId))) return { match: "close", read: want, score: mine };
     if (best >= 0.5 && best > mine + 0.08) return { match: "wrong", read: bestId, score: mine };
