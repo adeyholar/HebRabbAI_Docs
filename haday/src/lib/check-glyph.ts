@@ -13,13 +13,9 @@ export async function checkGlyphInk(
 ): Promise<GlyphCheck> {
   if (mode === "letter") {
     const local = verifyLetterInk(strokes ?? [], expected);
-    if (local.match === "exact" || local.match === "close") {
+    if (local.match === "exact" || local.match === "close" || local.match === "wrong") {
       takeWriteCheck();
-      return { match: local.match, read: local.read || expected, counted: true };
-    }
-    if (local.match === "wrong") {
-      takeWriteCheck();
-      return { match: "wrong", read: local.read, counted: true };
+      return { match: local.match, read: local.read, counted: true };
     }
   }
 
@@ -37,15 +33,10 @@ export async function checkGlyphInk(
     /* reader offline */
   }
 
-  if (mode === "letter" && (strokes?.length ?? 0) > 0) {
-    takeWriteCheck();
-    return { match: "close", read: expected, counted: true };
-  }
-
   return {
     match: "empty",
     read: "",
-    note: "Could not judge that ink. Count it if the letter looks right, or mark a miss.",
+    note: "Could not judge that ink. Count it only if the letter looks right.",
     counted: false,
   };
 }

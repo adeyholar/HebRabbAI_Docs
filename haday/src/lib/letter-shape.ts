@@ -7,18 +7,22 @@ type Feat = {
   n: number;
   w: number;
   h: number;
-  aspect: number;
   closed: number;
   circ: number;
   path: number;
   tall: boolean;
-  wide: boolean;
   square: boolean;
   small: boolean;
 };
 
 function dist(a: InkPoint, b: InkPoint): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function pathOf(s: InkStroke): number {
+  let n = 0;
+  for (let i = 1; i < s.length; i++) n += dist(s[i - 1], s[i]);
+  return n;
 }
 
 function analyze(strokes: InkStroke[]): Feat | null {
@@ -36,7 +40,7 @@ function analyze(strokes: InkStroke[]): Feat | null {
       maxX = Math.max(maxX, p.x);
       maxY = Math.max(maxY, p.y);
     }
-    for (let i = 1; i < s.length; i++) path += dist(s[i - 1], s[i]);
+    path += pathOf(s);
   }
   const w = Math.max(1, maxX - minX);
   const h = Math.max(1, maxY - minY);
@@ -57,21 +61,13 @@ function analyze(strokes: InkStroke[]): Feat | null {
     n: clean.length,
     w,
     h,
-    aspect: w / h,
     closed,
     circ,
     path,
-    tall: h / w > 1.35,
-    wide: w / h > 1.3,
-    square: w / h > 0.5 && w / h < 1.6,
-    small: Math.max(w, h) < 42 && path < 110,
+    tall: h / w > 1.4,
+    square: w / h > 0.55 && w / h < 1.55,
+    small: Math.max(w, h) < 40 && path < 100,
   };
-}
-
-function pathOf(s: InkStroke): number {
-  let n = 0;
-  for (let i = 1; i < s.length; i++) n += dist(s[i - 1], s[i]);
-  return n;
 }
 
 function baseLetter(expected: string): string {
@@ -80,80 +76,76 @@ function baseLetter(expected: string): string {
   return g.replace(/[^\u05D0-\u05EA]/g, "").slice(0, 1);
 }
 
-function loop(f: Feat): boolean {
-  return f.closed > 0.22 || f.circ > 0.16;
+function roundLoop(f: Feat): boolean {
+  return f.circ > 0.24 && f.closed > 0.28 && f.square;
 }
-
+function boxLoop(f: Feat): boolean {
+  return f.closed > 0.42 && f.square && f.circ < 0.82;
+}
 function stick(f: Feat): boolean {
-  return f.tall && f.closed < 0.35 && f.circ < 0.28;
+  return f.tall && f.n <= 2 && f.closed < 0.32 && f.circ < 0.26;
 }
 
-/** Known-target check: is the ink a plausible form of this letter? */
+const ROUND = new Set(["ס", "ם", "ט"]);
+const TALL = new Set(["ו", "ן", "ך", "ל", "ק", "ף", "ץ"]);
+
+function verdict(ok: HandMatch, read: string, score: number) {
+  return { match: ok, read, score };
+}
+
+/** Known-target check. A circle is only Samekh/mem/tet. A stick is only vav/nun/kaf-final. */
 export function verifyLetterInk(strokes: InkStroke[], expected: string): { match: HandMatch; read: string; score: number } {
   const want = baseLetter(expected);
-  const feat = analyze(strokes);
-  if (!feat || !want) return { match: "empty", read: "", score: 0 };
-  if (feat.path < 12) return { match: "empty", read: "", score: 0 };
+  const f = analyze(strokes);
+  if (!f || !want) return verdict("empty", "", 0);
+  if (f.path < 18) return verdict("empty", "", 0);
 
-  let ok = false;
-  let strong = false;
+  if (roundLoop(f) && !ROUND.has(want)) return verdict("wrong", "ס", 0.2);
+  if (f.small && want !== "י" && f.path < 80) return verdict("wrong", "י", 0.2);
+  if (stick(f) && !TALL.has(want) && want !== "י") return verdict("wrong", "ו", 0.2);
 
   switch (want) {
     case "ס":
-      ok = loop(feat) || (feat.square && feat.n <= 3);
-      strong = feat.circ > 0.22 || feat.closed > 0.4;
-      break;
+      if (roundLoop(f) || (f.closed > 0.48 && f.circ > 0.2 && f.square)) return verdict("exact", "ס", 0.85);
+      if (f.closed > 0.32 && f.circ > 0.16 && !stick(f)) return verdict("close", "ס", 0.5);
+      return verdict("wrong", "", 0.1);
     case "ם":
-      ok = loop(feat) || (feat.square && feat.closed > 0.18);
-      strong = feat.closed > 0.45;
-      break;
+      if (boxLoop(f) || (f.closed > 0.5 && f.square)) return verdict("exact", "ם", 0.85);
+      if (f.closed > 0.35 && f.square && !stick(f)) return verdict("close", "ם", 0.5);
+      return verdict("wrong", "", 0.1);
     case "ט":
-    case "ע":
-    case "מ":
-      ok = feat.path > 30 && !stick(feat);
-      strong = loop(feat);
-      break;
+      if (roundLoop(f) || boxLoop(f) || (f.closed > 0.35 && f.n <= 3)) return verdict("exact", "ט", 0.8);
+      if (f.closed > 0.22 && !stick(f)) return verdict("close", "ט", 0.45);
+      return verdict("wrong", "", 0.1);
+    case "י":
+      if (f.small) return verdict("exact", "י", 0.85);
+      if (f.n === 1 && f.path < 130 && !roundLoop(f) && !f.tall) return verdict("close", "י", 0.5);
+      return verdict("wrong", "", 0.1);
     case "ו":
     case "ן":
+      if (stick(f) && !roundLoop(f)) return verdict("exact", want, 0.85);
+      if (f.tall && f.n <= 2 && f.circ < 0.3) return verdict("close", want, 0.5);
+      return verdict("wrong", "", 0.1);
     case "ך":
-    case "י":
-      ok = feat.n <= 3 && (feat.small || stick(feat) || feat.tall || feat.path < 180);
-      strong = stick(feat) || feat.small;
-      break;
     case "ל":
-      ok = feat.tall || feat.h > feat.w;
-      strong = feat.tall;
-      break;
+    case "ק":
+    case "ף":
+    case "ץ":
+      if (f.tall && !roundLoop(f)) return verdict(f.h / f.w > 1.6 ? "exact" : "close", want, 0.7);
+      return verdict("wrong", "", 0.1);
     case "ה":
     case "ח":
     case "ת":
     case "א":
     case "ש":
-      ok = feat.n >= 1 && feat.path > 28;
-      strong = feat.n >= 2;
-      break;
-    case "ב":
-    case "כ":
-    case "פ":
-    case "ג":
-    case "נ":
-    case "ד":
-    case "ר":
-    case "ק":
-    case "ז":
-    case "צ":
-    case "ץ":
-    case "ף":
-      ok = feat.path > 24 && !(want !== "ק" && loop(feat) && feat.circ > 0.55);
-      strong = feat.path > 50;
-      break;
+      if (roundLoop(f) || stick(f)) return verdict("wrong", roundLoop(f) ? "ס" : "ו", 0.2);
+      if (f.n >= 2 && f.path > 40) return verdict("exact", want, 0.75);
+      if (f.path > 55 && f.n >= 1) return verdict("close", want, 0.45);
+      return verdict("wrong", "", 0.1);
     default:
-      ok = feat.path > 24;
-      strong = feat.path > 70;
+      if (roundLoop(f) || (stick(f) && !TALL.has(want))) return verdict("wrong", roundLoop(f) ? "ס" : "ו", 0.2);
+      if (f.path > 45 && f.n >= 1) return verdict("close", want, 0.45);
+      if (f.path > 80) return verdict("exact", want, 0.6);
+      return verdict("wrong", "", 0.1);
   }
-
-  if (strong && ok) return { match: "exact", read: want, score: 0.8 };
-  if (ok) return { match: "close", read: want, score: 0.5 };
-  if (feat.path > 50 && !stick(feat)) return { match: "close", read: want, score: 0.28 };
-  return { match: "wrong", read: "", score: 0.1 };
 }
