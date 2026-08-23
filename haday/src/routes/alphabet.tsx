@@ -7,21 +7,25 @@ import {
   QUIZ_KINDS,
   VOWEL_GROUPS,
   VOWELS,
+  WRITE_LETTERS,
   type HebrewLetter,
   type HebrewVowel,
   type QuizKind,
 } from "@/lib/alphabet";
+import { alefByKeys, alefKey } from "@/lib/alef";
 import { shuffle } from "@/lib/vocab";
 import { cn } from "@/lib/cn";
 import { GradeBanner } from "@/components/grade-banner";
 import { GlyphInk } from "@/components/glyph-ink";
 import { LetterWrite } from "@/components/letter-write";
+import { ClosedBook } from "@/components/closed-book";
 import { playGrade } from "@/lib/sfx";
+import { useStudy } from "@/lib/store";
 
 export const Route = createFileRoute("/alphabet")({ component: AlphabetPage });
 
 function AlphabetPage() {
-  const [tab, setTab] = useState<"letters" | "vowels" | "write" | "drill">("letters");
+  const [tab, setTab] = useState<"letters" | "vowels" | "write" | "drill" | "exam">("letters");
   const [active, setActive] = useState<HebrewLetter>(CONSONANTS[0]);
 
   return (
@@ -29,12 +33,20 @@ function AlphabetPage() {
       <Panel>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Alef-bet</h1>
         <p className="mt-1 text-sm text-muted">
-          Consonants right to left, vowel charts, and a pad that checks letters and vowels.
+          Consonants right to left, a closed-book exam from memory, and practice that follows what you miss.
         </p>
         <div className="mt-4 flex gap-2">
-          {(["letters", "vowels", "write", "drill"] as const).map((t) => (
+          {(["letters", "vowels", "write", "drill", "exam"] as const).map((t) => (
             <Button key={t} size="sm" variant={tab === t ? "primary" : "outline"} onClick={() => setTab(t)}>
-              {t === "letters" ? "Letters" : t === "vowels" ? "Vowels" : t === "write" ? "Write" : "Quiz"}
+              {t === "letters"
+                ? "Letters"
+                : t === "vowels"
+                  ? "Vowels"
+                  : t === "write"
+                    ? "Write"
+                    : t === "drill"
+                      ? "Quiz"
+                      : "Exam"}
             </Button>
           ))}
         </div>
@@ -100,11 +112,15 @@ function AlphabetPage() {
       {tab === "write" && <LetterWrite />}
 
       {tab === "drill" && <FoundationQuiz />}
+
+      {tab === "exam" && <ClosedBook onPractice={(next) => setTab(next)} />}
     </>
   );
 }
 
 function FoundationQuiz() {
+  const queue = useStudy((s) => s.alefQueue);
+  const rate = useStudy((s) => s.rate);
   const [kind, setKind] = useState<QuizKind>("vowel-name");
   const [seed, setSeed] = useState(0);
   const [i, setI] = useState(0);
@@ -112,13 +128,27 @@ function FoundationQuiz() {
   const [right, setRight] = useState(0);
   const [missedId, setMissedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [inkKey, setInkKey] = useState(0);
 
-  const letterDeck = useMemo(() => shuffle(CONSONANTS), [seed, kind]);
-  const vowelDeck = useMemo(() => shuffle(VOWELS), [seed, kind]);
   const isScribble = kind === "letter-scribble" || kind === "vowel-scribble";
   const isLetter = kind.startsWith("letter") || kind === "translit-letter";
+  const letterDeck = useMemo(() => {
+    const q = alefByKeys(queue)
+      .filter((x) => x.kind === "letter")
+      .map((x) => WRITE_LETTERS.find((l) => l.id === x.id))
+      .filter((x): x is HebrewLetter => Boolean(x));
+    if (q.length && isLetter) return q;
+    return shuffle(kind === "letter-scribble" ? WRITE_LETTERS : CONSONANTS);
+  }, [seed, kind, queue, isLetter]);
+  const vowelDeck = useMemo(() => {
+    const q = alefByKeys(queue)
+      .filter((x) => x.kind === "vowel")
+      .map((x) => VOWELS.find((v) => v.id === x.id))
+      .filter((x): x is HebrewVowel => Boolean(x));
+    if (q.length && !isLetter) return q;
+    return shuffle(VOWELS);
+  }, [seed, kind, queue, isLetter]);
   const total = isLetter ? letterDeck.length : vowelDeck.length;
-  const [inkKey, setInkKey] = useState(0);
 
   useEffect(() => {
     setI(0);
@@ -217,6 +247,9 @@ function FoundationQuiz() {
   return (
     <div className="mt-5">
       <QuizPicker kind={kind} onKind={(k) => { setKind(k); setSeed((s) => s + 1); }} />
+      {queue.length > 0 && (
+        <p className="mt-2 text-sm font-medium text-primary">Serving closed-book misses first.</p>
+      )}
       <p className="mt-4 text-sm font-medium tabular-nums text-ink">
         {i + 1} / {total} · {right} correct
       </p>
@@ -232,6 +265,8 @@ function FoundationQuiz() {
           expected={"letter" in prompt ? prompt.letter : prompt.mark}
           mode={kind === "vowel-scribble" ? "vowel" : "letter"}
           onPass={(ok) => {
+            const key = isLetter && letter ? alefKey("letter", letter.id) : vowel ? alefKey("vowel", vowel.id) : null;
+            if (key) rate(key, ok ? "good" : "again");
             if (ok) setRight((r) => r + 1);
             setI((n) => n + 1);
             setInkKey((n) => n + 1);
@@ -255,6 +290,8 @@ function FoundationQuiz() {
                     setPicked(id);
                     setRight((r) => r + 1);
                     playGrade(true);
+                    const key = isLetter && letter ? alefKey("letter", letter.id) : vowel ? alefKey("vowel", vowel.id) : null;
+                    if (key) rate(key, "easy");
                     return;
                   }
                   if (!missedId) {
@@ -264,6 +301,8 @@ function FoundationQuiz() {
                   }
                   setPicked(id);
                   playGrade(false);
+                  const key = isLetter && letter ? alefKey("letter", letter.id) : vowel ? alefKey("vowel", vowel.id) : null;
+                  if (key) rate(key, "again");
                 }}
                 className={cn(
                   "w-full min-h-12 rounded-[var(--radius-md)] px-3 py-3 text-sm font-medium shadow-[var(--shadow-border)]",

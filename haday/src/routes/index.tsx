@@ -168,6 +168,11 @@ function Home() {
               Write letters
             </Button>
           </Link>
+          <Link to="/alphabet" className="flex-1">
+            <Button className="w-full" variant="outline" size="lg">
+              Closed-book alef
+            </Button>
+          </Link>
         </div>
       </div>
 

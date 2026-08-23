@@ -35,7 +35,7 @@ function GuidePage() {
             </Link>
             <span className="text-ink"> — </span>
             pick a course week or a Game chapter — same BBH 3rd-ed. lemmas as Game — then Drill, Write, Quiz, or Lex.
-            Alef has a Write tab (letters and vowels) and Quiz modes that let you scribble the glyph; HaDay reads the ink.
+            Closed-book Exam is from memory; misses lead the next Write and Quiz rounds.
           </li>
         </ul>
       </Panel>

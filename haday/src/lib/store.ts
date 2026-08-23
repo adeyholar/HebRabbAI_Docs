@@ -36,10 +36,12 @@ export type StudySnapshot = {
 
 type StudyState = StudySnapshot & {
   ownerId: string | null;
+  alefQueue: string[];
   rate: (id: string, rating: Rating) => void;
   setWeek: (week: number) => void;
   setDirection: (d: "he-en" | "en-he") => void;
   setFocus: (focus: FocusMode) => void;
+  setAlefQueue: (keys: string[]) => void;
   completeGameStage: (
     chapter: number,
     stage: GameStageId,
@@ -69,6 +71,7 @@ export const useStudy = create<StudyState>()(
       sessions: 0,
       game: defaultGame(),
       ownerId: null,
+      alefQueue: [],
       rate: (id, rating) => {
         const now = Date.now();
         const prev = hydrateCard(get().cards[id], now);
@@ -85,6 +88,7 @@ export const useStudy = create<StudyState>()(
       setWeek: (week) => set({ week }),
       setDirection: (direction) => set({ direction }),
       setFocus: (focus) => set({ focus }),
+      setAlefQueue: (alefQueue) => set({ alefQueue }),
       completeGameStage: (chapter, stage, result) => {
         const now = Date.now();
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
@@ -115,6 +119,7 @@ export const useStudy = create<StudyState>()(
           sessions: 0,
           focus: "due",
           game: defaultGame(),
+          alefQueue: [],
         }),
     }),
     {

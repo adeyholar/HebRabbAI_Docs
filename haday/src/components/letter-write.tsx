@@ -1,21 +1,62 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GlyphInk } from "@/components/glyph-ink";
 import { VOWELS, WRITE_LETTERS, type HebrewLetter, type HebrewVowel } from "@/lib/alphabet";
-import { shuffle } from "@/lib/vocab";
+import { alefByKeys, alefKey, alefLetters, alefVowels, pickAlefRound } from "@/lib/alef";
+import { useStudy } from "@/lib/store";
 import { cn } from "@/lib/cn";
 
 type Kind = "letter" | "vowel";
 type Mode = "trace" | "recall";
 
 export function LetterWrite() {
-  const [kind, setKind] = useState<Kind>("letter");
-  const [mode, setMode] = useState<Mode>("trace");
-  const [letterDeck, setLetterDeck] = useState(() => shuffle(WRITE_LETTERS));
-  const [vowelDeck, setVowelDeck] = useState(() => shuffle(VOWELS));
+  const queue = useStudy((s) => s.alefQueue);
+  const cards = useStudy((s) => s.cards);
+  const focus = useStudy((s) => s.focus);
+  const rate = useStudy((s) => s.rate);
+  const setAlefQueue = useStudy((s) => s.setAlefQueue);
+  const queued = alefByKeys(queue);
+  const [kind, setKind] = useState<Kind>(() =>
+    queued.some((x) => x.kind === "vowel") && !queued.some((x) => x.kind === "letter") ? "vowel" : "letter",
+  );
+  const [mode, setMode] = useState<Mode>(queued.length ? "recall" : "trace");
+  const [letterDeck, setLetterDeck] = useState(() => WRITE_LETTERS);
+  const [vowelDeck, setVowelDeck] = useState(() => VOWELS);
   const [i, setI] = useState(0);
   const [right, setRight] = useState(0);
   const [padKey, setPadKey] = useState(0);
+
+  useEffect(() => {
+    const q = alefByKeys(queue);
+    const qLetters = q
+      .filter((x) => x.kind === "letter")
+      .map((x) => WRITE_LETTERS.find((l) => l.id === x.id))
+      .filter((x): x is HebrewLetter => Boolean(x));
+    const qVowels = q
+      .filter((x) => x.kind === "vowel")
+      .map((x) => VOWELS.find((v) => v.id === x.id))
+      .filter((x): x is HebrewVowel => Boolean(x));
+    setLetterDeck(
+      qLetters.length
+        ? qLetters
+        : pickAlefRound(alefLetters(), cards, focus, 12)
+            .map((x) => WRITE_LETTERS.find((l) => l.id === x.id))
+            .filter((x): x is HebrewLetter => Boolean(x)),
+    );
+    setVowelDeck(
+      qVowels.length
+        ? qVowels
+        : pickAlefRound(alefVowels(), cards, focus, 10)
+            .map((x) => VOWELS.find((v) => v.id === x.id))
+            .filter((x): x is HebrewVowel => Boolean(x)),
+    );
+    if (qVowels.length && !qLetters.length) setKind("vowel");
+    else if (qLetters.length && !qVowels.length) setKind("letter");
+    if (q.length) setMode("recall");
+    setI(0);
+    setRight(0);
+    setPadKey((n) => n + 1);
+  }, [queue]);
 
   const deckLen = kind === "letter" ? letterDeck.length : vowelDeck.length;
   const letter = kind === "letter" ? letterDeck[i] : undefined;
@@ -34,14 +75,25 @@ export function LetterWrite() {
   }
 
   function newRound() {
-    if (kind === "letter") setLetterDeck(shuffle(WRITE_LETTERS));
-    else setVowelDeck(shuffle(VOWELS));
+    setAlefQueue([]);
+    setLetterDeck(
+      pickAlefRound(alefLetters(), useStudy.getState().cards, focus, 12)
+        .map((x) => WRITE_LETTERS.find((l) => l.id === x.id))
+        .filter((x): x is HebrewLetter => Boolean(x)),
+    );
+    setVowelDeck(
+      pickAlefRound(alefVowels(), useStudy.getState().cards, focus, 10)
+        .map((x) => VOWELS.find((v) => v.id === x.id))
+        .filter((x): x is HebrewVowel => Boolean(x)),
+    );
     setI(0);
     setRight(0);
     resetPad();
   }
 
   function next(ok: boolean) {
+    const key = letter ? alefKey("letter", letter.id) : vowel ? alefKey("vowel", vowel.id) : null;
+    if (key) rate(key, ok ? "good" : "again");
     if (ok) setRight((n) => n + 1);
     if (i + 1 >= deckLen) {
       setI(deckLen);
@@ -75,6 +127,9 @@ export function LetterWrite() {
         <KindBtn on={kind === "letter"} onClick={() => switchKind("letter")} label="Letters" />
         <KindBtn on={kind === "vowel"} onClick={() => switchKind("vowel")} label="Vowels" />
       </div>
+      {queue.length > 0 && (
+        <p className="mt-2 text-sm font-medium text-primary">Serving closed-book misses first.</p>
+      )}
       <div className="mt-2 flex gap-2">
         <KindBtn
           on={mode === "trace"}
