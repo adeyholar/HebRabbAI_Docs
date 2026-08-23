@@ -73,7 +73,7 @@ export const VOCAB: VocabItem[] = [
   { id: "sus", hebrew: "סוּס", translit: "sûs", gloss: "horse", alts: [], pos: "noun", chapter: 4, freq: 138 },
   { id: "sefer", hebrew: "סֵפֶר", translit: "sēper", gloss: "book, scroll, document", alts: ["book", "scroll", "document"], pos: "noun", chapter: 4, freq: 191 },
   { id: "ebed", hebrew: "עֶבֶד", translit: "ʿebed", gloss: "slave, servant", alts: ["slave", "servant"], pos: "noun", chapter: 4, freq: 803 },
-  { id: "ayin", hebrew: "עַיִן", translit: "ʿayin", gloss: "eye, spring", alts: ["eye", "spring"], pos: "noun", chapter: 4, freq: 900 },
+  { id: "ayin", hebrew: "עַיִן", translit: "ʿayin", gloss: "eye, spring", alts: ["eye", "spring"], hebrewAlts: ["עֵין"], pos: "noun", chapter: 4, freq: 900 },
   { id: "ir", hebrew: "עִיר", translit: "ʿîr", gloss: "city, town", alts: ["city", "town"], pos: "noun", chapter: 4, freq: 1088 },
   { id: "tsaba", hebrew: "צָבָא", translit: "ṣābāʾ", gloss: "host, army, war, service", alts: ["host", "army", "war", "service"], pos: "noun", chapter: 4, freq: 487 },
   { id: "qol", hebrew: "קוֹל", translit: "qôl", gloss: "voice, sound, noise", alts: ["voice", "sound", "noise"], hebrewAlts: ["קֹל"], pos: "noun", chapter: 4, freq: 505 },

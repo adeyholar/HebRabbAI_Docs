@@ -20,9 +20,19 @@ import {
   type GameStageId,
 } from "@/lib/game";
 import { liveMatchAny } from "@/lib/hebrew";
+import { verseFor } from "@/lib/verses";
 import { scoreboard } from "@/lib/rewards";
 import { useStudy } from "@/lib/store";
 import { glossMatches, liveGloss, quizChoices, type VocabItem } from "@/lib/vocab";
+
+function spellTargets(item: VocabItem, stage: GameStageId): { target: string; alts: string[] } {
+  const alts = [...(item.hebrewAlts ?? [])];
+  if (stage === "spell-lenient") {
+    const hit = verseFor(item.id)?.hit;
+    if (hit && hit !== item.hebrew && !alts.includes(hit)) alts.push(hit);
+  }
+  return { target: item.hebrew, alts };
+}
 
 function shuffleCopy(items: VocabItem[]) {
   const a = [...items];
@@ -73,6 +83,13 @@ export function GameStagePlay({ chapter, stage }: Props) {
   }, [chapter, stage, pool]);
 
   const item = queue[0];
+  const spell = item ? spellTargets(item, stage) : { target: "", alts: [] as string[] };
+  const typedOk =
+    !item
+      ? false
+      : stage === "gloss"
+        ? glossMatches(item, typed)
+        : liveMatchAny(spell.target, typed, spell.alts, true) === "exact";
   const choices = useMemo(() => (item ? quizChoices(item, pool) : []), [item, pool]);
   const meta = stageMeta(stage);
   const chapterMeta = CHAPTER_META[chapter];
@@ -248,11 +265,6 @@ export function GameStagePlay({ chapter, stage }: Props) {
     );
   }
 
-  const typedOk =
-    stage === "gloss"
-      ? glossMatches(item, typed)
-      : liveMatchAny(item.hebrew, typed, item.hebrewAlts, true) === "exact";
-
   return (
     <>
       <Panel className="mb-4">
@@ -418,8 +430,8 @@ export function GameStagePlay({ chapter, stage }: Props) {
           <HebrewType
             value={typed}
             onChange={setTyped}
-            target={item.hebrew}
-            alts={item.hebrewAlts}
+            target={spell.target}
+            alts={spell.alts}
             disabled={revealed}
             strict
           />
@@ -434,6 +446,17 @@ export function GameStagePlay({ chapter, stage }: Props) {
               {!typedOk && (
                 <p className="mt-2 text-center text-sm text-muted">
                   Answer: <span className="he-word text-xl text-ink">{item.hebrew}</span>
+                </p>
+              )}
+              {typedOk && spell.alts.some((a) => a !== item.hebrew) && (
+                <p className="mt-2 text-center text-sm text-muted">
+                  Lemma <span className="he-word text-lg text-ink">{item.hebrew}</span>
+                  {verseFor(item.id)?.hit && verseFor(item.id)!.hit !== item.hebrew ? (
+                    <>
+                      {" "}
+                      · this verse <span className="he-word text-lg text-ink">{verseFor(item.id)!.hit}</span>
+                    </>
+                  ) : null}
                 </p>
               )}
             </div>

@@ -138,8 +138,6 @@ const LOOKALIKE: Record<string, string> = {
   מ: "ס",
   נ: "ג",
   ג: "נ",
-  ע: "צ",
-  צ: "ע",
   ך: "ר",
   ן: "ו",
 };
@@ -284,9 +282,7 @@ export function consonantsMatch(expected: string, typed: string): boolean {
   const got = normalizeHebrew(typed);
   if (!want || !got) return false;
   if (isFinalFormMismatch(expected, typed)) return false;
-  if (got === want) return true;
-  const distance = weightedDistance(want, got);
-  return distance <= 0.9 || (want.length >= 4 && distance / want.length <= 0.28);
+  return got === want;
 }
 
 export function foldLetterGlyph(s: string): string {

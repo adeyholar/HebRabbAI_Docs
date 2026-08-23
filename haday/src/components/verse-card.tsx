@@ -11,8 +11,10 @@ export function VerseCard({ item, showEnglish = true }: { item: VocabItem; showE
     <figure className="mt-4 rounded-[var(--radius-lg)] bg-surface/80 px-4 py-3 text-start shadow-[var(--shadow-border)]">
       <figcaption className="text-xs font-semibold uppercase tracking-wide text-muted">
         In the Tanakh · {verse.ref}
-        {!showEnglish && <span className="ms-2 font-normal normal-case tracking-normal">Hebrew only — tap the card to reveal English</span>}
       </figcaption>
+      {!showEnglish && (
+        <p className="mt-1 text-xs font-normal text-muted">Hebrew only — tap the card to reveal English.</p>
+      )}
       <p className="he-word mt-2 text-xl leading-relaxed" lang="he">
         {range ? (
           <>
