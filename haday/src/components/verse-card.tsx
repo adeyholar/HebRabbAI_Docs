@@ -3,9 +3,9 @@ import { verseFor } from "@/lib/verses";
 import type { VocabItem } from "@/lib/vocab";
 
 export function VerseCard({ item, showEnglish = true }: { item: VocabItem; showEnglish?: boolean }) {
-  const verse = verseFor(item.id);
-  if (!verse) return null;
-  const range = findHitRange(verse.he, verse.hit);
+  const verse = item?.id ? verseFor(item.id) : undefined;
+  if (!verse?.he) return null;
+  const range = findHitRange(verse.he, verse.hit ?? "");
 
   return (
     <figure className="mt-4 rounded-[var(--radius-lg)] bg-surface/80 px-4 py-3 text-start shadow-[var(--shadow-border)]">

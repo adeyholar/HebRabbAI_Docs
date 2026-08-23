@@ -3,12 +3,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { WeekSelect } from "@/components/week-select";
 import { VerseCard } from "@/components/verse-card";
 import { Panel } from "@/components/panel";
+import { AppErrorComponent } from "@/lib/error-component";
 import { POS_LABEL, VOCAB, itemsForWeek, type Pos } from "@/lib/vocab";
 import { hydrateCard, isMastered, isWeak } from "@/lib/srs";
 import { useStudy } from "@/lib/store";
 import { cn } from "@/lib/cn";
 
-export const Route = createFileRoute("/browse")({ component: BrowsePage });
+export const Route = createFileRoute("/browse")({
+  component: BrowsePage,
+  errorComponent: AppErrorComponent,
+});
 
 const POS_FILTERS: Array<Pos | "all"> = ["all", "noun", "verb", "adj", "prep", "particle", "pron", "name"];
 
@@ -23,15 +27,21 @@ function BrowsePage() {
 
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
+    const hebrewQ = q.trim();
     return base.filter((item) => {
+      if (!item?.id) return false;
       if (weakOnly && !isWeak(cards[item.id])) return false;
       if (pos !== "all" && item.pos !== pos) return false;
       if (!query) return true;
+      const alts = Array.isArray(item.alts) ? item.alts : [];
+      const gloss = (item.gloss ?? "").toLowerCase();
+      const translit = (item.translit ?? "").toLowerCase();
+      const hebrew = item.hebrew ?? "";
       return (
-        item.gloss.toLowerCase().includes(query) ||
-        item.translit.toLowerCase().includes(query) ||
-        item.hebrew.includes(q.trim()) ||
-        item.alts.some((a) => a.toLowerCase().includes(query))
+        gloss.includes(query) ||
+        translit.includes(query) ||
+        hebrew.includes(hebrewQ) ||
+        alts.some((a) => a.toLowerCase().includes(query))
       );
     });
   }, [base, q, pos, weakOnly, cards]);
@@ -96,7 +106,7 @@ function BrowsePage() {
                   <p className="he-word text-2xl leading-tight">{item.hebrew}</p>
                   <p className="truncate text-sm text-fg">{item.gloss}</p>
                   <p className="text-xs text-muted">
-                    {item.translit} · {POS_LABEL[item.pos]} · Ch. {item.chapter}
+                    {item.translit} · {POS_LABEL[item.pos] ?? item.pos} · Ch. {item.chapter}
                   </p>
                 </div>
                 <span className={cn("text-xs font-medium", mastered ? "text-good" : weak ? "text-danger" : "text-subtle")}>

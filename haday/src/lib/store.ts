@@ -123,9 +123,16 @@ export const useStudy = create<StudyState>()(
       skipHydration: true,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<StudyState>;
+        const cards: ProgressMap = {};
+        if (p.cards && typeof p.cards === "object") {
+          for (const [id, card] of Object.entries(p.cards)) {
+            cards[id] = hydrateCard(card);
+          }
+        }
         return {
           ...current,
           ...p,
+          cards: Object.keys(cards).length ? cards : current.cards,
           game: stampRewards(hydrateGame(p.game), Number(p.streak) || 0),
         };
       },

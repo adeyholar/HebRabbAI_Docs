@@ -23,13 +23,19 @@ export function newCard(now = Date.now()): CardState {
 /** Fill fields added after v1 persist snapshots. */
 export function hydrateCard(card: Partial<CardState> | undefined, now = Date.now()): CardState {
   const base = newCard(now);
-  if (!card) return base;
+  if (!card || typeof card !== "object") return base;
+  const recent = Array.isArray(card.recent) ? card.recent.filter((x) => x === "h" || x === "m") : [];
   return {
     ...base,
-    ...card,
-    hits: card.hits ?? 0,
-    misses: card.misses ?? 0,
-    recent: card.recent ?? [],
+    ease: Number(card.ease) || base.ease,
+    interval: Number(card.interval) || 0,
+    due: Number(card.due) || base.due,
+    reps: Number(card.reps) || 0,
+    lapses: Number(card.lapses) || 0,
+    last: Number(card.last) || 0,
+    hits: Number(card.hits) || 0,
+    misses: Number(card.misses) || 0,
+    recent,
   };
 }
 
