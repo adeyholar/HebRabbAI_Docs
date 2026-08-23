@@ -12,6 +12,7 @@ import { continueTarget } from "@/lib/game";
 import { getAdminStatus } from "@/lib/admin";
 import { scoreboard } from "@/lib/rewards";
 import { HonorBadge } from "@/components/honor-badge";
+import { VisitorBeacon } from "@/components/visitor-beacon";
 
 const STUDY_NAV = [
   { to: "/", label: "Home", icon: House },
@@ -97,17 +98,35 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [isLogin, userId]);
 
   if (isLogin) {
-    return <div className="min-h-dvh text-fg">{children}</div>;
+    return (
+      <div className="min-h-dvh text-fg">
+        <VisitorBeacon />
+        {children}
+      </div>
+    );
   }
 
   if (isPending || (user && !progressReady)) {
-    return <ShellSkeleton />;
+    return (
+      <>
+        <VisitorBeacon />
+        <ShellSkeleton />
+      </>
+    );
   }
 
-  if (!user) return <RedirectToSignIn />;
+  if (!user) {
+    return (
+      <>
+        <VisitorBeacon />
+        <RedirectToSignIn />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-dvh text-fg">
+      <VisitorBeacon />
       <header className="sticky top-0 z-20 border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4">
           <BrandLockup linked />

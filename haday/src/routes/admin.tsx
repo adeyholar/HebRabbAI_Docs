@@ -2,19 +2,25 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Panel } from "@/components/panel";
 import { getAdminStatus, listRoster, type RosterPerson } from "@/lib/admin";
+import { listVisits, type VisitStats } from "@/lib/visits";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
-function fmt(iso: string | null): string {
+function fmt(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
+function shortId(id: string): string {
+  return id.replace(/-/g, "").slice(0, 6);
+}
+
 function AdminPage() {
   const [admin, setAdmin] = useState<boolean | null>(null);
   const [people, setPeople] = useState<RosterPerson[] | null>(null);
+  const [visits, setVisits] = useState<VisitStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,9 +31,10 @@ function AdminPage() {
         if (cancelled) return;
         setAdmin(status.admin);
         if (!status.admin) return;
-        const rows = await listRoster();
+        const [rows, traffic] = await Promise.all([listRoster(), listVisits()]);
         if (cancelled) return;
         setPeople(rows);
+        setVisits(traffic);
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : "Could not load roster.");
@@ -73,6 +80,8 @@ function AdminPage() {
     );
   }
 
+  const anon = visits?.recentAnon ?? [];
+
   return (
     <>
       <Panel className="mb-4">
@@ -82,6 +91,41 @@ function AdminPage() {
           {people.length} account{people.length === 1 ? "" : "s"}. Name and email come from sign-in.
           Last login is the most recent session; last study is when they saved progress.
         </p>
+      </Panel>
+
+      {visits && (
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Stat label="Unique browsers" value={String(visits.unique)} />
+          <Stat label="Did not sign in" value={String(visits.anonymous)} />
+          <Stat label="Signed in later" value={String(visits.signedIn)} />
+          <Stat label="Page hits" value={String(visits.hits)} />
+        </div>
+      )}
+
+      <Panel className="mb-4">
+        <h2 className="font-display text-2xl font-bold text-ink">Visitors who did not sign in</h2>
+        <p className="mt-1 text-sm text-muted">
+          Anonymous browsers on the login page or the site. No names or emails — a cookie id only.
+        </p>
+        {anon.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">None yet. New visits to the login page will show here.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border">
+            {anon.map((v) => (
+              <li key={v.id} className="flex items-baseline justify-between gap-3 py-2.5 text-sm">
+                <span className="min-w-0">
+                  <span className="font-semibold text-ink">Visitor {shortId(v.id)}</span>
+                  <span className="ms-2 text-muted">
+                    {v.lastPath}
+                    {v.device ? ` · ${v.device}` : ""}
+                    {` · ${v.hits} hit${v.hits === 1 ? "" : "s"}`}
+                  </span>
+                </span>
+                <span className="shrink-0 whitespace-nowrap text-muted">{fmt(v.lastSeen)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Panel>
 
       <div className="overflow-x-auto rounded-[var(--radius-xl)] bg-card shadow-[var(--shadow-border)]">
@@ -111,5 +155,14 @@ function AdminPage() {
         </table>
       </div>
     </>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[var(--radius-xl)] bg-card px-4 py-3 shadow-[var(--shadow-border)]">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-1 font-display text-3xl font-bold tabular-nums text-ink">{value}</p>
+    </div>
   );
 }

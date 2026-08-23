@@ -30,7 +30,7 @@ function allowList(): string[] {
   return [...new Set([...ADMIN_EMAILS.map((e) => e.toLowerCase()), ...envAdminEmails()])];
 }
 
-async function assertAdmin(userId: string): Promise<void> {
+export async function assertAdmin(userId: string): Promise<void> {
   const sql = await getSql();
   const me = await sql<{ email: string }>`
     select email from "user" where id = ${userId}
