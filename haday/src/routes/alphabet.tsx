@@ -48,7 +48,7 @@ function AlphabetPage() {
             <p className="text-sm text-muted">{active.sound}</p>
             <p className="mt-1 font-mono text-lg text-ink">{active.translit}</p>
           </div>
-          <ul className="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-8">
+          <ul dir="rtl" className="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-8">
             {CONSONANTS.map((c) => (
               <li key={c.id}>
                 <button
