@@ -1,32 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Flame, Flag, Footprints, Medal, Mountain, Star, Trophy } from "lucide-react";
 import { Panel } from "@/components/panel";
 import { LadderStrip } from "@/components/rewards-bar";
-import { BADGES, HONOR_RANKS, scoreboard } from "@/lib/rewards";
+import { BadgeGlyph } from "@/components/badge-icons";
 import { HonorBadge } from "@/components/honor-badge";
+import { AppErrorComponent } from "@/lib/error-component";
+import { hydrateGame } from "@/lib/game";
+import { BADGES, HONOR_RANKS, scoreboard } from "@/lib/rewards";
 import { useStudy } from "@/lib/store";
 
-const ICONS = {
-  "first-win": Flag,
-  "win-3": Trophy,
-  "win-7": Trophy,
-  "first-chapter": Medal,
-  "rung-5": Footprints,
-  "rung-11": Flag,
-  summit: Mountain,
-  "streak-3": Flame,
-  "streak-7": Flame,
-  "streak-14": Flame,
-  perfect: Star,
-} as const;
-
-export const Route = createFileRoute("/rewards")({ component: RewardsPage });
+export const Route = createFileRoute("/rewards")({
+  component: RewardsPage,
+  errorComponent: AppErrorComponent,
+});
 
 function RewardsPage() {
-  const game = useStudy((s) => s.game);
+  const raw = useStudy((s) => s.game);
   const streak = useStudy((s) => s.streak);
+  const game = hydrateGame(raw);
   const board = scoreboard(game, streak);
-  const earned = new Set(game.badges);
+  const earned = new Set(Array.isArray(game.badges) ? game.badges : []);
+  const honor = board.honor ?? { title: "Hearer of the Word", short: "Hearer", step: 0 };
 
   return (
     <>
@@ -38,13 +31,13 @@ function RewardsPage() {
           Honor ranks follow the church’s old formation names, from Hearer to Masorete.
         </p>
         <div className="mt-3">
-          <HonorBadge honor={board.honor} />
+          <HonorBadge honor={honor} />
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
           <div className="rounded-[var(--radius-md)] bg-surface px-3 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Level</p>
             <p className="mt-1 font-display text-3xl font-bold tabular-nums text-ink">{board.level}</p>
-            <p className="mt-0.5 truncate text-xs text-muted">{board.honor.short}</p>
+            <p className="mt-0.5 truncate text-xs text-muted">{honor.short}</p>
           </div>
           <div className="rounded-[var(--radius-md)] bg-surface px-3 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Points</p>
@@ -66,10 +59,10 @@ function RewardsPage() {
         <p className="mt-2 text-sm text-muted">Clear a chapter to take the next name. Chapter 19 is Masorete — keeper of the pointed text.</p>
         <ol className="mt-4 grid gap-2 sm:grid-cols-2">
           {HONOR_RANKS.map((rank, i) => {
-            const got = board.honor.step >= i;
+            const got = honor.step >= i;
             return (
               <li
-                key={rank.short}
+                key={`${rank.short}-${i}`}
                 className={`flex items-center justify-between gap-2 rounded-[var(--radius-md)] px-3 py-2.5 ${
                   got ? "bg-card shadow-[var(--shadow-border)]" : "bg-surface"
                 }`}
@@ -88,7 +81,6 @@ function RewardsPage() {
       <ul className="grid gap-2 sm:grid-cols-2">
         {BADGES.map((b) => {
           const got = earned.has(b.id);
-          const Icon = ICONS[b.id];
           return (
             <li
               key={b.id}
@@ -97,7 +89,7 @@ function RewardsPage() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`size-5 ${got ? "text-primary" : "text-muted"}`} />
+                <BadgeGlyph id={b.id} className={`size-5 ${got ? "text-primary" : "text-muted"}`} />
                 <div>
                   <p className={`font-semibold ${got ? "text-ink" : "text-muted"}`}>{b.title}</p>
                   <p className="text-sm text-muted">{got ? "Earned" : b.hint}</p>

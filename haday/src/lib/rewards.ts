@@ -47,8 +47,10 @@ export const HONOR_RANKS = [
 export type HonorRank = (typeof HONOR_RANKS)[number];
 
 export function honorForCleared(cleared: number): HonorRank & { step: number } {
-  const step = Math.min(HONOR_RANKS.length - 1, Math.max(0, Math.floor(cleared)));
-  return { ...HONOR_RANKS[step], step };
+  const n = Number.isFinite(cleared) ? Math.floor(cleared) : 0;
+  const step = Math.min(HONOR_RANKS.length - 1, Math.max(0, n));
+  const rank = HONOR_RANKS[step] ?? HONOR_RANKS[0];
+  return { ...rank, step };
 }
 
 export function chaptersCleared(game: GameSnapshot): number {
@@ -117,7 +119,7 @@ export function ladderRung(game: GameSnapshot): { current: number; cleared: numb
 
 export function stampRewards(game: GameSnapshot, dailyStreak: number): GameSnapshot {
   const next = evaluateBadges(game, dailyStreak);
-  const prev = new Set(game.badges);
+  const prev = new Set(Array.isArray(game.badges) ? game.badges : []);
   const justEarned = next.filter((id) => !prev.has(id));
   return { ...game, badges: next, justEarned };
 }
@@ -132,7 +134,7 @@ export function scoreboard(game: GameSnapshot, dailyStreak: number) {
     stars * 10 +
     stages * 20 +
     rung.cleared * 50 +
-    game.badges.length * 30 +
+    (Array.isArray(game.badges) ? game.badges.length : 0) * 30 +
     dailyStreak * 5 +
     game.winStreak * 8;
   const chapterPct = Math.round((chapterStagesDone / GAME_STAGES.length) * 100);

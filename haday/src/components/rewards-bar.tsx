@@ -1,30 +1,18 @@
-import { Flame, Flag, Footprints, Medal, Mountain, Star, Trophy } from "lucide-react";
+import { Flame } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
-import { GAME_CHAPTER_MAX, chapterRecord, type GameSnapshot } from "@/lib/game";
+import { GAME_CHAPTER_MAX, chapterRecord, hydrateGame, type GameSnapshot } from "@/lib/game";
 import { BADGES, badgeMeta, scoreboard } from "@/lib/rewards";
 import { HonorBadge } from "@/components/honor-badge";
+import { BadgeGlyph } from "@/components/badge-icons";
 import { useStudy } from "@/lib/store";
 
-const ICONS = {
-  "first-win": Flag,
-  "win-3": Trophy,
-  "win-7": Trophy,
-  "first-chapter": Medal,
-  "rung-5": Footprints,
-  "rung-11": Flag,
-  summit: Mountain,
-  "streak-3": Flame,
-  "streak-7": Flame,
-  "streak-14": Flame,
-  perfect: Star,
-} as const;
-
 export function RewardsBar() {
-  const game = useStudy((s) => s.game);
+  const raw = useStudy((s) => s.game);
   const streak = useStudy((s) => s.streak);
+  const game = hydrateGame(raw);
   const board = scoreboard(game, streak);
-  const earned = new Set(game.badges);
+  const earned = new Set(Array.isArray(game.badges) ? game.badges : []);
   const shown = BADGES.filter((b) => earned.has(b.id)).slice(0, 4);
 
   return (
@@ -65,19 +53,16 @@ export function RewardsBar() {
           <Flame className="size-4 text-primary" />
           {streak}d
         </span>
-        {shown.map((b) => {
-          const Icon = ICONS[b.id];
-          return (
+        {shown.map((b) => (
             <span
               key={b.id}
               className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] bg-surface px-3 text-sm font-medium text-ink"
               title={b.hint}
             >
-              <Icon className="size-4 text-primary" />
+              <BadgeGlyph id={b.id} className="size-4 text-primary" />
               {b.title}
             </span>
-          );
-        })}
+        ))}
       </div>
     </div>
   );
@@ -143,10 +128,9 @@ export function NewBadges({ ids }: { ids: string[] }) {
       {ids.map((id) => {
         const meta = badgeMeta(id);
         if (!meta) return null;
-        const Icon = ICONS[id as keyof typeof ICONS] ?? Medal;
         return (
           <li key={id} className="flex items-center justify-center gap-2 text-sm font-medium text-good">
-            <Icon className="size-4" />
+            <BadgeGlyph id={id} className="size-4" />
             Reward: {meta.title}
           </li>
         );
