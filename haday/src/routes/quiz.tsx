@@ -5,7 +5,7 @@ import { VerseCard } from "@/components/verse-card";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
 import { glossMatches, liveGloss, itemsForWeek, quizChoices, type VocabItem } from "@/lib/vocab";
-import { useStudy, weightedQuizDeck, weakQueue } from "@/lib/store";
+import { useStudy, pickStudyRound } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { Panel } from "@/components/panel";
 import { GradeBanner } from "@/components/grade-banner";
@@ -34,9 +34,7 @@ function QuizPage() {
 
   useEffect(() => {
     const snapshot = useStudy.getState().cards;
-    const source = focus === "weak" ? weakQueue(pool, snapshot, 12) : pool;
-    const base = source.length ? source : pool;
-    setDeck(weightedQuizDeck(base, snapshot, 12));
+    setDeck(pickStudyRound(pool, snapshot, focus, 12));
     setI(0);
     setPicked(null);
     setMissedChoice(null);

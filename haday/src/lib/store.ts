@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { type VocabItem } from "./vocab";
+import { shuffle } from "./vocab";
 import {
   applyRating,
   hydrateCard,
@@ -181,7 +182,7 @@ export function dueQueue(items: VocabItem[], cards: ProgressMap, limit = 15, now
     if (weak !== 0) return weak;
     return (cards[a.id].due ?? 0) - (cards[b.id].due ?? 0);
   });
-  return [...due, ...unseen].slice(0, limit);
+  return [...due, ...shuffle(unseen)].slice(0, limit);
 }
 
 /** Missed / lapsing cards first, even if not due yet. */
@@ -190,6 +191,35 @@ export function weakQueue(items: VocabItem[], cards: ProgressMap, limit = 18) {
     .filter((item) => isWeak(cards[item.id]))
     .sort(byWeakness(cards))
     .slice(0, limit);
+}
+
+/** Random round: shuffle within weak / due / the rest, then deal `limit` cards. */
+export function pickStudyRound(
+  pool: VocabItem[],
+  cards: ProgressMap,
+  focus: FocusMode,
+  limit = 18,
+  now = Date.now(),
+): VocabItem[] {
+  if (!pool.length) return [];
+  const n = Math.min(limit, pool.length);
+  const weak = shuffle(pool.filter((item) => isWeak(cards[item.id])));
+  if (focus === "weak" && weak.length) {
+    if (weak.length >= n) return weak.slice(0, n);
+    const rest = shuffle(pool.filter((item) => !weak.some((w) => w.id === item.id)));
+    return shuffle([...weak, ...rest].slice(0, n));
+  }
+  const weakIds = new Set(weak.map((item) => item.id));
+  const due = shuffle(
+    pool.filter((item) => {
+      if (weakIds.has(item.id)) return false;
+      const c = cards[item.id];
+      return !c || c.due <= now;
+    }),
+  );
+  const dueIds = new Set(due.map((item) => item.id));
+  const rest = shuffle(pool.filter((item) => !weakIds.has(item.id) && !dueIds.has(item.id)));
+  return shuffle([...weak, ...due, ...rest].slice(0, n));
 }
 
 /** Adaptive: weak cards float to the front of whatever is due. */
@@ -214,11 +244,7 @@ export function queueForFocus(
   limit = 18,
   now = Date.now(),
 ) {
-  if (focus === "weak") {
-    const weak = weakQueue(items, cards, limit);
-    return weak.length ? weak : studyQueue(items, cards, limit, now);
-  }
-  return studyQueue(items, cards, limit, now);
+  return pickStudyRound(items, cards, focus, limit, now);
 }
 
 export function weakestOf(items: VocabItem[], cards: ProgressMap, n = 5) {

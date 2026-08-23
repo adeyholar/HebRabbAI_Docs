@@ -1,5 +1,4 @@
 import type { VocabItem } from "./vocab";
-import { shuffle } from "./vocab";
 import type { FocusMode } from "./store";
 import { queueForFocus } from "./store";
 import type { Rating } from "./srs";
@@ -17,11 +16,7 @@ export function buildRound(
   limit = 18,
 ): VocabItem[] {
   if (!pool.length) return [];
-  const first = queueForFocus(pool, cards, focus, limit);
-  const seen = new Set(first.map((item) => item.id));
-  const rest = pool.filter((item) => !seen.has(item.id));
-  const picked = [...first, ...rest].slice(0, Math.min(limit, pool.length));
-  return shuffle(picked);
+  return queueForFocus(pool, cards, focus, limit);
 }
 
 export function nextOpen(from: number, items: VocabItem[], done: ReadonlySet<string>): number {
@@ -46,8 +41,13 @@ export function applyDrillGrade(round: DrillRound, rating: Rating): DrillRound {
   }
   if (!cur) return { ...round, pos: -1 };
   if (rating === "again") {
-    const next = nextOpen(pos, round.items, doneSet);
-    return { ...round, pos: next < 0 ? pos : next };
+    const open: number[] = [];
+    for (let j = 0; j < round.items.length; j++) {
+      const item = round.items[j];
+      if (j !== pos && item && !doneSet.has(item.id)) open.push(j);
+    }
+    if (!open.length) return { ...round, pos };
+    return { ...round, pos: open[Math.floor(Math.random() * open.length)] };
   }
   doneSet.add(cur.id);
   const next = nextOpen(pos, round.items, doneSet);
