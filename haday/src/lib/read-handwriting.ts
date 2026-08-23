@@ -9,7 +9,7 @@ type Err = { ok: false; error: string };
 export type ReadHandwritingResult = Ok | Err;
 
 export const readHandwriting = createServerFn({ method: "POST" })
-  .validator((input: { image: string; expected: string }) => input)
+  .validator((input: { image: string; expected: string; mode?: "word" | "letter" }) => input)
   .middleware([authMiddleware])
   .handler(async ({ data }): Promise<ReadHandwritingResult> => {
     const apiKey = process.env.XAI_API_KEY;
@@ -17,8 +17,27 @@ export const readHandwriting = createServerFn({ method: "POST" })
     if (!data.image || data.image.length < 32) return { ok: false, error: "Empty drawing." };
     if (data.image.length > MAX_IMAGE_CHARS) return { ok: false, error: "Drawing is too large. Clear and try a simpler stroke." };
 
-    const target = normalizeHebrew(data.expected);
-    const prompt = `You are checking a student's Biblical Hebrew handwriting on a white pad (black ink, right-to-left).
+    const letterMode = data.mode === "letter";
+    const target = letterMode ? data.expected.trim() : normalizeHebrew(data.expected);
+    const prompt = letterMode
+      ? `You are checking a student's single Biblical Hebrew letter on a white pad (black ink).
+
+The assigned letter is: ${target || "(unknown)"}
+
+1. Transcribe the one letter you actually see (א-ת including finals ךםןףץ). For shin/sin include the dot: שׁ or שׂ. Ignore English and decoration.
+2. Judge whether the ink is that letter.
+
+Lookalikes: ד/ר, ב/כ, ו/י/ן, ה/ח/ת, ס/ם, ג/נ. Final vs regular (כ/ך, מ/ם, נ/ן, פ/ף, צ/ץ) must not be treated as the same. Shin שׁ vs sin שׂ must not be treated as the same.
+
+Reply JSON only, no markdown:
+{"hebrew":"...one letter...","verdict":"exact"|"close"|"different"}
+
+exact = clearly the assigned letter.
+close = messy but recognizable as that letter (or missing only the shin/sin dot).
+different = another letter, unreadable, or the wrong final/regular form.
+If nothing readable: {"hebrew":"","verdict":"different"}.
+Do not translate.`
+      : `You are checking a student's Biblical Hebrew handwriting on a white pad (black ink, right-to-left).
 
 The assigned lemma (consonants only) is: ${target || "(unknown)"}
 

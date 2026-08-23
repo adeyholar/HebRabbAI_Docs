@@ -14,12 +14,13 @@ import {
 import { shuffle } from "@/lib/vocab";
 import { cn } from "@/lib/cn";
 import { GradeBanner } from "@/components/grade-banner";
+import { LetterWrite } from "@/components/letter-write";
 import { playGrade } from "@/lib/sfx";
 
 export const Route = createFileRoute("/alphabet")({ component: AlphabetPage });
 
 function AlphabetPage() {
-  const [tab, setTab] = useState<"letters" | "vowels" | "drill">("vowels");
+  const [tab, setTab] = useState<"letters" | "vowels" | "write" | "drill">("letters");
   const [active, setActive] = useState<HebrewLetter>(CONSONANTS[0]);
 
   return (
@@ -27,13 +28,12 @@ function AlphabetPage() {
       <Panel>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Alef-bet</h1>
         <p className="mt-1 text-sm text-muted">
-          Week 1 foundation: consonants, transliteration, and the full vowel charts — long, short, reduced, and vowel
-          letters.
+          Consonants right to left, vowel charts, and a writing pad that checks your letter.
         </p>
         <div className="mt-4 flex gap-2">
-          {(["letters", "vowels", "drill"] as const).map((t) => (
+          {(["letters", "vowels", "write", "drill"] as const).map((t) => (
             <Button key={t} size="sm" variant={tab === t ? "primary" : "outline"} onClick={() => setTab(t)}>
-              {t === "letters" ? "Letters" : t === "vowels" ? "Vowels" : "Quiz"}
+              {t === "letters" ? "Letters" : t === "vowels" ? "Vowels" : t === "write" ? "Write" : "Quiz"}
             </Button>
           ))}
         </div>
@@ -95,6 +95,8 @@ function AlphabetPage() {
           ))}
         </div>
       )}
+
+      {tab === "write" && <LetterWrite />}
 
       {tab === "drill" && <FoundationQuiz />}
     </>

@@ -33,6 +33,16 @@ export const CONSONANTS: HebrewLetter[] = [
   { id: "tav", letter: "ת", name: "Tav", sound: "t", translit: "t" },
 ];
 
+export const FINAL_FORMS: HebrewLetter[] = [
+  { id: "kaf-final", letter: "ך", name: "Final kaf", sound: "k / kh (end of a word)", translit: "ḵ" },
+  { id: "mem-final", letter: "ם", name: "Final mem", sound: "m (end of a word)", translit: "m" },
+  { id: "nun-final", letter: "ן", name: "Final nun", sound: "n (end of a word)", translit: "n" },
+  { id: "pe-final", letter: "ף", name: "Final pe", sound: "p / f (end of a word)", translit: "p̄" },
+  { id: "tsade-final", letter: "ץ", name: "Final tsade", sound: "ts (end of a word)", translit: "ṣ" },
+];
+
+export const WRITE_LETTERS: HebrewLetter[] = [...CONSONANTS, ...FINAL_FORMS];
+
 export type VowelKind = "long" | "short" | "reduced" | "shewa" | "he" | "waw" | "yod";
 export type VowelClass = "a" | "e" | "i" | "o" | "u";
 

@@ -289,6 +289,32 @@ export function consonantsMatch(expected: string, typed: string): boolean {
   return distance <= 0.9 || (want.length >= 4 && distance / want.length <= 0.28);
 }
 
+export function foldLetterGlyph(s: string): string {
+  return s.normalize("NFC").replace(/[^\u05D0-\u05EA\u05C1\u05C2]/g, "");
+}
+
+/** Single-letter check: finals stay distinct; shin vs sin must match. */
+export function matchLetter(expected: string, read: string): { match: HandMatch; readN: string } {
+  const want = foldLetterGlyph(expected);
+  const got = foldLetterGlyph(read);
+  if (!got) return { match: "empty", readN: "" };
+  if (got === want) return { match: "exact", readN: got };
+  const wantBase = want.replace(/[\u05C1\u05C2]/g, "");
+  const gotBase = got.replace(/[\u05C1\u05C2]/g, "");
+  if (wantBase === "ש" && gotBase === "ש") {
+    const wantSin = want.includes("\u05C2");
+    const gotSin = got.includes("\u05C2");
+    const gotShin = got.includes("\u05C1");
+    if (!gotShin && !gotSin) return { match: "close", readN: got };
+    if (wantSin !== gotSin) return { match: "wrong", readN: got };
+    return { match: "exact", readN: got };
+  }
+  if (LOOKALIKE[gotBase] === wantBase || LOOKALIKE[wantBase] === gotBase) {
+    return { match: "close", readN: got };
+  }
+  return { match: "wrong", readN: got };
+}
+
 export function matchHandwriting(expected: string, read: string): { match: HandMatch; distance: number; expectedN: string; readN: string } {
   const expectedN = normalizeHebrew(expected);
   const readN = normalizeHebrew(read);
