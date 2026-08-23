@@ -11,10 +11,6 @@ type Feat = {
   closed: number;
   circ: number;
   path: number;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
   tall: boolean;
   wide: boolean;
   square: boolean;
@@ -44,8 +40,8 @@ function analyze(strokes: InkStroke[]): Feat | null {
   }
   const w = Math.max(1, maxX - minX);
   const h = Math.max(1, maxY - minY);
-  const longest = clean.reduce((a, b) => (a.length >= b.length ? a : b));
-  const closed = Math.max(0, 1 - dist(longest[0], longest[longest.length - 1]) / Math.max(w, h));
+  const longest = clean.reduce((a, b) => (pathOf(a) >= pathOf(b) ? a : b));
+  const closed = Math.max(0, 1 - dist(longest[0], longest[longest.length - 1]) / Math.max(w, h, 1));
   let area = 0;
   for (let i = 0; i < longest.length; i++) {
     const p = longest[i];
@@ -56,9 +52,7 @@ function analyze(strokes: InkStroke[]): Feat | null {
   let perim = 0;
   for (let i = 1; i < longest.length; i++) perim += dist(longest[i - 1], longest[i]);
   perim += dist(longest[longest.length - 1], longest[0]);
-  const circ = perim > 0 ? Math.min(1.4, (4 * Math.PI * area) / (perim * perim)) : 0;
-  const first = clean[0][0];
-  const last = clean[clean.length - 1][clean[clean.length - 1].length - 1];
+  const circ = perim > 0 ? Math.min(1.5, (4 * Math.PI * area) / (perim * perim)) : 0;
   return {
     n: clean.length,
     w,
@@ -67,52 +61,18 @@ function analyze(strokes: InkStroke[]): Feat | null {
     closed,
     circ,
     path,
-    startX: (first.x - minX) / w,
-    startY: (first.y - minY) / h,
-    endX: (last.x - minX) / w,
-    endY: (last.y - minY) / h,
-    tall: h / w > 1.45,
-    wide: w / h > 1.35,
-    square: w / h > 0.62 && w / h < 1.45,
-    small: Math.max(w, h) < 36 && path < 90,
+    tall: h / w > 1.35,
+    wide: w / h > 1.3,
+    square: w / h > 0.5 && w / h < 1.6,
+    small: Math.max(w, h) < 42 && path < 110,
   };
 }
 
-type Scorer = (f: Feat) => number;
-
-const SCORES: Record<string, Scorer> = {
-  א: (f) => (f.n >= 2 ? 0.35 : 0.1) + (f.tall ? 0.15 : 0) + (f.closed < 0.5 ? 0.2 : 0),
-  ב: (f) => (f.closed < 0.55 ? 0.25 : 0) + (f.endX < 0.45 || f.startX < 0.45 ? 0.3 : 0) + (f.n <= 2 ? 0.2 : 0),
-  ג: (f) => (f.n <= 2 ? 0.25 : 0) + (f.closed < 0.5 ? 0.25 : 0) + (f.endY > 0.55 ? 0.2 : 0),
-  ד: (f) => (f.wide || f.square ? 0.2 : 0) + (f.startY < 0.35 ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0),
-  ה: (f) => (f.n >= 2 ? 0.45 : 0.1) + (f.closed < 0.6 ? 0.2 : 0),
-  ו: (f) => (f.tall ? 0.45 : 0) + (f.n === 1 ? 0.25 : 0) + (f.small ? 0 : 0.1) + (f.closed < 0.5 ? 0.1 : 0) - (f.circ > 0.45 ? 0.4 : 0),
-  ז: (f) => (f.n <= 2 ? 0.25 : 0) + (f.startY < 0.3 ? 0.25 : 0) + (f.closed < 0.5 ? 0.2 : 0),
-  ח: (f) => (f.n >= 2 ? 0.4 : 0.15) + (f.square ? 0.2 : 0) + (f.closed > 0.35 ? 0.15 : 0),
-  ט: (f) => (f.closed > 0.45 ? 0.3 : 0.1) + (f.square ? 0.2 : 0) + (f.n <= 2 ? 0.2 : 0),
-  י: (f) => (f.small ? 0.5 : 0) + (f.n === 1 ? 0.25 : 0) + (f.path < 120 ? 0.15 : 0) - (f.tall && !f.small ? 0.35 : 0),
-  כ: (f) => (f.closed < 0.55 ? 0.25 : 0) + (f.n <= 2 ? 0.2 : 0) + (f.circ > 0.25 && f.circ < 0.7 ? 0.2 : 0),
-  ך: (f) => (f.tall ? 0.4 : 0) + (f.n <= 2 ? 0.2 : 0) + (f.endY > 0.7 ? 0.2 : 0) - (f.circ > 0.5 ? 0.3 : 0),
-  ל: (f) => (f.tall ? 0.4 : 0) + (f.startY < 0.25 ? 0.25 : 0) + (f.n <= 2 ? 0.15 : 0),
-  מ: (f) => (f.n <= 2 ? 0.2 : 0) + (f.closed < 0.7 ? 0.25 : 0) + (f.square ? 0.2 : 0) - (f.circ > 0.7 ? 0.25 : 0),
-  ם: (f) => (f.closed > 0.72 ? 0.4 : 0.1) + (f.square ? 0.25 : 0) + (f.circ < 0.72 ? 0.2 : 0) - (f.circ > 0.78 ? 0.35 : 0),
-  נ: (f) => (f.n <= 2 ? 0.25 : 0) + (f.closed < 0.5 ? 0.25 : 0) + (!f.small && f.aspect < 1.1 ? 0.15 : 0),
-  ן: (f) => (f.tall ? 0.45 : 0) + (f.n === 1 ? 0.25 : 0) - (f.circ > 0.45 ? 0.4 : 0) - (f.small ? 0.3 : 0),
-  ס: (f) =>
-    (f.closed > 0.62 ? 0.4 : f.closed > 0.4 ? 0.2 : 0) +
-    (f.circ > 0.45 ? 0.4 : f.circ > 0.28 ? 0.2 : 0) +
-    (f.square ? 0.15 : 0) +
-    (f.n <= 2 ? 0.1 : 0),
-  ע: (f) => (f.n <= 2 ? 0.2 : 0) + (f.closed < 0.65 ? 0.2 : 0) + (f.endY > 0.5 ? 0.15 : 0),
-  פ: (f) => (f.closed < 0.6 ? 0.25 : 0) + (f.n <= 2 ? 0.2 : 0),
-  ף: (f) => (f.tall ? 0.35 : 0) + (f.n <= 2 ? 0.2 : 0),
-  צ: (f) => (f.n <= 3 ? 0.2 : 0) + (f.closed < 0.55 ? 0.2 : 0),
-  ץ: (f) => (f.tall ? 0.35 : 0) + (f.n <= 2 ? 0.2 : 0),
-  ק: (f) => (f.tall || f.endY > 0.7 ? 0.3 : 0) + (f.n <= 2 ? 0.2 : 0),
-  ר: (f) => (f.n === 1 ? 0.25 : 0) + (f.closed < 0.5 ? 0.25 : 0) + (f.startY < 0.35 ? 0.2 : 0),
-  ש: (f) => (f.n >= 1 ? 0.15 : 0) + (f.wide || f.square ? 0.2 : 0) + (f.closed < 0.55 ? 0.15 : 0),
-  ת: (f) => (f.n <= 3 ? 0.2 : 0) + (f.square || f.wide ? 0.2 : 0) + (f.endX > 0.55 ? 0.15 : 0),
-};
+function pathOf(s: InkStroke): number {
+  let n = 0;
+  for (let i = 1; i < s.length; i++) n += dist(s[i - 1], s[i]);
+  return n;
+}
 
 function baseLetter(expected: string): string {
   const g = foldLetterGlyph(expected);
@@ -120,26 +80,80 @@ function baseLetter(expected: string): string {
   return g.replace(/[^\u05D0-\u05EA]/g, "").slice(0, 1);
 }
 
-/** Local ink check so a circle for samekh (and similar shapes) can grade without the cloud reader. */
+function loop(f: Feat): boolean {
+  return f.closed > 0.22 || f.circ > 0.16;
+}
+
+function stick(f: Feat): boolean {
+  return f.tall && f.closed < 0.35 && f.circ < 0.28;
+}
+
+/** Known-target check: is the ink a plausible form of this letter? */
 export function verifyLetterInk(strokes: InkStroke[], expected: string): { match: HandMatch; read: string; score: number } {
   const want = baseLetter(expected);
   const feat = analyze(strokes);
   if (!feat || !want) return { match: "empty", read: "", score: 0 };
-  const scorer = SCORES[want];
-  const score = scorer ? Math.max(0, Math.min(1.2, scorer(feat))) : 0;
-  let bestOther = 0;
-  let bestId = "";
-  for (const [id, fn] of Object.entries(SCORES)) {
-    if (id === want) continue;
-    const s = fn(feat);
-    if (s > bestOther) {
-      bestOther = s;
-      bestId = id;
-    }
+  if (feat.path < 12) return { match: "empty", read: "", score: 0 };
+
+  let ok = false;
+  let strong = false;
+
+  switch (want) {
+    case "ס":
+      ok = loop(feat) || (feat.square && feat.n <= 3);
+      strong = feat.circ > 0.22 || feat.closed > 0.4;
+      break;
+    case "ם":
+      ok = loop(feat) || (feat.square && feat.closed > 0.18);
+      strong = feat.closed > 0.45;
+      break;
+    case "ט":
+    case "ע":
+    case "מ":
+      ok = feat.path > 30 && !stick(feat);
+      strong = loop(feat);
+      break;
+    case "ו":
+    case "ן":
+    case "ך":
+    case "י":
+      ok = feat.n <= 3 && (feat.small || stick(feat) || feat.tall || feat.path < 180);
+      strong = stick(feat) || feat.small;
+      break;
+    case "ל":
+      ok = feat.tall || feat.h > feat.w;
+      strong = feat.tall;
+      break;
+    case "ה":
+    case "ח":
+    case "ת":
+    case "א":
+    case "ש":
+      ok = feat.n >= 1 && feat.path > 28;
+      strong = feat.n >= 2;
+      break;
+    case "ב":
+    case "כ":
+    case "פ":
+    case "ג":
+    case "נ":
+    case "ד":
+    case "ר":
+    case "ק":
+    case "ז":
+    case "צ":
+    case "ץ":
+    case "ף":
+      ok = feat.path > 24 && !(want !== "ק" && loop(feat) && feat.circ > 0.55);
+      strong = feat.path > 50;
+      break;
+    default:
+      ok = feat.path > 24;
+      strong = feat.path > 70;
   }
-  if (score >= 0.55 && score + 0.04 >= bestOther) return { match: "exact", read: want, score };
-  if (score >= 0.4 && score + 0.12 >= bestOther) return { match: "close", read: want, score };
-  if (bestOther >= 0.55 && bestOther > score + 0.12) return { match: "wrong", read: bestId, score };
-  if (score >= 0.32) return { match: "close", read: want, score };
-  return { match: "wrong", read: bestId, score };
+
+  if (strong && ok) return { match: "exact", read: want, score: 0.8 };
+  if (ok) return { match: "close", read: want, score: 0.5 };
+  if (feat.path > 50 && !stick(feat)) return { match: "close", read: want, score: 0.28 };
+  return { match: "wrong", read: "", score: 0.1 };
 }

@@ -39,15 +39,23 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
 
   async function check() {
     if (empty || busy || result) return;
+    pad.current?.commit();
     const image = pad.current?.toImage();
-    if (!image) return;
+    const strokes = pad.current?.getStrokes() ?? [];
+    if (!image && !strokes.length) return;
     setBusy(true);
-    const next = await checkGlyphInk(image, expected, mode, pad.current?.getStrokes());
+    const next = await checkGlyphInk(image || "data:image/png;base64,", expected, mode, strokes);
     setLeft(writeChecksLeft());
     if (next.counted !== false) setTries((n) => n + 1);
     setResult(next);
     playGrade(next.match === "exact" || next.match === "close");
     setBusy(false);
+  }
+
+  function selfGrade(pass: boolean) {
+    setResult({ match: pass ? "exact" : "wrong", read: expected, counted: true });
+    setTries((n) => n + 1);
+    playGrade(pass);
   }
 
   return (
@@ -87,7 +95,17 @@ export function GlyphInk({ expected, mode, ghost, onPass }: Props) {
         </div>
       )}
       {result && result.match === "empty" && (
-        <p className="mt-3 text-center text-sm text-muted">{result.note}</p>
+        <div className="mt-3">
+          <p className="text-center text-sm text-muted">{result.note}</p>
+          <div className="mt-3 flex gap-2">
+            <Button className="flex-1" onClick={() => selfGrade(true)}>
+              Count as correct
+            </Button>
+            <Button className="flex-1" variant="outline" onClick={() => selfGrade(false)}>
+              I missed it
+            </Button>
+          </div>
+        </div>
       )}
       {!result && (
         <Button className="mt-3 w-full" onClick={() => void check()} disabled={empty || busy}>

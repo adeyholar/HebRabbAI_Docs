@@ -8,6 +8,7 @@ export type InkPadHandle = {
   isEmpty: () => boolean;
   clear: () => void;
   undo: () => void;
+  commit: () => void;
   toImage: () => string | null;
   getStrokes: () => { x: number; y: number }[][];
 };
@@ -135,13 +136,21 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       onChange?.(strokesRef.current.length === 0);
       redraw();
     },
+    commit: () => {
+      if (currentRef.current?.length) {
+        strokesRef.current.push(currentRef.current);
+        currentRef.current = null;
+        redraw();
+      }
+    },
     toImage: () => {
-      if (strokesRef.current.length === 0) return null;
+      const all = currentRef.current?.length ? [...strokesRef.current, currentRef.current] : strokesRef.current;
+      if (all.length === 0) return null;
       let minX = Infinity;
       let minY = Infinity;
       let maxX = -Infinity;
       let maxY = -Infinity;
-      for (const stroke of strokesRef.current) {
+      for (const stroke of all) {
         for (const p of stroke) {
           minX = Math.min(minX, p.x);
           minY = Math.min(minY, p.y);
@@ -170,7 +179,7 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       ctx.lineWidth = Math.max(8, 10);
       const tx = (x: number) => (x - minX + pad) * scale;
       const ty = (y: number) => (y - minY + pad) * scale;
-      for (const stroke of strokesRef.current) {
+      for (const stroke of all) {
         if (stroke.length < 2) {
           if (stroke[0]) {
             ctx.beginPath();
@@ -186,7 +195,10 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       }
       return out.toDataURL("image/png");
     },
-    getStrokes: () => strokesRef.current.map((s) => s.map((p) => ({ x: p.x, y: p.y }))),
+    getStrokes: () => {
+      const all = currentRef.current?.length ? [...strokesRef.current, currentRef.current] : strokesRef.current;
+      return all.map((s) => s.map((p) => ({ x: p.x, y: p.y })));
+    },
   }));
 
   return (
