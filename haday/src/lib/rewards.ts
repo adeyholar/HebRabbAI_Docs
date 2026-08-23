@@ -12,6 +12,8 @@ export const BADGES = [
   { id: "streak-7", title: "Week flame", hint: "Show up 7 days in a row" },
   { id: "streak-14", title: "Fortnight", hint: "Show up 14 days in a row" },
   { id: "perfect", title: "Three stars", hint: "Score three stars on a stage" },
+  { id: "ultimate-90", title: "The Full Scroll", hint: "Score 90% on the Ultimate Challenge" },
+  { id: "ultimate-100", title: "Crown of the Text", hint: "Perfect score on the Ultimate Challenge" },
 ] as const;
 
 export type BadgeId = (typeof BADGES)[number]["id"];
@@ -101,6 +103,8 @@ export function evaluateBadges(game: GameSnapshot, dailyStreak: number): BadgeId
   if (dailyStreak >= 7) out.push("streak-7");
   if (dailyStreak >= 14) out.push("streak-14");
   if (hasThreeStar(game)) out.push("perfect");
+  if ((Number(game.ultimateBest) || 0) >= 90) out.push("ultimate-90");
+  if ((Number(game.ultimateBest) || 0) >= 100 || game.ultimatePerfect) out.push("ultimate-100");
   return out;
 }
 
@@ -136,15 +140,19 @@ export function scoreboard(game: GameSnapshot, dailyStreak: number) {
     rung.cleared * 50 +
     (Array.isArray(game.badges) ? game.badges.length : 0) * 30 +
     dailyStreak * 5 +
-    game.winStreak * 8;
+    game.winStreak * 8 +
+    ((Number(game.ultimateBest) || 0) >= 90 ? 250 : 0) +
+    ((Number(game.ultimateBest) || 0) >= 100 || game.ultimatePerfect ? 1000 : 0);
   const chapterPct = Math.round((chapterStagesDone / GAME_STAGES.length) * 100);
   const overallPct = Math.round((rung.cleared / GAME_CHAPTER_MAX) * 100);
+  const crown = (Number(game.ultimateBest) || 0) >= 100 || Boolean(game.ultimatePerfect);
   const honor = honorForCleared(rung.cleared);
   const title = rung.cleared >= GAME_CHAPTER_MAX ? honor.title : `Chapter ${rung.current}`;
   return {
     level: rung.current,
     title,
     honor,
+    crown,
     points,
     stars,
     stages,

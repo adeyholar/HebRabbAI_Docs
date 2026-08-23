@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Panel } from "@/components/panel";
 import { LadderStrip } from "@/components/rewards-bar";
 import { BadgeGlyph } from "@/components/badge-icons";
-import { HonorBadge } from "@/components/honor-badge";
+import { HonorBadge, CrownBadge } from "@/components/honor-badge";
 import { AppErrorComponent } from "@/lib/error-component";
 import { hydrateGame } from "@/lib/game";
 import { BADGES, HONOR_RANKS, scoreboard } from "@/lib/rewards";
@@ -30,8 +30,9 @@ function RewardsPage() {
           Daily streak for showing up. Win streak for clearing stages. Each BBH chapter is a rung — 19 to the summit.
           Honor ranks follow the church’s old formation names, from Hearer to Masorete.
         </p>
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <HonorBadge honor={honor} />
+          {board.crown ? <CrownBadge /> : null}
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
           <div className="rounded-[var(--radius-md)] bg-surface px-3 py-3">

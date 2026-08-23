@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { HonorBadge } from "@/components/honor-badge";
+import { HonorBadge, CrownBadge } from "@/components/honor-badge";
 import { listLeaderboard, type BoardRow } from "@/lib/leaderboard";
 
 export function LeaderboardTeaser() {
@@ -46,6 +46,7 @@ export function LeaderboardTeaser() {
               <span className="me-1 font-display font-bold tabular-nums text-primary">{row.rank}</span>
               <span className="truncate">{row.name}</span>
               <HonorBadge honor={{ title: row.honor, short: row.honorShort }} compact className="min-h-6 px-2" />
+              {row.crown ? <CrownBadge compact className="min-h-6 px-2" /> : null}
               {row.you ? <span className="text-xs font-medium uppercase tracking-wide text-primary">You</span> : null}
             </span>
             <span className="shrink-0 tabular-nums text-muted">{row.points.toLocaleString()} pts</span>
@@ -57,6 +58,7 @@ export function LeaderboardTeaser() {
               <span className="me-1 font-display font-bold tabular-nums text-primary">{you.rank}</span>
               <span className="truncate">{you.name}</span>
               <HonorBadge honor={{ title: you.honor, short: you.honorShort }} compact className="min-h-6 px-2" />
+              {you.crown ? <CrownBadge compact className="min-h-6 px-2" /> : null}
               <span className="text-xs font-medium uppercase tracking-wide text-primary">You</span>
             </span>
             <span className="shrink-0 tabular-nums text-muted">{you.points.toLocaleString()} pts</span>

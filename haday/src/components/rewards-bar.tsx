@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { GAME_CHAPTER_MAX, chapterRecord, hydrateGame, type GameSnapshot } from "@/lib/game";
 import { BADGES, badgeMeta, scoreboard } from "@/lib/rewards";
-import { HonorBadge } from "@/components/honor-badge";
+import { HonorBadge, CrownBadge } from "@/components/honor-badge";
 import { BadgeGlyph } from "@/components/badge-icons";
 import { useStudy } from "@/lib/store";
 
@@ -25,6 +25,7 @@ export function RewardsBar() {
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <HonorBadge honor={board.honor} />
+        {board.crown ? <CrownBadge /> : null}
         <span className="text-sm text-muted">Level {board.level} of {board.total}</span>
       </div>
 

@@ -36,6 +36,7 @@ function GuidePage() {
             <span className="text-ink"> — </span>
             pick a course week or a Game chapter — same BBH 3rd-ed. lemmas as Game — then Drill, Write, Quiz, or Lex.
             Closed-book Exam is from memory; misses lead the next Write and Quiz rounds.
+            Ultimate Challenge is optional: the whole Ch. 2–19 list in one sitting, graded at the end.
           </li>
         </ul>
       </Panel>

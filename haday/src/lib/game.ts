@@ -24,6 +24,12 @@ export type ChapterRecord = {
   stages: Record<GameStageId, StageRecord>;
 };
 
+export type UltimateRun = {
+  ids: string[];
+  answers: string[];
+  i: number;
+};
+
 export type GameSnapshot = {
   unlockedChapter: number;
   currentChapter: number;
@@ -34,6 +40,10 @@ export type GameSnapshot = {
   winStreak: number;
   bestWinStreak: number;
   justEarned: string[];
+  ultimateBest: number;
+  ultimateAttempts: number;
+  ultimatePerfect: boolean;
+  ultimateRun: UltimateRun | null;
 };
 
 export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
@@ -84,6 +94,10 @@ export function defaultGame(): GameSnapshot {
     winStreak: 0,
     bestWinStreak: 0,
     justEarned: [],
+    ultimateBest: 0,
+    ultimateAttempts: 0,
+    ultimatePerfect: false,
+    ultimateRun: null,
   };
 }
 
@@ -110,7 +124,24 @@ export function hydrateGame(raw: unknown): GameSnapshot {
     winStreak: Math.max(0, Number(r.winStreak) || 0),
     bestWinStreak: Math.max(0, Number(r.bestWinStreak) || 0),
     justEarned: Array.isArray(r.justEarned) ? r.justEarned.filter((x) => typeof x === "string") : [],
+    ultimateBest: Math.max(0, Math.min(100, Number(r.ultimateBest) || 0)),
+    ultimateAttempts: Math.max(0, Number(r.ultimateAttempts) || 0),
+    ultimatePerfect: Boolean(r.ultimatePerfect) || Number(r.ultimateBest) >= 100,
+    ultimateRun: hydrateUltimateRun(r.ultimateRun),
   };
+}
+
+function hydrateUltimateRun(raw: unknown): UltimateRun | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Partial<UltimateRun>;
+  if (!Array.isArray(r.ids) || !r.ids.length) return null;
+  const ids = r.ids.filter((x) => typeof x === "string");
+  const answers = Array.isArray(r.answers)
+    ? r.answers.map((x) => (typeof x === "string" ? x : ""))
+    : ids.map(() => "");
+  while (answers.length < ids.length) answers.push("");
+  const i = Math.max(0, Math.min(ids.length, Number(r.i) || 0));
+  return { ids, answers: answers.slice(0, ids.length), i };
 }
 
 function mergeChapter(val: unknown): ChapterRecord {
@@ -261,6 +292,32 @@ export function applyStageResult(
   next.currentChapter = cursor.chapter;
   next.currentStage = cursor.stage;
   next.lastPlayDay = Date.now();
+  return next;
+}
+
+export function applyUltimateResult(game: GameSnapshot, pct: number): GameSnapshot {
+  const next = cloneGame(hydrateGame(game));
+  const score = Math.max(0, Math.min(100, Math.round(pct)));
+  next.ultimateBest = Math.max(next.ultimateBest || 0, score);
+  next.ultimateAttempts = (next.ultimateAttempts || 0) + 1;
+  next.ultimatePerfect = next.ultimatePerfect || score >= 100;
+  next.ultimateRun = null;
+  return next;
+}
+
+export function startUltimateRun(game: GameSnapshot, ids: string[]): GameSnapshot {
+  const next = cloneGame(hydrateGame(game));
+  next.ultimateRun = { ids, answers: ids.map(() => ""), i: 0 };
+  return next;
+}
+
+export function patchUltimateRun(game: GameSnapshot, run: UltimateRun): GameSnapshot {
+  const next = cloneGame(hydrateGame(game));
+  next.ultimateRun = {
+    ids: run.ids,
+    answers: run.answers.slice(0, run.ids.length),
+    i: Math.max(0, Math.min(run.ids.length, run.i)),
+  };
   return next;
 }
 

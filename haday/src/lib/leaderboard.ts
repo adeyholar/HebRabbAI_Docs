@@ -13,6 +13,7 @@ export type BoardRow = {
   streak: number;
   honor: string;
   honorShort: string;
+  crown: boolean;
   you: boolean;
 };
 
@@ -75,12 +76,14 @@ export const listLeaderboard = createServerFn({ method: "GET" })
       let level = 1;
       let honor = fallback.title;
       let honorShort = fallback.short;
+      let crown = false;
       try {
         const board = scoreboard(hydrateGame(parseGame(r.game)), streak);
         points = board.points;
         level = board.level;
         honor = board.honor?.title ?? honor;
         honorShort = board.honor?.short ?? honorShort;
+        crown = Boolean(board.crown);
       } catch (err) {
         console.error("[leaderboard] score", r.id, err);
       }
@@ -92,6 +95,7 @@ export const listLeaderboard = createServerFn({ method: "GET" })
         streak,
         honor,
         honorShort,
+        crown,
       };
     });
 
@@ -116,6 +120,7 @@ export const listLeaderboard = createServerFn({ method: "GET" })
         streak: row.streak,
         honor: row.honor,
         honorShort: row.honorShort,
+        crown: row.crown,
         you: row.id === context.userId,
       };
     });

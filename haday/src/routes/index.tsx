@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Compass, Library } from "lucide-react";
+import { Compass, Crown, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
@@ -76,6 +76,19 @@ function Home() {
         <GameContinue />
         <p className="sr-only">{continueLabel(game)}</p>
       </div>
+
+      <Link
+        to="/challenge"
+        className="mt-3 flex items-start gap-3 rounded-[var(--radius-xl)] bg-card p-5 text-ink shadow-[var(--shadow-border)]"
+      >
+        <Crown className="mt-0.5 size-6 shrink-0 text-primary" />
+        <span>
+          <span className="block font-display text-2xl font-bold">Ultimate Challenge</span>
+          <span className="mt-1 block text-sm text-muted">
+            Optional. Whole BBH list, one sitting, graded at the end. 90% Full Scroll · 100% Crown of the Text.
+          </span>
+        </span>
+      </Link>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="Due" value={s.due} />

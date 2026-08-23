@@ -34,6 +34,12 @@ function GameMapPage() {
         <div className="mt-4">
           <GameContinue />
         </div>
+        <p className="mt-3 text-sm">
+          <Link to="/challenge" className="font-semibold text-primary">
+            Ultimate Challenge
+          </Link>
+          <span className="text-muted"> — optional full-list exam, graded when you finish.</span>
+        </p>
         <p className="mt-3 text-sm text-muted">
           Streak <span className="font-semibold tabular-nums text-ink">{streak}d</span>
           {game.winStreak > 1 ? (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Panel } from "@/components/panel";
-import { HonorBadge } from "@/components/honor-badge";
+import { HonorBadge, CrownBadge } from "@/components/honor-badge";
 import { Button } from "@/components/ui/button";
 import { AppErrorComponent } from "@/lib/error-component";
 import { cn } from "@/lib/cn";
@@ -98,6 +98,7 @@ function LeaderboardPage() {
                     honor={{ title: row.honor || "Hearer of the Word", short: row.honorShort || "Hearer" }}
                     compact
                   />
+                  {row.crown ? <CrownBadge compact /> : null}
                   {row.you ? <span className="text-xs font-medium uppercase tracking-wide text-primary">You</span> : null}
                 </p>
                 <p className="text-sm text-muted">

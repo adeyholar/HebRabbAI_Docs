@@ -13,10 +13,14 @@ import {
 } from "./srs";
 import {
   applyStageResult,
+  applyUltimateResult,
   defaultGame,
   hydrateGame,
+  patchUltimateRun,
+  startUltimateRun,
   type GameSnapshot,
   type GameStageId,
+  type UltimateRun,
 } from "./game";
 import { stampRewards } from "./rewards";
 
@@ -47,6 +51,9 @@ type StudyState = StudySnapshot & {
     stage: GameStageId,
     result: { stars: number; score: number; firstTryRate: number },
   ) => void;
+  startUltimate: (ids: string[]) => void;
+  saveUltimateRun: (run: UltimateRun) => void;
+  finishUltimate: (pct: number) => void;
   hydrateRemote: (snap: StudySnapshot, ownerId: string) => void;
   reset: () => void;
 };
@@ -93,6 +100,22 @@ export const useStudy = create<StudyState>()(
         const now = Date.now();
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
         const game = stampRewards(applyStageResult(get().game, chapter, stage, result), streakInfo.streak);
+        set({
+          game,
+          ...streakInfo,
+          sessions: get().lastStudyDay === startOfDay(now) ? get().sessions : get().sessions + 1,
+        });
+      },
+      startUltimate: (ids) => {
+        set({ game: startUltimateRun(get().game, ids) });
+      },
+      saveUltimateRun: (run) => {
+        set({ game: patchUltimateRun(get().game, run) });
+      },
+      finishUltimate: (pct) => {
+        const now = Date.now();
+        const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
+        const game = stampRewards(applyUltimateResult(get().game, pct), streakInfo.streak);
         set({
           game,
           ...streakInfo,

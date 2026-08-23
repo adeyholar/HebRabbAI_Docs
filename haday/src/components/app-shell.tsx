@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CircleHelp, Compass, House, Languages, Layers, ListChecks, Map, Medal, PenLine, Trophy, Users } from "lucide-react";
+import { BookOpen, CircleHelp, Compass, Crown, House, Languages, Layers, ListChecks, Map, Medal, PenLine, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { snapshotOf, useStudy } from "@/lib/store";
 import { loadProgress, saveProgress } from "@/lib/progress";
@@ -11,7 +11,7 @@ import { SfxToggle } from "@/components/sfx-toggle";
 import { continueTarget } from "@/lib/game";
 import { getAdminStatus } from "@/lib/admin";
 import { scoreboard } from "@/lib/rewards";
-import { HonorBadge } from "@/components/honor-badge";
+import { HonorBadge, CrownBadge } from "@/components/honor-badge";
 import { VisitorBeacon } from "@/components/visitor-beacon";
 
 const STUDY_NAV = [
@@ -33,7 +33,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const game = useStudy((s) => s.game);
   const streak = useStudy((s) => s.streak);
-  const honor = scoreboard(game, streak).honor;
+  const board = scoreboard(game, streak);
+  const honor = board.honor;
   const cont = continueTarget(game);
 
   useEffect(() => {
@@ -151,6 +152,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               <CircleHelp className="size-5" strokeWidth={pathname === "/guide" ? 2.2 : 1.8} />
             </Link>
             <Link
+              to="/challenge"
+              aria-label="Ultimate Challenge"
+              className={cn(
+                "flex size-11 items-center justify-center rounded-[var(--radius-md)]",
+                pathname === "/challenge" ? "text-primary" : "text-muted",
+              )}
+            >
+              <Crown className="size-5" strokeWidth={pathname === "/challenge" ? 2.2 : 1.8} />
+            </Link>
+            <Link
               to="/rewards"
               aria-label="Rewards"
               className={cn(
@@ -184,6 +195,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
             <SfxToggle />
             <HonorBadge honor={honor} compact className="hidden max-w-[7.5rem] sm:inline-flex" />
+            {board.crown ? <CrownBadge compact className="hidden sm:inline-flex" /> : null}
             <div className="account-chip min-w-0 shrink">
               <UserButton />
             </div>

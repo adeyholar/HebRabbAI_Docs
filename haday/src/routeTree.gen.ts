@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AlphabetRouteImport } from './routes/alphabet'
 import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as ChallengeRouteImport } from './routes/challenge'
 import { Route as DrillRouteImport } from './routes/drill'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
@@ -43,6 +44,11 @@ const AlphabetRoute = AlphabetRouteImport.update({
 const BrowseRoute = BrowseRouteImport.update({
   id: '/browse',
   path: '/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChallengeRoute = ChallengeRouteImport.update({
+  id: '/challenge',
+  path: '/challenge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DrillRoute = DrillRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
+  '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
+  '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
   '/browse': typeof BrowseRoute
+  '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/alphabet'
     | '/browse'
+    | '/challenge'
     | '/drill'
     | '/guide'
     | '/leaderboard'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/alphabet'
     | '/browse'
+    | '/challenge'
     | '/drill'
     | '/guide'
     | '/leaderboard'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/alphabet'
     | '/browse'
+    | '/challenge'
     | '/drill'
     | '/guide'
     | '/leaderboard'
@@ -212,6 +224,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AlphabetRoute: typeof AlphabetRoute
   BrowseRoute: typeof BrowseRoute
+  ChallengeRoute: typeof ChallengeRoute
   DrillRoute: typeof DrillRoute
   GuideRoute: typeof GuideRoute
   LeaderboardRoute: typeof LeaderboardRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/browse'
       fullPath: '/browse'
       preLoaderRoute: typeof BrowseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/challenge': {
+      id: '/challenge'
+      path: '/challenge'
+      fullPath: '/challenge'
+      preLoaderRoute: typeof ChallengeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/drill': {
@@ -340,6 +360,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AlphabetRoute: AlphabetRoute,
   BrowseRoute: BrowseRoute,
+  ChallengeRoute: ChallengeRoute,
   DrillRoute: DrillRoute,
   GuideRoute: GuideRoute,
   LeaderboardRoute: LeaderboardRoute,
