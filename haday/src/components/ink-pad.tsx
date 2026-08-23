@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { PAD_BASE, PAD_TOP } from "@/lib/pad-guides";
 import { cn } from "@/lib/cn";
 
 type Point = { x: number; y: number };
@@ -11,18 +12,22 @@ export type InkPadHandle = {
   commit: () => void;
   toImage: () => string | null;
   getStrokes: () => { x: number; y: number }[][];
+  getHeight: () => number;
 };
 
 type Props = {
   className?: string;
   disabled?: boolean;
+  guides?: boolean;
   onChange?: (empty: boolean) => void;
 };
 
-export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ className, disabled, onChange }, ref) {
+export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ className, disabled, guides, onChange }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const strokesRef = useRef<Stroke[]>([]);
   const currentRef = useRef<Stroke | null>(null);
+  const guidesRef = useRef(Boolean(guides));
+  guidesRef.current = Boolean(guides);
 
   function sizeCanvas() {
     const canvas = canvasRef.current;
@@ -43,6 +48,23 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
     if (!canvas || !ctx) return;
     const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
+    if (guidesRef.current) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(28, 24, 20, 0.28)";
+      ctx.lineWidth = 1.25;
+      ctx.setLineDash([5, 5]);
+      const topY = rect.height * PAD_TOP;
+      const baseY = rect.height * PAD_BASE;
+      ctx.beginPath();
+      ctx.moveTo(12, topY);
+      ctx.lineTo(rect.width - 12, topY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(12, baseY);
+      ctx.lineTo(rect.width - 12, baseY);
+      ctx.stroke();
+      ctx.restore();
+    }
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#1c1814";
@@ -77,7 +99,7 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
     const onResize = () => sizeCanvas();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [guides]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -199,6 +221,7 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       const all = currentRef.current?.length ? [...strokesRef.current, currentRef.current] : strokesRef.current;
       return all.map((s) => s.map((p) => ({ x: p.x, y: p.y })));
     },
+    getHeight: () => canvasRef.current?.getBoundingClientRect().height ?? 0,
   }));
 
   return (

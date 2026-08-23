@@ -1,4 +1,5 @@
 import { foldLetterGlyph, type HandMatch } from "@/lib/hebrew";
+import { FINAL_DESCENDERS, PAD_BASE, QOF } from "@/lib/pad-guides";
 
 export type InkPoint = { x: number; y: number };
 export type InkStroke = InkPoint[];
@@ -22,6 +23,8 @@ type Feat = {
   leftShare: number;
   topShare: number;
   hasTopBar: boolean;
+  descender: number;
+  belowShare: number;
 };
 
 function dist(a: InkPoint, b: InkPoint): number {
@@ -34,7 +37,7 @@ function pathOf(s: InkStroke): number {
   return n;
 }
 
-function analyze(strokes: InkStroke[]): Feat | null {
+function analyze(strokes: InkStroke[], height = 0): Feat | null {
   const clean = strokes.map((s) => s.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))).filter((s) => s.length);
   if (!clean.length) return null;
   const pts = clean.flat();
@@ -93,6 +96,15 @@ function analyze(strokes: InkStroke[]): Feat | null {
   const topSpan = Number.isFinite(topMinX) ? topMaxX - topMinX : 0;
   const midSpan = Number.isFinite(midMinX) ? midMaxX - midMinX : 0;
   const hasTopBar = topSpan > w * 0.4 && topSpan > Math.max(midSpan, w * 0.18) * 1.2;
+  const baseY = height > 0 ? height * PAD_BASE : maxY;
+  const descender = height > 0 ? Math.max(0, (maxY - baseY) / height) : 0;
+  let below = 0;
+  if (height > 0) {
+    for (const p of pts) {
+      if (p.y > baseY + 3) below += 1;
+    }
+  }
+  const belowShare = pts.length ? below / pts.length : 0;
   return {
     n: clean.length,
     w,
@@ -112,6 +124,8 @@ function analyze(strokes: InkStroke[]): Feat | null {
     leftShare: left / pts.length,
     topShare: top / pts.length,
     hasTopBar,
+    descender,
+    belowShare,
   };
 }
 
@@ -154,7 +168,7 @@ const SCORES: Record<string, Scorer> = {
     (f.closed < 0.5 ? 0.15 : 0) +
     (roundLoop(f) ? -0.45 : 0.1) +
     (stick(f) && !f.hasTopBar ? -0.35 : 0.05),
-  ן: (f) => (stick(f) && !f.hasTopBar ? 0.55 : f.tall && f.n === 1 && !f.hasTopBar ? 0.3 : 0) + (f.n === 1 ? 0.15 : 0) + (roundLoop(f) || f.small || f.hasTopBar ? -0.5 : 0.1),
+  ן: (f) => (stick(f) && !f.hasTopBar ? 0.4 : f.tall && f.n === 1 && !f.hasTopBar ? 0.2 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.35 : -0.3) + (f.n === 1 ? 0.1 : 0) + (roundLoop(f) || f.small || f.hasTopBar ? -0.5 : 0.1),
   ח: (f) => (f.n >= 2 ? 0.4 : 0.08) + (f.square ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
   ט: (f) => (f.closed > 0.35 ? 0.4 : 0.1) + (f.square ? 0.2 : 0) + (f.n <= 3 ? 0.15 : 0) + (stick(f) ? -0.4 : 0.1),
   י: (f) => (f.small ? 0.6 : 0) + (f.n === 1 ? 0.2 : 0) + (f.path < 120 ? 0.15 : -0.2) + (f.tall && !f.small ? -0.4 : 0) + (roundLoop(f) ? -0.5 : 0.05),
@@ -164,8 +178,8 @@ const SCORES: Record<string, Scorer> = {
     (f.circ > 0.18 && f.circ < 0.65 ? 0.2 : 0) +
     (f.tall ? -0.35 : 0.1) +
     (roundLoop(f) ? -0.4 : 0.1),
-  ך: (f) => (f.tall ? 0.45 : 0) + (f.n <= 2 ? 0.2 : 0) + (f.endY > 0.65 ? 0.2 : 0) + (roundLoop(f) || f.small ? -0.45 : 0.1),
-  ל: (f) => (f.tall ? 0.4 : 0) + (f.startY < 0.3 || f.topShare < 0.35 ? 0.2 : 0) + (f.n <= 2 ? 0.15 : 0) + (roundLoop(f) ? -0.45 : 0.1),
+  ך: (f) => (f.tall ? 0.35 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (roundLoop(f) || f.small ? -0.45 : 0.1),
+  ל: (f) => (f.tall ? 0.4 : 0) + (f.startY < 0.3 || f.topShare < 0.35 ? 0.2 : 0) + (f.n <= 2 ? 0.15 : 0) + (roundLoop(f) ? -0.45 : 0.1) + (f.descender > 0.1 ? -0.25 : 0),
   מ: (f) => (f.n <= 3 ? 0.2 : 0) + (f.closed < 0.72 ? 0.25 : -0.2) + (f.square ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
   ם: (f) => (boxLoop(f) || (f.closed > 0.5 && f.square) ? 0.55 : f.closed > 0.35 ? 0.25 : 0) + (f.square ? 0.2 : 0) + (f.circ > 0.8 ? -0.3 : 0.1) + (stick(f) ? -0.5 : 0.1),
   נ: (f) => (f.n <= 2 ? 0.25 : 0) + (f.closed < 0.5 ? 0.25 : 0) + (!f.small && !f.tall ? 0.15 : 0) + (roundLoop(f) || (f.tall && f.n === 1) ? -0.4 : 0.1),
@@ -176,10 +190,10 @@ const SCORES: Record<string, Scorer> = {
     (stick(f) || f.small ? -0.5 : 0.1),
   ע: (f) => (f.n <= 3 ? 0.2 : 0) + (f.closed < 0.7 ? 0.2 : 0) + (f.endY > 0.45 ? 0.15 : 0) + (stick(f) || (roundLoop(f) && f.n === 1) ? -0.4 : 0.15),
   פ: (f) => (f.closed < 0.6 ? 0.25 : -0.1) + (f.n <= 2 ? 0.2 : 0) + (f.tall ? -0.3 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
-  ף: (f) => (f.tall ? 0.45 : 0) + (f.n <= 2 ? 0.15 : 0) + (f.wide || !f.tall ? -0.35 : 0.1) + (roundLoop(f) || f.small ? -0.45 : 0.1),
-  צ: (f) => (f.n <= 3 ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.tall ? -0.25 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
-  ץ: (f) => (f.tall ? 0.45 : 0) + (f.n <= 2 ? 0.15 : 0) + (f.wide || !f.tall ? -0.35 : 0.1) + (roundLoop(f) || f.small ? -0.45 : 0.1),
-  ק: (f) => (f.tall || f.endY > 0.7 ? 0.35 : 0) + (f.n <= 2 ? 0.2 : 0) + (roundLoop(f) ? -0.4 : 0.15),
+  ף: (f) => (f.tall ? 0.3 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (f.wide || roundLoop(f) || f.small ? -0.35 : 0.1),
+  צ: (f) => (f.n <= 3 ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.tall ? -0.25 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15) + (f.descender > 0.1 ? -0.2 : 0),
+  ץ: (f) => (f.tall ? 0.3 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (f.wide || roundLoop(f) || f.small ? -0.35 : 0.1),
+  ק: (f) => (f.tall || f.endY > 0.7 ? 0.25 : 0) + (f.descender > 0.02 || f.belowShare > 0.05 ? 0.35 : -0.2) + (f.n <= 2 ? 0.15 : 0) + (roundLoop(f) ? -0.4 : 0.1),
   ר: (f) => (f.n === 1 ? 0.25 : 0.1) + (f.closed < 0.5 ? 0.25 : 0) + (f.startY < 0.4 || f.topShare > 0.28 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
   ש: (f) => (f.n >= 1 ? 0.15 : 0) + (f.wide || f.square ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.n >= 2 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.45 : 0.1),
   ת: (f) => (f.n <= 3 ? 0.2 : 0) + (f.square || f.wide ? 0.2 : 0) + (f.endX > 0.5 || f.n >= 2 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
@@ -209,16 +223,30 @@ function isNear(a: string, b: string): boolean {
 export function verifyLetterInk(
   strokes: InkStroke[],
   expected: string,
-  opts?: { trace?: boolean },
+  opts?: { trace?: boolean; height?: number },
 ): { match: HandMatch; read: string; score: number } {
   const want = baseLetter(expected);
-  const f = analyze(strokes);
+  const f = analyze(strokes, opts?.height ?? 0);
   if (!f || !want) return { match: "empty", read: "", score: 0 };
   if (f.path < 16) return { match: "empty", read: "", score: 0 };
 
   const ROUND = new Set(["ס", "ם", "ט"]);
   if (roundLoop(f) && !ROUND.has(want)) return { match: "wrong", read: "ס", score: 0.15 };
   if (f.small && want !== "י" && f.path < 70) return { match: "wrong", read: "י", score: 0.15 };
+
+  const lined = (opts?.height ?? 0) > 40;
+  const dropped = f.descender >= 0.04 || f.belowShare >= 0.1;
+  const bitLow = f.descender >= 0.018 || f.belowShare >= 0.05;
+  if (lined && FINAL_DESCENDERS.has(want) && !dropped) {
+    return { match: "wrong", read: want, score: 0.12 };
+  }
+  if (lined && want === QOF && !bitLow) {
+    return { match: "wrong", read: want, score: 0.12 };
+  }
+  if (lined && dropped && !FINAL_DESCENDERS.has(want) && want !== QOF && f.descender > 0.09) {
+    const asFinal = want === "כ" ? "ך" : want === "נ" ? "ן" : want === "פ" ? "ף" : want === "צ" ? "ץ" : "";
+    if (asFinal) return { match: "wrong", read: asFinal, score: 0.15 };
+  }
 
   let bestId = "";
   let best = -1;

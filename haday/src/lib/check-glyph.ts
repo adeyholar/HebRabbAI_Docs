@@ -10,10 +10,10 @@ export async function checkGlyphInk(
   expected: string,
   mode: "letter" | "vowel",
   strokes?: InkStroke[],
-  opts?: { trace?: boolean },
+  opts?: { trace?: boolean; height?: number },
 ): Promise<GlyphCheck> {
   if (mode === "letter") {
-    const local = verifyLetterInk(strokes ?? [], expected, { trace: opts?.trace });
+    const local = verifyLetterInk(strokes ?? [], expected, { trace: opts?.trace, height: opts?.height });
     if (local.match === "exact" || local.match === "close" || local.match === "wrong") {
       takeWriteCheck();
       return { match: local.match, read: local.read, counted: true };

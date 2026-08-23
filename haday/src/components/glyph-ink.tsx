@@ -51,6 +51,7 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
     setBusy(true);
     const next = await checkGlyphInk(image || "data:image/png;base64,", expected, mode, strokes, {
       trace,
+      height: pad.current?.getHeight() ?? 0,
     });
     setLeft(writeChecksLeft());
     if (next.counted !== false) setTries((n) => n + 1);
@@ -69,13 +70,17 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
     <div>
       <div className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] bg-card shadow-[var(--shadow-border)]">
         {showSample && sampleGlyph && (
-          <p className="pointer-events-none absolute inset-0 z-0 grid place-items-center select-none he-word text-[8rem] leading-none text-ink/30">
+          <p
+            className="pointer-events-none absolute inset-x-0 z-0 grid place-items-center select-none he-word text-[5.5rem] leading-none text-ink/35"
+            style={{ top: "24%", height: "42%" }}
+          >
             {sampleGlyph}
           </p>
         )}
         <InkPad
           ref={pad}
           disabled={locked || busy}
+          guides={mode === "letter"}
           onChange={setEmpty}
           className={cn("relative z-10 h-56 shadow-none", showSample && "bg-transparent")}
         />
@@ -97,9 +102,9 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
       <p className="mt-1 text-center text-xs text-muted">
         {allowSample
           ? showSample
-            ? "Faint model on the pad — follow it, then check."
-            : "Show expected puts the target on the pad."
-          : null}{" "}
+            ? "Faint model between the lines. Finals drop below the bottom line; qof a little."
+            : "Show expected puts the target on the pad. Body between the lines; finals below."
+          : "Body between the lines. Finals drop below; qof a little below."}{" "}
         {left} checks left today
       </p>
       <div className="mt-2 flex gap-2">
