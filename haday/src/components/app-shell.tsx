@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CircleHelp, Compass, Crown, House, Languages, Layers, ListChecks, Map, Medal, PenLine, Repeat, Trophy, Users } from "lucide-react";
+import { BookOpen, CircleHelp, Compass, Crown, Headphones, House, Languages, Layers, ListChecks, Map, Medal, PenLine, Repeat, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { snapshotOf, useStudy } from "@/lib/store";
 import { loadProgress, saveProgress } from "@/lib/progress";
@@ -141,6 +141,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Game
               </Link>
             )}
+            <Link
+              to="/listen"
+              aria-label="Listen hands-free"
+              className={cn(
+                "flex size-11 items-center justify-center rounded-[var(--radius-md)]",
+                pathname === "/listen" ? "text-primary" : "text-muted",
+              )}
+            >
+              <Headphones className="size-5" strokeWidth={pathname === "/listen" ? 2.2 : 1.8} />
+            </Link>
             <Link
               to="/keep"
               aria-label="Daily keep"

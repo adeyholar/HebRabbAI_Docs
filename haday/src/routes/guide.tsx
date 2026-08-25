@@ -38,7 +38,8 @@ function GuidePage() {
             Closed-book Exam is from memory; misses lead the next Write and Quiz rounds.
             Ultimate Challenge is optional: the whole Ch. 2–19 list in one sitting, graded at the end.
             Zakhor (Daily keep) is the short daily mix of words you have already met — due, weak, and older mastered
-            lemmas — so new chapters do not bury the old ones.
+            lemmas — so new chapters do not bury the old ones. Listen is hands-free: Hebrew then English, chapters 1–19
+            in order, for the car or a walk.
           </li>
         </ul>
       </Panel>
@@ -60,6 +61,15 @@ function GuidePage() {
             body="Same typing, but the verse is hidden so you cannot copy from it."
           />
         </ol>
+      </Panel>
+
+      <Panel className="mb-3">
+        <h2 className="font-display text-2xl font-bold text-ink">Listen · hands-free</h2>
+        <p className="mt-2 text-sm text-muted">
+          One continuous reading of the BBH list. Each lemma is spoken in Hebrew, then in English, from chapter 1
+          (alef-bet) through 19. Tap Play once; after that you can sit and listen. Jump to a chapter if you want a
+          shorter stretch. Keep the screen awake so the phone does not stop the voice.
+        </p>
       </Panel>
 
       <Panel className="mb-3">

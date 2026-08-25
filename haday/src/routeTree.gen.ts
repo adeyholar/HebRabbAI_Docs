@@ -18,6 +18,7 @@ import { Route as DrillRouteImport } from './routes/drill'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as KeepRouteImport } from './routes/keep'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as ListenRouteImport } from './routes/listen'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as RewardsRouteImport } from './routes/rewards'
@@ -72,6 +73,11 @@ const LeaderboardRoute = LeaderboardRouteImport.update({
   path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListenRoute = ListenRouteImport.update({
+  id: '/listen',
+  path: '/listen',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/guide': typeof GuideRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/listen': typeof ListenRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/guide': typeof GuideRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/listen': typeof ListenRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/guide': typeof GuideRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/listen': typeof ListenRoute
   '/login': typeof LoginRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/keep'
     | '/leaderboard'
+    | '/listen'
     | '/login'
     | '/quiz'
     | '/rewards'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/keep'
     | '/leaderboard'
+    | '/listen'
     | '/login'
     | '/quiz'
     | '/rewards'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/keep'
     | '/leaderboard'
+    | '/listen'
     | '/login'
     | '/quiz'
     | '/rewards'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   GuideRoute: typeof GuideRoute
   KeepRoute: typeof KeepRoute
   LeaderboardRoute: typeof LeaderboardRoute
+  ListenRoute: typeof ListenRoute
   LoginRoute: typeof LoginRoute
   QuizRoute: typeof QuizRoute
   RewardsRoute: typeof RewardsRoute
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listen': {
+      id: '/listen'
+      path: '/listen'
+      fullPath: '/listen'
+      preLoaderRoute: typeof ListenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -385,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuideRoute: GuideRoute,
   KeepRoute: KeepRoute,
   LeaderboardRoute: LeaderboardRoute,
+  ListenRoute: ListenRoute,
   LoginRoute: LoginRoute,
   QuizRoute: QuizRoute,
   RewardsRoute: RewardsRoute,
