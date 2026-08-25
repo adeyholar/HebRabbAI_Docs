@@ -36,6 +36,10 @@ export function firstIndexForChapter(list: ListenItem[], chapter: number): numbe
   return i < 0 ? 0 : i;
 }
 
+export function speechSupported(): boolean {
+  return typeof window !== "undefined" && "speechSynthesis" in window && typeof SpeechSynthesisUtterance === "function";
+}
+
 function ttsHebrew(s: string): string {
   return s
     .normalize("NFC")
@@ -47,22 +51,27 @@ export function glossSpoken(gloss: string): string {
   return gloss.replace(/;/g, ".").replace(/\s+/g, " ").trim();
 }
 
+function synth(): SpeechSynthesis | null {
+  if (typeof window === "undefined" || !window.speechSynthesis) return null;
+  return window.speechSynthesis;
+}
+
 function voices(): SpeechSynthesisVoice[] {
-  if (typeof window === "undefined" || !window.speechSynthesis) return [];
-  return window.speechSynthesis.getVoices();
+  return synth()?.getVoices() ?? [];
 }
 
 export function waitForVoices(): Promise<SpeechSynthesisVoice[]> {
   const have = voices();
   if (have.length) return Promise.resolve(have);
   return new Promise((resolve) => {
-    if (typeof window === "undefined" || !window.speechSynthesis) {
+    const s = synth();
+    if (!s) {
       resolve([]);
       return;
     }
-    const done = () => resolve(window.speechSynthesis.getVoices());
-    const t = window.setTimeout(done, 1200);
-    window.speechSynthesis.addEventListener(
+    const done = () => resolve(s.getVoices());
+    const t = window.setTimeout(done, 800);
+    s.addEventListener(
       "voiceschanged",
       () => {
         window.clearTimeout(t);
@@ -74,83 +83,181 @@ export function waitForVoices(): Promise<SpeechSynthesisVoice[]> {
 }
 
 export function hasHebrewVoice(): boolean {
-  return voices().some((v) => /^he\b|^iw\b/i.test(v.lang));
+  return voices().some((v) => /^(he|iw)\b/i.test(v.lang) || /hebrew/i.test(v.name));
 }
 
 function pickVoice(langPrefix: string): SpeechSynthesisVoice | undefined {
   const all = voices();
   const want = langPrefix.toLowerCase();
   return (
+    all.find((v) => v.lang.toLowerCase().startsWith(want) && v.default) ||
     all.find((v) => v.lang.toLowerCase().startsWith(want) && v.localService) ||
     all.find((v) => v.lang.toLowerCase().startsWith(want))
   );
 }
 
+/** Must run inside the Play click, before any await. */
+export function unlockSpeech() {
+  const s = synth();
+  if (!s) return;
+  try {
+    if (s.paused) s.resume();
+    s.cancel();
+    const u = new SpeechSynthesisUtterance("Ready.");
+    u.lang = "en-US";
+    u.rate = 1.05;
+    u.volume = 1;
+    const en = pickVoice("en");
+    if (en) u.voice = en;
+    s.speak(u);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function stopSpeech() {
+  const s = synth();
+  if (!s) return;
+  try {
+    s.cancel();
+  } catch {
+    /* ignore */
+  }
+}
+
+export function keepSpeechAlive() {
+  const s = synth();
+  if (!s) return;
+  try {
+    if (s.paused) s.resume();
+    else if (s.speaking) {
+      s.pause();
+      s.resume();
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function lineBudget(text: string, rate: number): number {
+  return Math.min(14_000, Math.max(1_200, 650 + text.length * (95 / Math.max(rate, 0.5))));
+}
+
 export function speakLine(text: string, lang: "he" | "en", rate: number): Promise<void> {
   return new Promise((resolve) => {
-    if (typeof window === "undefined" || !window.speechSynthesis || !text.trim()) {
+    const s = synth();
+    const spoken = text.trim();
+    if (!s || !spoken) {
       resolve();
       return;
     }
-    const u = new SpeechSynthesisUtterance(text);
+    try {
+      if (s.paused) s.resume();
+    } catch {
+      /* ignore */
+    }
+    const u = new SpeechSynthesisUtterance(spoken);
+    u.volume = 1;
     if (lang === "he") {
       const he = pickVoice("he") || pickVoice("iw");
       u.lang = he?.lang || "he-IL";
       if (he) u.voice = he;
-      u.rate = Math.max(0.6, rate * 0.92);
+      u.rate = Math.max(0.55, rate * 0.9);
     } else {
       const en = pickVoice("en");
       u.lang = en?.lang || "en-US";
       if (en) u.voice = en;
       u.rate = rate;
     }
-    u.onend = () => resolve();
-    u.onerror = () => resolve();
-    window.speechSynthesis.speak(u);
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      resolve();
+    };
+    const timer = window.setTimeout(done, lineBudget(spoken, rate));
+    u.onend = () => done();
+    u.onerror = () => done();
+    try {
+      s.speak(u);
+      window.setTimeout(() => {
+        try {
+          if (s.paused) s.resume();
+        } catch {
+          /* ignore */
+        }
+      }, 40);
+    } catch {
+      done();
+    }
   });
-}
-
-export function stopSpeech() {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
 }
 
 export function pauseMs(ms: number, signal: { stop: boolean }): Promise<void> {
   return new Promise((resolve) => {
-    const t = window.setTimeout(resolve, ms);
+    if (signal.stop || ms <= 0) {
+      resolve();
+      return;
+    }
+    const t = window.setTimeout(() => {
+      window.clearInterval(check);
+      resolve();
+    }, ms);
     const check = window.setInterval(() => {
-      if (signal.stop) {
-        window.clearTimeout(t);
-        window.clearInterval(check);
-        resolve();
-      }
+      if (!signal.stop) return;
+      window.clearTimeout(t);
+      window.clearInterval(check);
+      resolve();
     }, 80);
-    window.setTimeout(() => window.clearInterval(check), ms + 20);
   });
 }
 
-export async function speakCard(
-  item: ListenItem,
-  rate: number,
-  signal: { stop: boolean },
-): Promise<void> {
+export async function speakCard(item: ListenItem, rate: number, signal: { stop: boolean }): Promise<void> {
   if (signal.stop) return;
   if (item.announce) {
     await speakLine(item.announce, "en", rate);
     if (signal.stop) return;
-    await pauseMs(280, signal);
+    await pauseMs(220, signal);
   }
   if (signal.stop) return;
   const he = ttsHebrew(item.hebrew);
-  if (hasHebrewVoice()) {
-    await speakLine(he, "he", rate);
-  } else {
-    await speakLine(item.translit.replace(/[ʾʿ]/g, ""), "en", rate * 0.85);
-  }
+  await speakLine(he, "he", rate);
   if (signal.stop) return;
-  await pauseMs(380, signal);
+  if (!hasHebrewVoice() && item.translit) {
+    await speakLine(item.translit.replace(/[ʾʿəâêîôûāēīōūăĕŏ]/g, ""), "en", Math.max(0.7, rate * 0.85));
+    if (signal.stop) return;
+  }
+  await pauseMs(280, signal);
   if (signal.stop) return;
   await speakLine(glossSpoken(item.gloss), "en", rate);
   if (signal.stop) return;
-  await pauseMs(620, signal);
+  await pauseMs(480, signal);
+}
+
+export function playListenChime() {
+  if (typeof window === "undefined") return;
+  const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AC) return;
+  const ac = new AC();
+  const g = ac.createGain();
+  g.connect(ac.destination);
+  g.gain.value = 0.18;
+  const beep = (freq: number, start: number, dur: number) => {
+    const o = ac.createOscillator();
+    const eg = ac.createGain();
+    o.type = "sine";
+    o.frequency.value = freq;
+    eg.gain.setValueAtTime(0.0001, start);
+    eg.gain.exponentialRampToValueAtTime(0.2, start + 0.02);
+    eg.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    o.connect(eg);
+    eg.connect(g);
+    o.start(start);
+    o.stop(start + dur + 0.02);
+  };
+  const t0 = ac.currentTime;
+  beep(523, t0, 0.12);
+  beep(784, t0 + 0.12, 0.16);
+  window.setTimeout(() => void ac.close(), 700);
 }

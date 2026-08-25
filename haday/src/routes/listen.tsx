@@ -7,11 +7,15 @@ import { GAME_CHAPTER_TITLES } from "@/lib/vocab";
 import {
   firstIndexForChapter,
   hasHebrewVoice,
+  keepSpeechAlive,
   listenPlaylist,
   loadListenIndex,
+  playListenChime,
   saveListenIndex,
   speakCard,
+  speechSupported,
   stopSpeech,
+  unlockSpeech,
   waitForVoices,
 } from "@/lib/listen";
 
@@ -24,9 +28,17 @@ function ListenPage() {
   const [loop, setLoop] = useState(true);
   const [rate, setRate] = useState(1);
   const [heVoice, setHeVoice] = useState(true);
+  const [supported] = useState(() => speechSupported());
+  const [status, setStatus] = useState("");
   const stopRef = useRef({ stop: false });
   const playGen = useRef(0);
+  const loopRef = useRef(loop);
+  const rateRef = useRef(rate);
+  const iRef = useRef(i);
   const item = list[i];
+  loopRef.current = loop;
+  rateRef.current = rate;
+  iRef.current = i;
 
   useEffect(() => {
     void waitForVoices().then(() => setHeVoice(hasHebrewVoice()));
@@ -44,6 +56,12 @@ function ListenPage() {
   }, []);
 
   useEffect(() => {
+    if (!playing) return;
+    const id = window.setInterval(keepSpeechAlive, 8_000);
+    return () => window.clearInterval(id);
+  }, [playing]);
+
+  useEffect(() => {
     if (!playing || !("mediaSession" in navigator)) return;
     const ms = navigator.mediaSession;
     ms.metadata = new MediaMetadata({
@@ -52,8 +70,8 @@ function ListenPage() {
       album: item ? `Chapter ${item.chapter}` : "BBH vocabulary",
     });
     ms.playbackState = "playing";
-    ms.setActionHandler("play", () => void toggle(true));
-    ms.setActionHandler("pause", () => void toggle(false));
+    ms.setActionHandler("play", () => startFrom(iRef.current, true));
+    ms.setActionHandler("pause", () => halt());
     ms.setActionHandler("previoustrack", () => step(-1));
     ms.setActionHandler("nexttrack", () => step(1));
     return () => {
@@ -62,65 +80,77 @@ function ListenPage() {
       ms.setActionHandler("previoustrack", null);
       ms.setActionHandler("nexttrack", null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, i]);
-
-  async function runFrom(start: number) {
-    const gen = ++playGen.current;
-    stopRef.current = { stop: false };
-    setPlaying(true);
-    try {
-      await navigator.wakeLock?.request("screen");
-    } catch {
-      /* optional */
-    }
-    let at = start;
-    while (!stopRef.current.stop && gen === playGen.current) {
-      const card = list[at];
-      if (!card) {
-        if (loop) {
-          at = 0;
-          setI(0);
-          continue;
-        }
-        break;
-      }
-      setI(at);
-      await speakCard(card, rate, stopRef.current);
-      if (stopRef.current.stop || gen !== playGen.current) break;
-      at += 1;
-    }
-    if (gen === playGen.current) setPlaying(false);
-  }
+  }, [playing, i, item]);
 
   function halt() {
     stopRef.current.stop = true;
     playGen.current += 1;
     stopSpeech();
     setPlaying(false);
+    setStatus("");
   }
 
-  function toggle(next = !playing) {
-    if (next) void runFrom(i);
-    else halt();
+  function startFrom(start: number, kick = false) {
+    if (!speechSupported()) {
+      setStatus("This browser cannot speak text. Try Safari or Chrome, and unmute the phone.");
+      return;
+    }
+    stopRef.current.stop = false;
+    const gen = ++playGen.current;
+    setPlaying(true);
+    setStatus("Speaking…");
+    if (kick) {
+      playListenChime();
+      unlockSpeech();
+    } else {
+      stopSpeech();
+    }
+    void navigator.wakeLock?.request("screen").catch(() => {});
+    void (async () => {
+      await waitForVoices();
+      if (stopRef.current.stop || gen !== playGen.current) return;
+      setHeVoice(hasHebrewVoice());
+      let at = start;
+      while (!stopRef.current.stop && gen === playGen.current) {
+        const card = list[at];
+        if (!card) {
+          if (loopRef.current) {
+            at = 0;
+            setI(0);
+            continue;
+          }
+          break;
+        }
+        setI(at);
+        iRef.current = at;
+        await speakCard(card, rateRef.current, stopRef.current);
+        if (stopRef.current.stop || gen !== playGen.current) break;
+        at += 1;
+      }
+      if (gen === playGen.current) {
+        setPlaying(false);
+        setStatus("");
+      }
+    })();
+  }
+
+  function toggle() {
+    if (playing) halt();
+    else startFrom(i, true);
   }
 
   function step(delta: number) {
-    const next = Math.min(list.length - 1, Math.max(0, i + delta));
+    const next = Math.min(list.length - 1, Math.max(0, iRef.current + delta));
     setI(next);
-    if (playing) {
-      halt();
-      window.setTimeout(() => void runFrom(next), 40);
-    }
+    iRef.current = next;
+    if (playing) startFrom(next, false);
   }
 
   function jumpChapter(ch: number) {
     const at = firstIndexForChapter(list, ch);
     setI(at);
-    if (playing) {
-      halt();
-      window.setTimeout(() => void runFrom(at), 40);
-    }
+    iRef.current = at;
+    if (playing) startFrom(at, false);
   }
 
   return (
@@ -129,14 +159,18 @@ function ListenPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Hands-free</p>
         <h1 className="mt-1 font-display text-4xl font-bold text-ink">Listen</h1>
         <p className="mt-3 text-muted">
-          Hebrew, then English, chapter 1 through 19. Tap play once. Then just listen — car, walk, kitchen.
+          Hebrew, then English, chapter 1 through 19. Tap play once. Unmute the phone. Then just listen.
         </p>
-        {!heVoice && (
-          <p className="mt-2 text-sm text-danger">
-            This device has no Hebrew voice yet, so you will hear transliteration for the Hebrew slot. Add a Hebrew
-            voice in system settings for true Hebrew audio.
+        {!supported && (
+          <p className="mt-2 text-sm text-danger">This browser has no speech engine. Open the site in Safari or Chrome.</p>
+        )}
+        {supported && !heVoice && (
+          <p className="mt-2 text-sm text-muted">
+            No Hebrew system voice on this device — you will hear Hebrew as best it can, plus transliteration, then
+            English. Add a Hebrew voice in Settings for a clearer Hebrew line.
           </p>
         )}
+        {status && <p className="mt-2 text-sm font-semibold text-primary">{status}</p>}
       </Panel>
 
       <div className="rounded-[var(--radius-xl)] bg-card px-5 py-10 text-center shadow-[var(--shadow-border)]">
@@ -157,11 +191,11 @@ function ListenPage() {
           <SkipBack className="size-6" />
           <span className="sr-only">Previous</span>
         </Button>
-        <Button type="button" size="lg" className="min-h-16" onClick={() => toggle()}>
+        <Button type="button" size="lg" className="min-h-16" onClick={toggle}>
           {playing ? <Pause className="size-7" /> : <Play className="size-7" />}
           <span className="ms-2">{playing ? "Pause" : "Play"}</span>
         </Button>
-        <Button type="button" variant="outline" size="lg" className="min-h-16" onClick={() => step(1)}>
+        <Button type="button" variant="outline" size="lg" onClick={() => step(1)} className="min-h-16">
           <SkipForward className="size-6" />
           <span className="sr-only">Next</span>
         </Button>
@@ -206,7 +240,7 @@ function ListenPage() {
           ))}
         </div>
         <p className="mt-3 text-xs text-muted">
-          Eyes on the road. Phone play/pause and car next/previous work when the screen stays open.
+          Turn the ringer/volume up. You should hear a short chime, then “Ready,” then the words. Keep the screen on.
         </p>
       </Panel>
     </>
