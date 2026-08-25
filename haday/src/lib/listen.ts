@@ -51,6 +51,17 @@ export function glossSpoken(gloss: string): string {
   return gloss.replace(/;/g, ".").replace(/\s+/g, " ").trim();
 }
 
+/** First sense only — “Abraham”, not the whole gloss dump. */
+export function primaryGloss(gloss: string): string {
+  const full = glossSpoken(gloss);
+  const first = full.split(/[,;]/)[0]?.trim() ?? full;
+  return first || full;
+}
+
+function restFor(rate: number, calmMs: number): number {
+  return Math.round(calmMs / Math.max(rate, 0.5));
+}
+
 function synth(): SpeechSynthesis | null {
   if (typeof window === "undefined" || !window.speechSynthesis) return null;
   return window.speechSynthesis;
@@ -140,7 +151,7 @@ export function keepSpeechAlive() {
 }
 
 function lineBudget(text: string, rate: number): number {
-  return Math.min(14_000, Math.max(1_200, 650 + text.length * (95 / Math.max(rate, 0.5))));
+  return Math.min(18_000, Math.max(2_200, 1_100 + text.length * (140 / Math.max(rate, 0.5))));
 }
 
 export function speakLine(text: string, lang: "he" | "en", rate: number): Promise<void> {
@@ -162,7 +173,7 @@ export function speakLine(text: string, lang: "he" | "en", rate: number): Promis
       const he = pickVoice("he") || pickVoice("iw");
       u.lang = he?.lang || "he-IL";
       if (he) u.voice = he;
-      u.rate = Math.max(0.55, rate * 0.9);
+      u.rate = Math.max(0.5, rate * 0.82);
     } else {
       const en = pickVoice("en");
       u.lang = en?.lang || "en-US";
@@ -216,23 +227,40 @@ export function pauseMs(ms: number, signal: { stop: boolean }): Promise<void> {
 export async function speakCard(item: ListenItem, rate: number, signal: { stop: boolean }): Promise<void> {
   if (signal.stop) return;
   if (item.announce) {
-    await speakLine(item.announce, "en", rate);
+    await speakLine(item.announce, "en", Math.min(rate, 0.95));
     if (signal.stop) return;
-    await pauseMs(220, signal);
+    await pauseMs(restFor(rate, 900), signal);
   }
   if (signal.stop) return;
+
   const he = ttsHebrew(item.hebrew);
-  await speakLine(he, "he", rate);
-  if (signal.stop) return;
-  if (!hasHebrewVoice() && item.translit) {
-    await speakLine(item.translit.replace(/[ʾʿəâêîôûāēīōūăĕŏ]/g, ""), "en", Math.max(0.7, rate * 0.85));
+  const en = primaryGloss(item.gloss);
+  const heFallback =
+    !hasHebrewVoice() && item.translit
+      ? item.translit.replace(/[ʾʿəâêîôûāēīōūăĕŏ]/g, "").trim()
+      : "";
+
+  async function sayHebrew() {
+    if (he) await speakLine(he, "he", rate);
     if (signal.stop) return;
+    if (heFallback) await speakLine(heFallback, "en", Math.max(0.55, rate * 0.8));
   }
-  await pauseMs(280, signal);
+
+  await sayHebrew();
   if (signal.stop) return;
-  await speakLine(glossSpoken(item.gloss), "en", rate);
+  await pauseMs(restFor(rate, 850), signal);
   if (signal.stop) return;
-  await pauseMs(480, signal);
+  await sayHebrew();
+  if (signal.stop) return;
+  await pauseMs(restFor(rate, 750), signal);
+  if (signal.stop) return;
+  await speakLine(en, "en", rate);
+  if (signal.stop) return;
+  await pauseMs(restFor(rate, 650), signal);
+  if (signal.stop) return;
+  await speakLine(en, "en", rate);
+  if (signal.stop) return;
+  await pauseMs(restFor(rate, 1600), signal);
 }
 
 export function playListenChime() {
