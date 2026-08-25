@@ -31,7 +31,7 @@ function Home() {
   const weakList = weakestOf(items, cards, 5);
   const lastKeepDay = useStudy((s) => s.lastKeepDay);
   const keepStreak = useStudy((s) => s.keepStreak);
-  const keep = keepStats(cards);
+  const keep = keepStats(cards, game);
   const keepDone = keepDoneToday(lastKeepDay);
   const firstName = user?.displayName?.split(" ")[0];
 
@@ -96,7 +96,7 @@ function Home() {
             {keep.seen
               ? keepDone
                 ? `${keepStreak}-day keep streak. A short mix of old mastered words and whatever is due — so new chapters do not bury the old ones.`
-                : `Across every chapter you have touched: due, weak, and cooling mastered lemmas. About twelve cards. ${keep.mastered} mastered · ${keep.cooling} cooling.`
+                : `Only lemmas you have already recalled, from chapters you have opened. About twelve cards. ${keep.mastered} mastered · ${keep.cooling} cooling.`
               : "After you meet some words in Game or Drill, Keep will mix the old ones back in each day."}
           </span>
         </span>

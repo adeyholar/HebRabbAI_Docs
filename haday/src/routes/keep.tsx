@@ -49,7 +49,8 @@ function KeepPage() {
   const cards = useStudy((s) => s.cards);
   const lastKeepDay = useStudy((s) => s.lastKeepDay);
   const keepStreak = useStudy((s) => s.keepStreak);
-  const stats = keepStats(cards);
+  const game = useStudy((s) => s.game);
+  const stats = keepStats(cards, game);
   const already = keepDoneToday(lastKeepDay);
   const [ui, dispatch] = useReducer(reducer, {
     ready: false,
@@ -60,7 +61,7 @@ function KeepPage() {
   });
 
   function deal() {
-    dispatch({ type: "deal", items: pickKeepRound(useStudy.getState().cards, 12) });
+    dispatch({ type: "deal", items: pickKeepRound(useStudy.getState().cards, useStudy.getState().game, 12) });
   }
 
   useEffect(() => {
@@ -86,8 +87,7 @@ function KeepPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">זָכוֹר · Zakhor</p>
         <h1 className="mt-1 font-display text-4xl font-bold text-ink">Daily keep</h1>
         <p className="mt-3 text-muted">
-          This round pulls words you have already met — due, weak, and older mastered lemmas that are cooling — so new
-          chapters do not bury the old ones.
+          This round only uses lemmas you have already recalled correctly — from Game chapters you have opened, not new vocabulary.
         </p>
         <p className="mt-3 text-sm text-muted">Play a Game stage or Drill first. Then Keep has a storehouse to draw from.</p>
         <Link to="/game" className="mt-4 inline-block">

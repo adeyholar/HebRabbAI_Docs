@@ -1,5 +1,6 @@
 import { isMastered, isWeak, startOfDay, type CardState } from "@/lib/srs";
 import { shuffle, bbhVocab, type VocabItem } from "@/lib/vocab";
+import { type GameSnapshot } from "@/lib/game";
 
 export type KeepFace = "he-en" | "en-he";
 export type KeepWhy = "due" | "weak" | "cool";
@@ -8,17 +9,45 @@ export type KeepCard = VocabItem & { face: KeepFace; why: KeepWhy };
 
 const DAY = 86_400_000;
 
-export function keepStats(cards: Record<string, CardState>, now = Date.now()) {
-  const pool = bbhVocab();
-  let seen = 0;
+/** Right at least once — a miss on a brand-new card does not count as met. */
+export function hasMet(card: CardState | undefined): boolean {
+  if (!card) return false;
+  return card.hits >= 1 && card.last > 0;
+}
+
+/** If they play Game, stay inside unlocked chapters. Study-only: any hit word. */
+export function keepChapterCap(game: GameSnapshot | undefined): number | null {
+  if (!game) return null;
+  const unlocked = Math.max(1, Number(game.unlockedChapter) || 1);
+  const started = Object.values(game.chapters ?? {}).some(
+    (ch) => ch.cleared || GAME_STAGES_DONE(ch),
+  );
+  if (unlocked <= 1 && !started) return null;
+  return unlocked;
+}
+
+function GAME_STAGES_DONE(ch: { stages?: Record<string, { cleared?: boolean }> }): boolean {
+  return Object.values(ch.stages ?? {}).some((s) => s.cleared);
+}
+
+function keepPool(cards: Record<string, CardState>, game?: GameSnapshot): VocabItem[] {
+  const cap = keepChapterCap(game);
+  return bbhVocab().filter((item) => {
+    if (!hasMet(cards[item.id])) return false;
+    if (cap != null && item.chapter > cap) return false;
+    return true;
+  });
+}
+
+export function keepStats(cards: Record<string, CardState>, game?: GameSnapshot, now = Date.now()) {
+  const pool = keepPool(cards, game);
   let due = 0;
   let weak = 0;
   let mastered = 0;
   let cooling = 0;
   for (const item of pool) {
     const c = cards[item.id];
-    if (!c || c.hits + c.misses === 0) continue;
-    seen += 1;
+    if (!c) continue;
     if (c.due <= now) due += 1;
     if (isWeak(c)) weak += 1;
     if (isMastered(c)) {
@@ -26,19 +55,16 @@ export function keepStats(cards: Record<string, CardState>, now = Date.now()) {
       if (c.last > 0 && now - c.last >= 3 * DAY) cooling += 1;
     }
   }
-  return { seen, due, weak, mastered, cooling, waiting: due + cooling + weak };
+  return { seen: pool.length, due, weak, mastered, cooling, waiting: due + cooling + weak };
 }
 
 export function pickKeepRound(
   cards: Record<string, CardState>,
+  game?: GameSnapshot,
   limit = 12,
   now = Date.now(),
 ): KeepCard[] {
-  const pool = bbhVocab();
-  const seen = pool.filter((item) => {
-    const c = cards[item.id];
-    return Boolean(c && c.hits + c.misses > 0);
-  });
+  const seen = keepPool(cards, game);
   if (!seen.length) return [];
 
   const weak: VocabItem[] = [];
@@ -55,14 +81,14 @@ export function pickKeepRound(
     else rest.push(item);
   }
 
-  weak.sort((a, b) => (cards[a.id]?.misses ?? 0) - (cards[b.id]?.misses ?? 0)).reverse();
+  weak.sort((a, b) => (cards[b.id]?.misses ?? 0) - (cards[a.id]?.misses ?? 0));
   due.sort((a, b) => (cards[a.id]?.due ?? 0) - (cards[b.id]?.due ?? 0));
   cool.sort((a, b) => (cards[a.id]?.last ?? 0) - (cards[b.id]?.last ?? 0));
 
   const n = Math.min(limit, seen.length);
-  const takeWeak = Math.min(weak.length, Math.max(3, Math.ceil(n * 0.35)));
-  const takeDue = Math.min(due.length, Math.max(2, Math.ceil(n * 0.25)));
-  const takeCool = Math.min(cool.length, Math.max(4, n - takeWeak - takeDue));
+  const takeWeak = Math.min(weak.length, Math.ceil(n * 0.35));
+  const takeDue = Math.min(due.length, Math.ceil(n * 0.25));
+  const takeCool = Math.min(cool.length, n - takeWeak - takeDue);
 
   const picked: Array<{ item: VocabItem; why: KeepWhy }> = [];
   const used = new Set<string>();
@@ -79,7 +105,8 @@ export function pickKeepRound(
   add(weak, "weak", takeWeak);
   add(due, "due", takeDue);
   add(cool, "cool", takeCool);
-  add(shuffle([...rest, ...due, ...weak, ...cool]), "due", n - picked.length);
+  add(shuffle(rest), "due", n - picked.length);
+  add(shuffle([...due, ...weak, ...cool]), "cool", n - picked.length);
 
   return shuffle(picked).map(({ item, why }, i) => ({
     ...item,
