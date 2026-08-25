@@ -14,6 +14,8 @@ export const BADGES = [
   { id: "perfect", title: "Three stars", hint: "Score three stars on a stage" },
   { id: "ultimate-90", title: "The Full Scroll", hint: "Score 90% on the Ultimate Challenge" },
   { id: "ultimate-100", title: "Crown of the Text", hint: "Perfect score on the Ultimate Challenge" },
+  { id: "zakhor", title: "Zakhor", hint: "Finish one Daily keep" },
+  { id: "zakhor-7", title: "Seven days of memory", hint: "Seven Daily keep days in a row" },
 ] as const;
 
 export type BadgeId = (typeof BADGES)[number]["id"];
@@ -88,7 +90,7 @@ export function totalStars(game: GameSnapshot): number {
   return n;
 }
 
-export function evaluateBadges(game: GameSnapshot, dailyStreak: number): BadgeId[] {
+export function evaluateBadges(game: GameSnapshot, dailyStreak: number, keepStreak = 0): BadgeId[] {
   const ch = chaptersCleared(game);
   const stages = stagesCleared(game);
   const out: BadgeId[] = [];
@@ -105,6 +107,8 @@ export function evaluateBadges(game: GameSnapshot, dailyStreak: number): BadgeId
   if (hasThreeStar(game)) out.push("perfect");
   if ((Number(game.ultimateBest) || 0) >= 90) out.push("ultimate-90");
   if ((Number(game.ultimateBest) || 0) >= 100 || game.ultimatePerfect) out.push("ultimate-100");
+  if (keepStreak >= 1) out.push("zakhor");
+  if (keepStreak >= 7) out.push("zakhor-7");
   return out;
 }
 
@@ -121,14 +125,14 @@ export function ladderRung(game: GameSnapshot): { current: number; cleared: numb
   return { current, cleared, total: GAME_CHAPTER_MAX };
 }
 
-export function stampRewards(game: GameSnapshot, dailyStreak: number): GameSnapshot {
-  const next = evaluateBadges(game, dailyStreak);
+export function stampRewards(game: GameSnapshot, dailyStreak: number, keepStreak = 0): GameSnapshot {
+  const next = evaluateBadges(game, dailyStreak, keepStreak);
   const prev = new Set(Array.isArray(game.badges) ? game.badges : []);
   const justEarned = next.filter((id) => !prev.has(id));
   return { ...game, badges: next, justEarned };
 }
 
-export function scoreboard(game: GameSnapshot, dailyStreak: number) {
+export function scoreboard(game: GameSnapshot, dailyStreak: number, keepStreak = 0) {
   const rung = ladderRung(game);
   const rec = chapterRecord(game, rung.current);
   const chapterStagesDone = GAME_STAGES.filter((s) => rec.stages[s.id].cleared).length;
@@ -140,6 +144,7 @@ export function scoreboard(game: GameSnapshot, dailyStreak: number) {
     rung.cleared * 50 +
     (Array.isArray(game.badges) ? game.badges.length : 0) * 30 +
     dailyStreak * 5 +
+    keepStreak * 8 +
     game.winStreak * 8 +
     ((Number(game.ultimateBest) || 0) >= 90 ? 250 : 0) +
     ((Number(game.ultimateBest) || 0) >= 100 || game.ultimatePerfect ? 1000 : 0);

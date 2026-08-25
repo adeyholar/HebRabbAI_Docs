@@ -1,4 +1,4 @@
-import { Crown, Flame, Flag, Footprints, Medal, Mountain, Scroll, Star, Trophy, type LucideIcon } from "lucide-react";
+import { Crown, Flame, Flag, Footprints, Medal, Mountain, Repeat, Scroll, Star, Trophy, type LucideIcon } from "lucide-react";
 import type { BadgeId } from "@/lib/rewards";
 
 export const BADGE_ICONS: Record<BadgeId, LucideIcon> = {
@@ -15,6 +15,8 @@ export const BADGE_ICONS: Record<BadgeId, LucideIcon> = {
   perfect: Star,
   "ultimate-90": Scroll,
   "ultimate-100": Crown,
+  zakhor: Repeat,
+  "zakhor-7": Repeat,
 };
 
 export function BadgeGlyph({ id, className }: { id: string; className?: string }) {

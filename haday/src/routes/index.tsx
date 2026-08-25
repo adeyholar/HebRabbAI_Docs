@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Compass, Crown, Library } from "lucide-react";
+import { Compass, Crown, Library, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
@@ -9,6 +9,7 @@ import { LeaderboardTeaser } from "@/components/leaderboard-teaser";
 import { RewardsBar } from "@/components/rewards-bar";
 import { COURSE_WEEKS, bbhVocab, itemsForWeek, studySetMeta } from "@/lib/vocab";
 import { statsFor, useStudy, weakestOf } from "@/lib/store";
+import { keepDoneToday, keepStats } from "@/lib/keep";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { continueLabel } from "@/lib/game";
 
@@ -28,6 +29,10 @@ function Home() {
   const meta = studySetMeta(week);
   const pct = s.total ? Math.round((s.mastered / s.total) * 100) : 0;
   const weakList = weakestOf(items, cards, 5);
+  const lastKeepDay = useStudy((s) => s.lastKeepDay);
+  const keepStreak = useStudy((s) => s.keepStreak);
+  const keep = keepStats(cards);
+  const keepDone = keepDoneToday(lastKeepDay);
   const firstName = user?.displayName?.split(" ")[0];
 
   return (
@@ -76,6 +81,26 @@ function Home() {
         <GameContinue />
         <p className="sr-only">{continueLabel(game)}</p>
       </div>
+
+      <Link
+        to="/keep"
+        className="mt-3 flex items-start gap-3 rounded-[var(--radius-xl)] bg-card p-5 text-ink shadow-[var(--shadow-border)]"
+      >
+        <Repeat className="mt-0.5 size-6 shrink-0 text-primary" />
+        <span>
+          <span className="block font-display text-2xl font-bold">
+            Zakhor · Daily keep
+            {keepDone ? " · done today" : keep.waiting ? ` · ${keep.waiting} waiting` : ""}
+          </span>
+          <span className="mt-1 block text-sm text-muted">
+            {keep.seen
+              ? keepDone
+                ? `${keepStreak}-day keep streak. A short mix of old mastered words and whatever is due — so new chapters do not bury the old ones.`
+                : `Across every chapter you have touched: due, weak, and cooling mastered lemmas. About twelve cards. ${keep.mastered} mastered · ${keep.cooling} cooling.`
+              : "After you meet some words in Game or Drill, Keep will mix the old ones back in each day."}
+          </span>
+        </span>
+      </Link>
 
       <Link
         to="/challenge"
@@ -159,8 +184,13 @@ function Home() {
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-2">
-          <Link to="/drill" className="flex-1">
+          <Link to="/keep" className="flex-1">
             <Button className="w-full" size="lg">
+              Zakhor · Daily keep
+            </Button>
+          </Link>
+          <Link to="/drill" className="flex-1">
+            <Button className="w-full" variant="outline" size="lg">
               Study due cards
             </Button>
           </Link>

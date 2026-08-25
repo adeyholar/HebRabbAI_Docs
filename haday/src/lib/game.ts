@@ -44,6 +44,8 @@ export type GameSnapshot = {
   ultimateAttempts: number;
   ultimatePerfect: boolean;
   ultimateRun: UltimateRun | null;
+  keepStreak: number;
+  lastKeepDay: number;
 };
 
 export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
@@ -98,6 +100,8 @@ export function defaultGame(): GameSnapshot {
     ultimateAttempts: 0,
     ultimatePerfect: false,
     ultimateRun: null,
+    keepStreak: 0,
+    lastKeepDay: 0,
   };
 }
 
@@ -128,6 +132,8 @@ export function hydrateGame(raw: unknown): GameSnapshot {
     ultimateAttempts: Math.max(0, Number(r.ultimateAttempts) || 0),
     ultimatePerfect: Boolean(r.ultimatePerfect) || Number(r.ultimateBest) >= 100,
     ultimateRun: hydrateUltimateRun(r.ultimateRun),
+    keepStreak: Math.max(0, Number(r.keepStreak) || 0),
+    lastKeepDay: Number(r.lastKeepDay) || 0,
   };
 }
 

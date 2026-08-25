@@ -14,6 +14,8 @@ export type ProgressPayload = {
   lastStudyDay: number;
   sessions: number;
   game: GameSnapshot;
+  keepStreak?: number;
+  lastKeepDay?: number;
 };
 
 type ProgressRow = {
@@ -77,7 +79,11 @@ export const saveProgress = createServerFn({ method: "POST" })
     const streak = Number.isFinite(data.streak) ? data.streak : 0;
     const lastStudyDay = Number.isFinite(data.lastStudyDay) ? data.lastStudyDay : 0;
     const sessions = Number.isFinite(data.sessions) ? data.sessions : 0;
-    const gameSnap = hydrateGame(data.game);
+    const gameSnap = hydrateGame({
+      ...hydrateGame(data.game),
+      keepStreak: Number(data.keepStreak) || Number((data.game as GameSnapshot | undefined)?.keepStreak) || 0,
+      lastKeepDay: Number(data.lastKeepDay) || Number((data.game as GameSnapshot | undefined)?.lastKeepDay) || 0,
+    });
     const game = JSON.stringify(gameSnap);
     const board = scoreboard(gameSnap, streak);
     await sql`
@@ -130,5 +136,7 @@ function parseRow(row: ProgressRow): ProgressPayload {
     lastStudyDay: Number(row.last_study_day) || 0,
     sessions: Number(row.sessions) || 0,
     game: hydrateGame(gameRaw),
+    keepStreak: hydrateGame(gameRaw).keepStreak,
+    lastKeepDay: hydrateGame(gameRaw).lastKeepDay,
   };
 }

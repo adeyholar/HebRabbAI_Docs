@@ -23,6 +23,7 @@ import {
   type UltimateRun,
 } from "./game";
 import { stampRewards } from "./rewards";
+import type { ProgressPayload } from "./progress";
 
 type ProgressMap = Record<string, CardState>;
 export type FocusMode = "due" | "weak";
@@ -35,6 +36,8 @@ export type StudySnapshot = {
   streak: number;
   lastStudyDay: number;
   sessions: number;
+  keepStreak: number;
+  lastKeepDay: number;
   game: GameSnapshot;
 };
 
@@ -54,7 +57,8 @@ type StudyState = StudySnapshot & {
   startUltimate: (ids: string[]) => void;
   saveUltimateRun: (run: UltimateRun) => void;
   finishUltimate: (pct: number) => void;
-  hydrateRemote: (snap: StudySnapshot, ownerId: string) => void;
+  finishKeep: () => void;
+  hydrateRemote: (snap: ProgressPayload, ownerId: string) => void;
   reset: () => void;
 };
 
@@ -76,6 +80,8 @@ export const useStudy = create<StudyState>()(
       streak: 0,
       lastStudyDay: 0,
       sessions: 0,
+      keepStreak: 0,
+      lastKeepDay: 0,
       game: defaultGame(),
       ownerId: null,
       alefQueue: [],
@@ -84,7 +90,7 @@ export const useStudy = create<StudyState>()(
         const prev = hydrateCard(get().cards[id], now);
         const next = applyRating(prev, rating, now);
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
-        const game = stampRewards(get().game, streakInfo.streak);
+        const game = stampRewards(get().game, streakInfo.streak, get().keepStreak);
         set({
           cards: { ...get().cards, [id]: next },
           ...streakInfo,
@@ -99,7 +105,7 @@ export const useStudy = create<StudyState>()(
       completeGameStage: (chapter, stage, result) => {
         const now = Date.now();
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
-        const game = stampRewards(applyStageResult(get().game, chapter, stage, result), streakInfo.streak);
+        const game = stampRewards(applyStageResult(get().game, chapter, stage, result), streakInfo.streak, get().keepStreak);
         set({
           game,
           ...streakInfo,
@@ -115,11 +121,28 @@ export const useStudy = create<StudyState>()(
       finishUltimate: (pct) => {
         const now = Date.now();
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
-        const game = stampRewards(applyUltimateResult(get().game, pct), streakInfo.streak);
+        const game = stampRewards(applyUltimateResult(get().game, pct), streakInfo.streak, get().keepStreak);
         set({
           game,
           ...streakInfo,
           sessions: get().lastStudyDay === startOfDay(now) ? get().sessions : get().sessions + 1,
+        });
+      },
+      finishKeep: () => {
+        const now = Date.now();
+        const today = startOfDay(now);
+        const yesterday = today - 86_400_000;
+        const last = get().lastKeepDay;
+        if (last === today) return;
+        const keepStreak = last === yesterday ? get().keepStreak + 1 : 1;
+        const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
+        const game = stampRewards(get().game, streakInfo.streak, keepStreak);
+        set({
+          keepStreak,
+          lastKeepDay: today,
+          game,
+          ...streakInfo,
+          sessions: get().lastStudyDay === today ? get().sessions : get().sessions + 1,
         });
       },
       hydrateRemote: (snap, ownerId) =>
@@ -131,7 +154,9 @@ export const useStudy = create<StudyState>()(
           streak: snap.streak,
           lastStudyDay: snap.lastStudyDay,
           sessions: snap.sessions,
-          game: stampRewards(hydrateGame(snap.game), snap.streak),
+          keepStreak: Number(snap.keepStreak) || Number(snap.game?.keepStreak) || 0,
+          lastKeepDay: Number(snap.lastKeepDay) || Number(snap.game?.lastKeepDay) || 0,
+          game: stampRewards(hydrateGame(snap.game), snap.streak, Number(snap.keepStreak) || Number(snap.game?.keepStreak) || 0),
           ownerId,
         }),
       reset: () =>
@@ -140,6 +165,8 @@ export const useStudy = create<StudyState>()(
           streak: 0,
           lastStudyDay: 0,
           sessions: 0,
+          keepStreak: 0,
+          lastKeepDay: 0,
           focus: "due",
           game: defaultGame(),
           alefQueue: [],
@@ -160,7 +187,7 @@ export const useStudy = create<StudyState>()(
           ...current,
           ...p,
           cards: Object.keys(cards).length ? cards : current.cards,
-          game: stampRewards(hydrateGame(p.game), Number(p.streak) || 0),
+          game: stampRewards(hydrateGame(p.game), Number(p.streak) || 0, Number(p.keepStreak) || 0),
         };
       },
     },
@@ -176,7 +203,13 @@ export function snapshotOf(state: StudySnapshot): StudySnapshot {
     streak: state.streak,
     lastStudyDay: state.lastStudyDay,
     sessions: state.sessions,
-    game: stampRewards(hydrateGame(state.game), state.streak),
+    keepStreak: state.keepStreak,
+    lastKeepDay: state.lastKeepDay,
+    game: stampRewards(
+      { ...hydrateGame(state.game), keepStreak: state.keepStreak, lastKeepDay: state.lastKeepDay },
+      state.streak,
+      state.keepStreak,
+    ),
   };
 }
 

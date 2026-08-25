@@ -37,6 +37,8 @@ function GuidePage() {
             pick a course week or a Game chapter — same BBH 3rd-ed. lemmas as Game — then Drill, Write, Quiz, or Lex.
             Closed-book Exam is from memory; misses lead the next Write and Quiz rounds.
             Ultimate Challenge is optional: the whole Ch. 2–19 list in one sitting, graded at the end.
+            Zakhor (Daily keep) is the short daily mix of words you have already met — due, weak, and older mastered
+            lemmas — so new chapters do not bury the old ones.
           </li>
         </ul>
       </Panel>
@@ -58,6 +60,14 @@ function GuidePage() {
             body="Same typing, but the verse is hidden so you cannot copy from it."
           />
         </ol>
+      </Panel>
+
+      <Panel className="mb-3">
+        <h2 className="font-display text-2xl font-bold text-ink">Zakhor · Daily keep</h2>
+        <p className="mt-2 text-sm text-muted">
+          Not a dump of every mastered word. About twelve cards from the whole course: what is due, what you miss, and
+          old lemmas that have been sitting cold. Hebrew and English faces mix. Finish it once a day.
+        </p>
       </Panel>
 
       <Panel className="mb-3">
