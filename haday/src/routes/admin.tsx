@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Panel } from "@/components/panel";
 import { getAdminStatus, listRoster, type RosterPerson } from "@/lib/admin";
-import { listVisits, type VisitStats } from "@/lib/visits";
+import { listVisits, countryLabel, type VisitStats } from "@/lib/visits";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -106,7 +106,21 @@ function AdminPage() {
         <h2 className="font-display text-2xl font-bold text-ink">Visitors who did not sign in</h2>
         <p className="mt-1 text-sm text-muted">
           Anonymous browsers on the login page or the site. No names or emails — a cookie id only.
+          Country is from the first request (Vercel / edge), owner-only.
         </p>
+        {(visits?.countries.length ?? 0) > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {visits!.countries.map((c) => (
+              <li
+                key={c.code}
+                className="rounded-[var(--radius-md)] bg-surface px-2.5 py-1 text-sm text-ink shadow-[var(--shadow-border)]"
+              >
+                <span className="font-semibold">{countryLabel(c.code) || c.code}</span>
+                <span className="ms-1.5 tabular-nums text-muted">{c.n}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         {anon.length === 0 ? (
           <p className="mt-3 text-sm text-muted">None yet. New visits to the login page will show here.</p>
         ) : (
@@ -116,8 +130,9 @@ function AdminPage() {
                 <span className="min-w-0">
                   <span className="font-semibold text-ink">Visitor {shortId(v.id)}</span>
                   <span className="ms-2 text-muted">
-                    {v.lastPath}
+                    {countryLabel(v.country) || "country unknown"}
                     {v.device ? ` · ${v.device}` : ""}
+                    {` · ${v.lastPath}`}
                     {` · ${v.hits} hit${v.hits === 1 ? "" : "s"}`}
                   </span>
                 </span>

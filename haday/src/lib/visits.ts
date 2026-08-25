@@ -18,7 +18,10 @@ export type VisitorRow = {
   lastPath: string;
   signedIn: boolean;
   device: string;
+  country: string;
 };
+
+export type CountryCount = { code: string; n: number };
 
 export type VisitStats = {
   unique: number;
@@ -27,6 +30,7 @@ export type VisitStats = {
   hits: number;
   recentAnon: VisitorRow[];
   recentAll: VisitorRow[];
+  countries: CountryCount[];
 };
 
 let tableReady: Promise<void> | null = null;
@@ -45,6 +49,7 @@ async function ensureVisitsTable() {
         device text not null default ''
       )
     `);
+    await sql.query("alter table site_visitors add column if not exists country text not null default ''");
     await sql.query(
       "create index if not exists site_visitors_last_seen on site_visitors (last_seen desc)",
     );
@@ -73,6 +78,41 @@ function cleanDevice(raw: string): string {
   return "";
 }
 
+function cleanCountry(raw: string | null | undefined): string {
+  const c = (raw ?? "").trim().toUpperCase();
+  if (c === "XX" || c === "T1" || c === "A1" || c === "A2") return "";
+  if (!/^[A-Z]{2}$/.test(c)) return "";
+  return c;
+}
+
+export function countryLabel(code: string): string {
+  const c = cleanCountry(code);
+  if (!c) return "";
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(c) ?? c;
+  } catch {
+    return c;
+  }
+}
+
+async function countryFromRequest(): Promise<string> {
+  try {
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const request = getRequest();
+    if (!request) return "";
+    const h = request.headers;
+    return cleanCountry(
+      h.get("x-vercel-ip-country") ||
+        h.get("cf-ipcountry") ||
+        h.get("cloudfront-viewer-country") ||
+        h.get("x-country-code") ||
+        h.get("x-geo-country"),
+    );
+  } catch {
+    return "";
+  }
+}
+
 export const pingVisit = createServerFn({ method: "POST" })
   .validator((input: VisitPing) => input)
   .handler(async ({ data }) => {
@@ -84,15 +124,17 @@ export const pingVisit = createServerFn({ method: "POST" })
       const path = cleanPath(data.path);
       const device = cleanDevice(data.device);
       const signed = Boolean(data.signedIn);
+      const country = await countryFromRequest();
       await sql`
-        insert into site_visitors (id, first_seen, last_seen, hits, last_path, signed_in, device)
-        values (${id}, now(), now(), 1, ${path}, ${signed}, ${device})
+        insert into site_visitors (id, first_seen, last_seen, hits, last_path, signed_in, device, country)
+        values (${id}, now(), now(), 1, ${path}, ${signed}, ${device}, ${country})
         on conflict (id) do update set
           last_seen = now(),
           hits = site_visitors.hits + 1,
           last_path = excluded.last_path,
           signed_in = site_visitors.signed_in or excluded.signed_in,
-          device = case when excluded.device = '' then site_visitors.device else excluded.device end
+          device = case when excluded.device = '' then site_visitors.device else excluded.device end,
+          country = case when site_visitors.country = '' then excluded.country else site_visitors.country end
       `;
       return { ok: true as const };
     } catch (err) {
@@ -118,6 +160,7 @@ export const listVisits = createServerFn({ method: "GET" })
       hits: 0,
       recentAnon: [],
       recentAll: [],
+      countries: [],
     };
     try {
       await ensureVisitsTable();
@@ -144,8 +187,9 @@ export const listVisits = createServerFn({ method: "GET" })
         last_path: string;
         signed_in: boolean;
         device: string;
+        country: string;
       }>`
-        select id, first_seen, last_seen, hits, last_path, signed_in, device
+        select id, first_seen, last_seen, hits, last_path, signed_in, device, country
         from site_visitors
         order by last_seen desc
         limit 80
@@ -158,7 +202,16 @@ export const listVisits = createServerFn({ method: "GET" })
         lastPath: r.last_path || "/",
         signedIn: Boolean(r.signed_in),
         device: r.device || "",
+        country: (r.country || "").toUpperCase(),
       }));
+      const byCountry = await sql<{ code: string; n: number }>`
+        select country as code, count(*)::int as n
+        from site_visitors
+        where country <> ''
+        group by country
+        order by n desc, country asc
+        limit 30
+      `;
       return {
         unique: Number(t?.unique) || 0,
         anonymous: Number(t?.anonymous) || 0,
@@ -166,6 +219,7 @@ export const listVisits = createServerFn({ method: "GET" })
         hits: Number(t?.hits) || 0,
         recentAnon: mapped.filter((r) => !r.signedIn),
         recentAll: mapped,
+        countries: byCountry.map((r) => ({ code: (r.code || "").toUpperCase(), n: Number(r.n) || 0 })),
       };
     } catch (err) {
       console.error("[visits] list", err);
