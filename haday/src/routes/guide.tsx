@@ -67,7 +67,7 @@ function GuidePage() {
         <h2 className="font-display text-2xl font-bold text-ink">Listen · hands-free</h2>
         <p className="mt-2 text-sm text-muted">
           One continuous reading of the BBH list. Each lemma is spoken in Hebrew twice, then in English twice, with a
-          pause in between, from chapter 1 (alef-bet) through 19. Default pace is calm. Tap Play once; after that you
+          pause in between, from chapter 1 (alef-bet) through 19. Default pace is Warm. Tap Play once; after that you
           can sit and listen. Jump to a chapter if you want a shorter stretch. Keep the screen awake so the phone does
           not stop the voice.
         </p>

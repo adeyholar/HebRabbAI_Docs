@@ -159,7 +159,7 @@ function ListenPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Hands-free</p>
         <h1 className="mt-1 font-display text-4xl font-bold text-ink">Listen</h1>
         <p className="mt-3 text-muted">
-          Hebrew twice, then English twice, with a rest in between. Default is calm. Slow it further or speed it up if you want.
+          Hebrew twice, then English twice, with a rest in between. Default is Warm. Slow it further or speed it up if you want.
         </p>
         {!supported && (
           <p className="mt-2 text-sm text-danger">This browser has no speech engine. Open the site in Safari or Chrome.</p>
@@ -217,7 +217,7 @@ function ListenPage() {
             onChange={(e) => setRate(Number(e.target.value))}
           >
             <option value="0.62">Slow</option>
-            <option value="0.8">Calm</option>
+            <option value="0.8">Warm</option>
             <option value="1.05">Faster</option>
           </select>
         </label>

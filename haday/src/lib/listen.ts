@@ -169,6 +169,7 @@ export function speakLine(text: string, lang: "he" | "en", rate: number): Promis
     }
     const u = new SpeechSynthesisUtterance(spoken);
     u.volume = 1;
+    u.pitch = 0.92;
     if (lang === "he") {
       const he = pickVoice("he") || pickVoice("iw");
       u.lang = he?.lang || "he-IL";
@@ -178,7 +179,7 @@ export function speakLine(text: string, lang: "he" | "en", rate: number): Promis
       const en = pickVoice("en");
       u.lang = en?.lang || "en-US";
       if (en) u.voice = en;
-      u.rate = rate;
+      u.rate = Math.max(0.55, rate * 0.94);
     }
     let settled = false;
     const done = () => {
