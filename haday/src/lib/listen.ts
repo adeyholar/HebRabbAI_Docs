@@ -94,17 +94,72 @@ export function waitForVoices(): Promise<SpeechSynthesisVoice[]> {
 }
 
 export function hasHebrewVoice(): boolean {
-  return voices().some((v) => /^(he|iw)\b/i.test(v.lang) || /hebrew/i.test(v.name));
+  return voices().some((v) => /^(he|iw)\b/i.test(v.lang) || /hebrew|carmit|עברית/i.test(v.name));
+}
+
+const FEMALE =
+  /female|woman|samantha|victoria|karen|moira|tessa|fiona|zira|jenny|aria|carmit|heera|nicky|susan|salli|ivy|kendra|joanna|amy|emma|olivia|linda|hazel|allison|ava|zoe|kate|serena|veena|raveena|aditi|hila|yael|natrasha|siri|google [a-z ]*female|microsoft (zira|jenny|aria)/i;
+const MALE =
+  /male|\bman\b|david|daniel|\balex\b|fred|tom|mark|\bguy\b|matthew|brian|ravi|aaron|nathan|ralph|bruce|gordon|oliver|james|thomas|jony|google [a-z ]*male|microsoft (david|mark|guy)/i;
+const ROBOT = /compact|novelty|whisper|bells|boing|trinoids|zarvox|bad news|good news|pipe organ|cellos/i;
+
+function scoreVoice(v: SpeechSynthesisVoice, langPrefix: string): number {
+  const lang = v.lang.toLowerCase();
+  const name = v.name;
+  const want = langPrefix.toLowerCase();
+  let n = 0;
+  if (lang.startsWith(want)) n += 8;
+  if (want.startsWith("he") && (lang.startsWith("he-il") || lang.startsWith("iw"))) n += 4;
+  if (want.startsWith("en") && (lang.startsWith("en-us") || lang.startsWith("en-il"))) n += 1;
+  if (FEMALE.test(name)) n += 6;
+  if (MALE.test(name)) n -= 8;
+  if (ROBOT.test(name)) n -= 12;
+  if (v.localService) n += 2;
+  if (v.default && FEMALE.test(name)) n += 1;
+  return n;
 }
 
 function pickVoice(langPrefix: string): SpeechSynthesisVoice | undefined {
-  const all = voices();
-  const want = langPrefix.toLowerCase();
-  return (
-    all.find((v) => v.lang.toLowerCase().startsWith(want) && v.default) ||
-    all.find((v) => v.lang.toLowerCase().startsWith(want) && v.localService) ||
-    all.find((v) => v.lang.toLowerCase().startsWith(want))
-  );
+  const all = voices().filter((v) => {
+    const lang = v.lang.toLowerCase();
+    const want = langPrefix.toLowerCase();
+    if (lang.startsWith(want)) return true;
+    if (want === "he" && (lang.startsWith("iw") || /hebrew|carmit|עברית/i.test(v.name))) return true;
+    return false;
+  });
+  const ranked = (all.length ? all : voices()).slice().sort((a, b) => scoreVoice(b, langPrefix) - scoreVoice(a, langPrefix));
+  const best = ranked[0];
+  if (!best) return undefined;
+  if (MALE.test(best.name) || ROBOT.test(best.name)) {
+    const female = ranked.find((v) => FEMALE.test(v.name) && !MALE.test(v.name));
+    if (female) return female;
+  }
+  return best;
+}
+
+/** Israeli-style Latin if the device has no Hebrew voice. */
+function modernLatin(translit: string): string {
+  return translit
+    .replace(/[ʾʿ]/g, "")
+    .replace(/[âāă]/g, "a")
+    .replace(/[êēĕə]/g, "e")
+    .replace(/[îī]/g, "i")
+    .replace(/[ôōŏ]/g, "o")
+    .replace(/[ûū]/g, "u")
+    .replace(/ḥ/g, "ch")
+    .replace(/[ṣ]/g, "ts")
+    .replace(/š/g, "sh")
+    .replace(/ś/g, "s")
+    .replace(/ṭ/g, "t")
+    .replace(/[ḇ]/g, "v")
+    .replace(/[ḵ]/g, "kh")
+    .replace(/[ḡ]/g, "g")
+    .replace(/[ḏ]/g, "d")
+    .replace(/[ṯ]/g, "t")
+    .replace(/p̄/g, "f")
+    .replace(/[-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Must run inside the Play click, before any await. */
@@ -116,7 +171,8 @@ export function unlockSpeech() {
     s.cancel();
     const u = new SpeechSynthesisUtterance("Ready.");
     u.lang = "en-US";
-    u.rate = 1.05;
+    u.rate = 1.02;
+    u.pitch = 1.12;
     u.volume = 1;
     const en = pickVoice("en");
     if (en) u.voice = en;
@@ -169,17 +225,17 @@ export function speakLine(text: string, lang: "he" | "en", rate: number): Promis
     }
     const u = new SpeechSynthesisUtterance(spoken);
     u.volume = 1;
-    u.pitch = 0.92;
+    u.pitch = 1.12;
     if (lang === "he") {
       const he = pickVoice("he") || pickVoice("iw");
       u.lang = he?.lang || "he-IL";
       if (he) u.voice = he;
-      u.rate = Math.max(0.5, rate * 0.82);
+      u.rate = Math.max(0.72, rate * 0.95);
     } else {
       const en = pickVoice("en");
       u.lang = en?.lang || "en-US";
       if (en) u.voice = en;
-      u.rate = Math.max(0.55, rate * 0.94);
+      u.rate = Math.max(0.78, rate);
     }
     let settled = false;
     const done = () => {
@@ -228,40 +284,27 @@ export function pauseMs(ms: number, signal: { stop: boolean }): Promise<void> {
 export async function speakCard(item: ListenItem, rate: number, signal: { stop: boolean }): Promise<void> {
   if (signal.stop) return;
   if (item.announce) {
-    await speakLine(item.announce, "en", Math.min(rate, 0.95));
+    await speakLine(item.announce, "en", Math.min(rate, 1));
     if (signal.stop) return;
-    await pauseMs(restFor(rate, 900), signal);
+    await pauseMs(restFor(rate, 500), signal);
   }
   if (signal.stop) return;
 
   const he = ttsHebrew(item.hebrew);
   const en = primaryGloss(item.gloss);
-  const heFallback =
-    !hasHebrewVoice() && item.translit
-      ? item.translit.replace(/[ʾʿəâêîôûāēīōūăĕŏ]/g, "").trim()
-      : "";
 
-  async function sayHebrew() {
-    if (he) await speakLine(he, "he", rate);
-    if (signal.stop) return;
-    if (heFallback) await speakLine(heFallback, "en", Math.max(0.55, rate * 0.8));
+  if (hasHebrewVoice()) {
+    await speakLine(he, "he", rate);
+  } else {
+    const latin = modernLatin(item.translit) || he;
+    await speakLine(latin, "en", Math.max(0.78, rate * 0.95));
   }
-
-  await sayHebrew();
   if (signal.stop) return;
-  await pauseMs(restFor(rate, 850), signal);
-  if (signal.stop) return;
-  await sayHebrew();
-  if (signal.stop) return;
-  await pauseMs(restFor(rate, 750), signal);
+  await pauseMs(restFor(rate, 420), signal);
   if (signal.stop) return;
   await speakLine(en, "en", rate);
   if (signal.stop) return;
-  await pauseMs(restFor(rate, 650), signal);
-  if (signal.stop) return;
-  await speakLine(en, "en", rate);
-  if (signal.stop) return;
-  await pauseMs(restFor(rate, 1600), signal);
+  await pauseMs(restFor(rate, 900), signal);
 }
 
 export function playListenChime() {

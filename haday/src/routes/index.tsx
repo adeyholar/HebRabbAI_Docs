@@ -90,7 +90,7 @@ function Home() {
         <span>
           <span className="block font-display text-2xl font-bold">Listen · hands-free</span>
           <span className="mt-1 block text-sm text-muted">
-            Hebrew twice, then English twice, with a rest. Warm default. Chapters 1–19. For the car, a walk, or anywhere you cannot type.
+            Hebrew, a brief pause, then English. Modern pronunciation. Warm default. Chapters 1–19. For the car, a walk, or anywhere you cannot type.
           </span>
         </span>
       </Link>

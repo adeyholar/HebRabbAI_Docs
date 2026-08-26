@@ -159,15 +159,14 @@ function ListenPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Hands-free</p>
         <h1 className="mt-1 font-display text-4xl font-bold text-ink">Listen</h1>
         <p className="mt-3 text-muted">
-          Hebrew twice, then English twice, with a rest in between. Default is Warm. Slow it further or speed it up if you want.
+          Hebrew once, a brief pause, then English. Modern Israeli pronunciation. Warm default — Slow or Faster if you want.
         </p>
         {!supported && (
           <p className="mt-2 text-sm text-danger">This browser has no speech engine. Open the site in Safari or Chrome.</p>
         )}
         {supported && !heVoice && (
           <p className="mt-2 text-sm text-muted">
-            No Hebrew system voice on this device — you will hear Hebrew as best it can, plus transliteration, then
-            English. Add a Hebrew voice in Settings for a clearer Hebrew line.
+            Hebrew uses a lively woman voice when this phone has one. Add a Hebrew voice in system settings if you only hear English. Modern Israeli pronunciation, not academic reconstruction.
           </p>
         )}
         {status && <p className="mt-2 text-sm font-semibold text-primary">{status}</p>}
