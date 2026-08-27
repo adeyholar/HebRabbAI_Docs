@@ -213,7 +213,12 @@ function ListenPage() {
           <select
             className="bg-transparent text-ink"
             value={String(rate)}
-            onChange={(e) => setRate(Number(e.target.value))}
+            onChange={(e) => {
+              const next = Number(e.target.value);
+              setRate(next);
+              rateRef.current = next;
+              if (playing) startFrom(iRef.current, false);
+            }}
           >
             <option value="0.62">Slow</option>
             <option value="0.8">Warm</option>

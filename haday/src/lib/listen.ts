@@ -197,69 +197,84 @@ export function keepSpeechAlive() {
   if (!s) return;
   try {
     if (s.paused) s.resume();
-    else if (s.speaking) {
-      s.pause();
-      s.resume();
-    }
   } catch {
     /* ignore */
   }
 }
 
-function lineBudget(text: string, rate: number): number {
-  return Math.min(18_000, Math.max(2_200, 1_100 + text.length * (140 / Math.max(rate, 0.5))));
+function waitUntilQuiet(s: SpeechSynthesis, signal: { stop: boolean }, maxMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    const t0 = Date.now();
+    const tick = () => {
+      if (signal.stop || Date.now() - t0 > maxMs || (!s.speaking && !s.pending)) {
+        resolve();
+        return;
+      }
+      window.setTimeout(tick, 70);
+    };
+    tick();
+  });
 }
 
-export function speakLine(text: string, lang: "he" | "en", rate: number): Promise<void> {
-  return new Promise((resolve) => {
-    const s = synth();
-    const spoken = text.trim();
-    if (!s || !spoken) {
-      resolve();
-      return;
-    }
-    try {
-      if (s.paused) s.resume();
-    } catch {
-      /* ignore */
-    }
-    const u = new SpeechSynthesisUtterance(spoken);
-    u.volume = 1;
-    u.pitch = 1.12;
-    if (lang === "he") {
-      const he = pickVoice("he") || pickVoice("iw");
-      u.lang = he?.lang || "he-IL";
-      if (he) u.voice = he;
-      u.rate = Math.max(0.72, rate * 0.95);
-    } else {
-      const en = pickVoice("en");
-      u.lang = en?.lang || "en-US";
-      if (en) u.voice = en;
-      u.rate = Math.max(0.78, rate);
-    }
+export async function speakLine(
+  text: string,
+  lang: "he" | "en",
+  rate: number,
+  signal: { stop: boolean } = { stop: false },
+): Promise<void> {
+  const s = synth();
+  const spoken = text.trim();
+  if (!s || !spoken || signal.stop) return;
+  try {
+    if (s.paused) s.resume();
+  } catch {
+    /* ignore */
+  }
+  const u = new SpeechSynthesisUtterance(spoken);
+  u.volume = 1;
+  u.pitch = 1.12;
+  const spokenRate = Math.min(1.15, Math.max(0.55, lang === "he" ? rate * 0.94 : rate));
+  if (lang === "he") {
+    const he = pickVoice("he") || pickVoice("iw");
+    u.lang = he?.lang || "he-IL";
+    if (he) u.voice = he;
+    u.rate = spokenRate;
+  } else {
+    const en = pickVoice("en");
+    u.lang = en?.lang || "en-US";
+    if (en) u.voice = en;
+    u.rate = spokenRate;
+  }
+
+  await new Promise<void>((resolve) => {
     let settled = false;
-    const done = () => {
+    let heard = false;
+    const finish = () => {
       if (settled) return;
       settled = true;
-      window.clearTimeout(timer);
+      window.clearTimeout(safety);
+      window.clearInterval(poll);
       resolve();
     };
-    const timer = window.setTimeout(done, lineBudget(spoken, rate));
-    u.onend = () => done();
-    u.onerror = () => done();
+    const safety = window.setTimeout(finish, Math.min(28_000, 3_000 + spoken.length * (220 / spokenRate)));
+    const poll = window.setInterval(() => {
+      if (signal.stop) {
+        finish();
+        return;
+      }
+      if (s.speaking || s.pending) heard = true;
+      else if (heard) finish();
+    }, 70);
+    u.onend = () => finish();
+    u.onerror = () => finish();
     try {
       s.speak(u);
-      window.setTimeout(() => {
-        try {
-          if (s.paused) s.resume();
-        } catch {
-          /* ignore */
-        }
-      }, 40);
     } catch {
-      done();
+      finish();
     }
   });
+  if (signal.stop) return;
+  await waitUntilQuiet(s, signal, 2_500);
 }
 
 export function pauseMs(ms: number, signal: { stop: boolean }): Promise<void> {
@@ -284,7 +299,7 @@ export function pauseMs(ms: number, signal: { stop: boolean }): Promise<void> {
 export async function speakCard(item: ListenItem, rate: number, signal: { stop: boolean }): Promise<void> {
   if (signal.stop) return;
   if (item.announce) {
-    await speakLine(item.announce, "en", Math.min(rate, 1));
+    await speakLine(item.announce, "en", Math.min(rate, 1), signal);
     if (signal.stop) return;
     await pauseMs(restFor(rate, 500), signal);
   }
@@ -294,15 +309,15 @@ export async function speakCard(item: ListenItem, rate: number, signal: { stop: 
   const en = primaryGloss(item.gloss);
 
   if (hasHebrewVoice()) {
-    await speakLine(he, "he", rate);
+    await speakLine(he, "he", rate, signal);
   } else {
     const latin = modernLatin(item.translit) || he;
-    await speakLine(latin, "en", Math.max(0.78, rate * 0.95));
+    await speakLine(latin, "en", rate, signal);
   }
   if (signal.stop) return;
   await pauseMs(restFor(rate, 420), signal);
   if (signal.stop) return;
-  await speakLine(en, "en", rate);
+  await speakLine(en, "en", rate, signal);
   if (signal.stop) return;
   await pauseMs(restFor(rate, 900), signal);
 }
