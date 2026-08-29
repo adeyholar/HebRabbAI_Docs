@@ -603,3 +603,55 @@ test("a saved he sample matches a similar he", () => {
   assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
   assert.equal(r.read, "ה");
 });
+
+function screenshotSamekh() {
+  const cx = 330;
+  const cy = (TOP + BASE) / 2;
+  const rx = 28;
+  const ry = 32;
+  const loop = [];
+  const corners = [
+    [cx + 4, cy - ry],
+    [cx + rx, cy - ry * 0.35],
+    [cx + rx * 0.85, cy + ry * 0.55],
+    [cx - 2, cy + ry],
+    [cx - rx, cy + ry * 0.2],
+    [cx - rx * 0.7, cy - ry * 0.45],
+    [cx + 4, cy - ry],
+  ];
+  for (let i = 1; i < corners.length; i++) {
+    const a = corners[i - 1];
+    const b = corners[i];
+    for (let k = 0; k <= 10; k++) {
+      const t = k / 10;
+      loop.push({ x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t });
+    }
+  }
+  const hook = [];
+  for (let k = 0; k <= 8; k++) {
+    const t = k / 8;
+    hook.push({ x: cx + 4 + t * 10, y: cy - ry + t * 8 });
+  }
+  return [loop, hook];
+}
+
+test("screenshot-like closed oval with a start tick counts as samekh", () => {
+  const r = grade(screenshotSamekh(), "ס");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ס");
+});
+
+test("a closed oval is samekh, not tet", () => {
+  const ink = [oval(240, (TOP + BASE) / 2, 40, 34)];
+  const samekh = grade(ink, "ס");
+  assert.ok(samekh.match === "exact" || samekh.match === "close", JSON.stringify(samekh));
+  const tet = grade(ink, "ט");
+  assert.equal(tet.match, "wrong");
+  assert.notEqual(tet.read, "ט");
+});
+
+test("chart tet is not samekh", () => {
+  const r = grade(modelInk("ט", 0), "ס");
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "ס");
+});
