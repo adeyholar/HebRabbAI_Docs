@@ -1,0 +1,32 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createJiti } from "jiti";
+
+const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
+const { SYLLABLE_UNITS, SYLLABLE_QUIZ_LEN, shuffleQuiz } = await jiti.import("/workspace/src/lib/syllables.ts");
+
+test("eight units, each with Tanakh verses and a long quiz pool", () => {
+  assert.equal(SYLLABLE_UNITS.length, 8);
+  assert.equal(SYLLABLE_QUIZ_LEN, 12);
+  for (const u of SYLLABLE_UNITS) {
+    assert.ok(u.verses.length >= 3, `unit ${u.id} verses`);
+    assert.ok(u.samples.length >= 4, `unit ${u.id} samples`);
+    assert.ok(u.quiz.length >= 14, `unit ${u.id} quiz pool ${u.quiz.length}`);
+    for (const v of u.verses) {
+      assert.ok(v.he.includes(v.hit), `unit ${u.id} ${v.ref} missing hit ${v.hit}`);
+    }
+    for (const q of u.quiz) {
+      assert.ok(q.choices.includes(q.answer), `unit ${u.id} ${q.q}`);
+      assert.equal(new Set(q.choices).size, q.choices.length, `dup choices: ${q.q}`);
+    }
+  }
+});
+
+test("a play draws 12 shuffled questions, not the whole pool in order", () => {
+  const unit = SYLLABLE_UNITS[0];
+  const a = shuffleQuiz(unit);
+  const b = shuffleQuiz(unit);
+  assert.equal(a.length, 12);
+  assert.equal(b.length, 12);
+  for (const q of a) assert.ok(q.choices.includes(q.answer));
+});

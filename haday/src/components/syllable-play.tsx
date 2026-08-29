@@ -10,6 +10,7 @@ import {
   shuffleQuiz,
   syllableUnit,
   starsFromSyllableScore,
+  SYLLABLE_QUIZ_LEN,
   type SyllableQuiz,
 } from "@/lib/syllables";
 import { useStudy } from "@/lib/store";
@@ -100,7 +101,7 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
           <p className="mt-3 max-w-prose text-ink">{unit.rule}</p>
         </Panel>
         <Panel className="mt-3">
-          <h2 className="font-display text-xl font-bold text-ink">Samples</h2>
+          <h2 className="font-display text-xl font-bold text-ink">Tanakh words</h2>
           <ul className="mt-3 space-y-3">
             {unit.samples.map((s) => (
               <li key={s.word} className="rounded-[var(--radius-md)] bg-surface px-3 py-3">
@@ -111,18 +112,26 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
                   {s.split}
                 </p>
                 <p className="mt-1 text-sm text-muted">{s.note}</p>
+                {s.ref ? <p className="mt-1 text-xs font-semibold text-muted">{s.ref}</p> : null}
               </li>
             ))}
           </ul>
         </Panel>
         <Panel className="mt-3">
           <h2 className="font-display text-xl font-bold text-ink">In the Tanakh</h2>
-          <p className="mt-1 text-sm font-semibold text-muted">{unit.verse.ref}</p>
-          <VerseHit he={unit.verse.he} hit={unit.verse.hit} />
-          <p className="mt-2 text-sm text-muted">{unit.verse.en}</p>
+          <p className="mt-1 text-sm text-muted">The hit word is marked. Same split you just learned.</p>
+          <ul className="mt-3 space-y-4">
+            {unit.verses.map((v) => (
+              <li key={`${v.ref}-${v.hit}`} className="rounded-[var(--radius-md)] bg-surface px-3 py-3">
+                <p className="text-sm font-semibold text-muted">{v.ref}</p>
+                <VerseHit he={v.he} hit={v.hit} />
+                <p className="mt-2 text-sm text-muted">{v.en}</p>
+              </li>
+            ))}
+          </ul>
         </Panel>
         <Button className="mt-4 w-full" onClick={startQuiz}>
-          Quiz this rule
+          Quiz this rule · {Math.min(SYLLABLE_QUIZ_LEN, unit.quiz.length)} questions
         </Button>
       </>
     );
@@ -163,6 +172,7 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
           Unit {unit.id} · Quiz · {i + 1} / {items.length}
         </p>
         <h1 className="mt-1 font-display text-2xl font-bold text-ink">{q.q}</h1>
+        {q.ref ? <p className="mt-1 text-xs font-semibold text-muted">{q.ref}</p> : null}
         {q.he ? (
           <p className="he-word mt-3 text-4xl" dir="rtl">
             {q.he}
