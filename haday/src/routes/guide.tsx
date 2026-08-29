@@ -35,7 +35,7 @@ function GuidePage() {
               Study mode
             </Link>
             <span className="text-ink"> — </span>
-            pick a course week or a Game chapter — same BBH 3rd-ed. lemmas as Game — then Drill, Write, Quiz, or Lex.
+            pick a course week or a Game chapter — same BBH 3rd-ed. lemmas as Game — then Drill, Write, Quiz, Match, or Lex.
             Closed-book Exam is from memory; misses lead the next Write and Quiz rounds.
             Ultimate Challenge is optional: the whole Ch. 2–19 list in one sitting, graded at the end.
             Zakhor (Daily keep) is the short daily mix of words you have already met — due, weak, and older mastered
@@ -132,6 +132,7 @@ function GuidePage() {
           <Tool name="Drill" to="/drill" body="Flip cards. Grade yourself. SRS brings weak words back." />
           <Tool name="Write" to="/write" body="Type or hand-write the Hebrew. Memorize mode hides the lemma first." />
           <Tool name="Quiz" to="/quiz" body="Multiple choice or type the English gloss." />
+          <Tool name="Match" to="/match" body="Select the pair: Hebrew tile to English tile, then pick the lemma from a pad. Misses come back." />
           <Tool name="Lex" to="/browse" body="Browse the week’s lemmas with verses." />
           <Tool name="Alef" to="/alphabet" body="Letters, vowel charts, and quizzes — including shewa and shureq." />
         </dl>
@@ -186,7 +187,7 @@ function Stage({ n, name, body }: { n: string; name: string; body: string }) {
   );
 }
 
-function Tool({ name, to, body }: { name: string; to: "/drill" | "/write" | "/quiz" | "/browse" | "/alphabet"; body: string }) {
+function Tool({ name, to, body }: { name: string; to: "/drill" | "/write" | "/quiz" | "/match" | "/browse" | "/alphabet"; body: string }) {
   return (
     <div>
       <dt>

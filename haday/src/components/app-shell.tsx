@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CircleHelp, Compass, Crown, Headphones, House, Languages, Layers, ListChecks, Map, Medal, PenLine, Repeat, Trophy, Users } from "lucide-react";
+import { BookOpen, CircleHelp, Compass, Crown, Headphones, House, Languages, Layers, Link2, ListChecks, Map, Medal, PenLine, Repeat, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { snapshotOf, useStudy } from "@/lib/store";
 import { loadProgress, saveProgress } from "@/lib/progress";
@@ -19,6 +19,7 @@ const STUDY_NAV = [
   { to: "/drill", label: "Drill", icon: Layers },
   { to: "/write", label: "Write", icon: PenLine },
   { to: "/quiz", label: "Quiz", icon: ListChecks },
+  { to: "/match", label: "Match", icon: Link2 },
   { to: "/browse", label: "Lex", icon: BookOpen },
   { to: "/alphabet", label: "Alef", icon: Languages },
 ] as const;
@@ -266,7 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       ) : (
         <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
-          <ul className="mx-auto grid max-w-3xl grid-cols-6">
+          <ul className="mx-auto grid max-w-3xl grid-cols-7">
             {STUDY_NAV.map((item) => {
               const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
               const Icon = item.icon;

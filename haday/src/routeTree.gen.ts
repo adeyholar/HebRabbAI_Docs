@@ -20,6 +20,7 @@ import { Route as KeepRouteImport } from './routes/keep'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as ListenRouteImport } from './routes/listen'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MatchRouteImport } from './routes/match'
 import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as WriteRouteImport } from './routes/write'
@@ -85,6 +86,11 @@ const ListenRoute = ListenRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchRoute = MatchRouteImport.update({
+  id: '/match',
+  path: '/match',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuizRoute = QuizRouteImport.update({
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/listen': typeof ListenRoute
   '/login': typeof LoginRoute
+  '/match': typeof MatchRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/listen': typeof ListenRoute
   '/login': typeof LoginRoute
+  '/match': typeof MatchRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/listen': typeof ListenRoute
   '/login': typeof LoginRoute
+  '/match': typeof MatchRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/listen'
     | '/login'
+    | '/match'
     | '/quiz'
     | '/rewards'
     | '/write'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/listen'
     | '/login'
+    | '/match'
     | '/quiz'
     | '/rewards'
     | '/write'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/listen'
     | '/login'
+    | '/match'
     | '/quiz'
     | '/rewards'
     | '/write'
@@ -303,6 +315,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   ListenRoute: typeof ListenRoute
   LoginRoute: typeof LoginRoute
+  MatchRoute: typeof MatchRoute
   QuizRoute: typeof QuizRoute
   RewardsRoute: typeof RewardsRoute
   WriteRoute: typeof WriteRoute
@@ -393,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/match': {
+      id: '/match'
+      path: '/match'
+      fullPath: '/match'
+      preLoaderRoute: typeof MatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/quiz': {
@@ -487,6 +507,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   ListenRoute: ListenRoute,
   LoginRoute: LoginRoute,
+  MatchRoute: MatchRoute,
   QuizRoute: QuizRoute,
   RewardsRoute: RewardsRoute,
   WriteRoute: WriteRoute,

@@ -43,7 +43,7 @@ function Home() {
           {firstName ? `${firstName}, learn the words that open the text.` : "Learn the words that open the text."}
         </h1>
         <p className="mt-3 max-w-prose text-muted">
-          Game mode is a gated chapter path. Study mode is the free toolbox — drill, write, quiz, lex, alef.{" "}
+          Game mode is a gated chapter path. Study mode is the free toolbox — drill, write, quiz, match, lex, alef.{" "}
           <Link to="/guide" className="font-semibold text-primary">
             How to use HaDay
           </Link>
@@ -73,7 +73,7 @@ function Home() {
         >
           <Library className="size-6 text-primary" />
           <p className="mt-3 font-display text-3xl font-bold">Study mode</p>
-          <p className="mt-1 text-sm text-muted">Drill, write, quiz, lex, and alef — as they are.</p>
+          <p className="mt-1 text-sm text-muted">Drill, write, quiz, match, lex, and alef — as they are.</p>
         </a>
       </div>
 
@@ -205,6 +205,11 @@ function Home() {
           <Link to="/drill" className="flex-1">
             <Button className="w-full" variant="outline" size="lg">
               Study due cards
+            </Button>
+          </Link>
+          <Link to="/match" className="flex-1">
+            <Button className="w-full" variant="outline" size="lg">
+              Match · select pairs
             </Button>
           </Link>
           <div className="grid grid-cols-2 gap-2">
