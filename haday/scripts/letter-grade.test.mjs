@@ -4,6 +4,8 @@ import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
 const { verifyLetterInk } = await jiti.import("/workspace/src/lib/letter-shape.ts");
+const { strokeModels } = await jiti.import("/workspace/src/lib/letter-strokes.ts");
+const { staveRegion } = await jiti.import("/workspace/src/lib/letter-models.ts");
 
 const H = 208;
 const TOP = H * 0.24;
@@ -360,4 +362,166 @@ test("a single stem is not shin", () => {
   const r = grade([line(320, TOP + 8, 320, BASE - 4)], "ש");
   assert.equal(r.match, "wrong");
   assert.notEqual(r.read, "ש");
+});
+
+function densify(path, step = 3.2) {
+  const out = [];
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1];
+    const b = path[i];
+    const d = Math.hypot(b.x - a.x, b.y - a.y);
+    const n = Math.max(1, Math.round(d / step));
+    for (let k = 0; k < n; k++) {
+      const t = k / n;
+      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  }
+  if (path.length) out.push(path[path.length - 1]);
+  return out;
+}
+
+function modelInk(letter, mi = 0) {
+  const model = strokeModels(letter)[mi];
+  const region = staveRegion(letter);
+  const bandH = H * (region.bottom - region.top);
+  const ox = (640 - bandH) / 2;
+  const oy = H * region.top;
+  return model.paths.map((path) =>
+    densify(path.map((p) => ({ x: ox + (p.x / 100) * bandH, y: oy + (p.y / 100) * bandH }))),
+  );
+}
+
+function oval(cx, cy, rx, ry, n = 36) {
+  const s = [];
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    s.push({ x: cx + Math.cos(a) * rx, y: cy + Math.sin(a) * ry });
+  }
+  return s;
+}
+
+const LETTERS = "אבגדהוזחטיכךלמםנןסעפףצץקרשת";
+
+test("every chart model of every letter counts as that letter", () => {
+  for (const L of LETTERS) {
+    const models = strokeModels(L);
+    for (let i = 0; i < models.length; i++) {
+      const r = grade(modelInk(L, i), L);
+      assert.ok(r.match === "exact" || r.match === "close", `${L} model ${i} ${JSON.stringify(r)}`);
+      assert.equal(r.read, L, `${L} model ${i} read ${r.read}`);
+    }
+  }
+});
+
+test("body-sized vav is not yod", () => {
+  const r = grade(modelInk("ו", 0), "י");
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "י");
+});
+
+test("Latin C is not shin, tet, or mem", () => {
+  const ink = [
+    curve(
+      [
+        { x: 280, y: TOP + 10 },
+        { x: 180, y: TOP + 18 },
+        { x: 170, y: (TOP + BASE) / 2 },
+        { x: 180, y: BASE - 10 },
+        { x: 280, y: BASE - 4 },
+      ],
+      14,
+    ),
+  ];
+  for (const L of ["ש", "ט", "מ", "ע", "כ"]) {
+    const r = grade(ink, L);
+    assert.equal(r.match, "wrong", `${L} accepted C ${JSON.stringify(r)}`);
+  }
+});
+
+test("Latin O is samekh, not mem sofit, tet, or ayin", () => {
+  const ink = [oval(240, (TOP + BASE) / 2, 55, 38)];
+  const samekh = grade(ink, "ס");
+  assert.ok(samekh.match === "exact" || samekh.match === "close", JSON.stringify(samekh));
+  for (const L of ["ם", "ט", "ע", "מ"]) {
+    const r = grade(ink, L);
+    assert.equal(r.match, "wrong", `${L} accepted O ${JSON.stringify(r)}`);
+  }
+});
+
+test("Latin U is ayin, not shin or mem", () => {
+  const ink = [
+    curve(
+      [
+        { x: 190, y: TOP + 8 },
+        { x: 195, y: BASE - 8 },
+        { x: 240, y: BASE },
+        { x: 285, y: BASE - 8 },
+        { x: 290, y: TOP + 8 },
+      ],
+      16,
+    ),
+  ];
+  const ayin = grade(ink, "ע");
+  assert.ok(ayin.match === "exact" || ayin.match === "close", JSON.stringify(ayin));
+  for (const L of ["ש", "מ"]) {
+    const r = grade(ink, L);
+    assert.equal(r.match, "wrong", `${L} accepted U ${JSON.stringify(r)}`);
+  }
+});
+
+test("Latin W is shin, not ayin", () => {
+  const ink = [
+    curve(
+      [
+        { x: 160, y: TOP + 8 },
+        { x: 190, y: BASE - 4 },
+        { x: 220, y: TOP + 30 },
+        { x: 250, y: BASE - 4 },
+        { x: 280, y: TOP + 8 },
+      ],
+      14,
+    ),
+  ];
+  const shin = grade(ink, "ש");
+  assert.ok(shin.match === "exact" || shin.match === "close", JSON.stringify(shin));
+  const ayin = grade(ink, "ע");
+  assert.equal(ayin.match, "wrong");
+});
+
+test("Latin Y is not tsade", () => {
+  const ink = [
+    line(200, TOP + 8, 240, (TOP + BASE) / 2),
+    line(280, TOP + 8, 240, (TOP + BASE) / 2),
+    line(240, (TOP + BASE) / 2, 240, BASE - 4),
+  ];
+  for (const L of ["צ", "ץ"]) {
+    const r = grade(ink, L);
+    assert.equal(r.match, "wrong", `${L} accepted Latin Y ${JSON.stringify(r)}`);
+  }
+});
+
+test("Latin X is not tsade", () => {
+  const ink = [line(180, TOP + 8, 300, BASE - 4), line(300, TOP + 8, 180, BASE - 4)];
+  const r = grade(ink, "צ");
+  assert.equal(r.match, "wrong");
+});
+
+test("alef, chet, and tav charts are not shin", () => {
+  for (const L of ["א", "ח", "ת"]) {
+    const r = grade(modelInk(L, 0), "ש");
+    assert.equal(r.match, "wrong", `shin accepted ${L} ${JSON.stringify(r)}`);
+  }
+});
+
+test("a long hanging stem is final nun, not vav or yod", () => {
+  const ink = [line(240, TOP + 8, 240, BASE + 50)];
+  const nun = grade(ink, "ן");
+  assert.ok(nun.match === "exact" || nun.match === "close", JSON.stringify(nun));
+  assert.equal(grade(ink, "ו").match, "wrong");
+  assert.equal(grade(ink, "י").match, "wrong");
+});
+
+test("pe without a nose is not pe", () => {
+  const r = grade(kafC(), "פ");
+  assert.equal(r.match, "wrong");
 });

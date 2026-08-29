@@ -36,6 +36,8 @@ type Feat = {
   leftJoinsRoof: boolean;
   hasCross: boolean;
   footX: number;
+  topTips: number;
+  hasNose: boolean;
 };
 
 function dist(a: InkPoint, b: InkPoint): number {
@@ -200,6 +202,42 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
   if (clean.length === 2 && strokeStraight(clean[0]) && strokeStraight(clean[1])) {
     hasCross = segmentsCross(clean[0][0], clean[0][clean[0].length - 1], clean[1][0], clean[1][clean[1].length - 1]);
   }
+  const tipBins = [0, 0, 0, 0, 0, 0, 0];
+  for (const p of pts) {
+    const xn = (p.x - minX) / w;
+    const yn = (p.y - minY) / h;
+    if (yn < 0.42) tipBins[Math.max(0, Math.min(6, Math.floor(xn * 7)))] += 1;
+  }
+  let topTips = 0;
+  let inPeak = false;
+  for (const n of tipBins) {
+    if (n >= 2) {
+      if (!inPeak) {
+        topTips += 1;
+        inPeak = true;
+      }
+    } else inPeak = false;
+  }
+  let hasNose = false;
+  for (const s of clean) {
+    if (s === longest) continue;
+    const plen = pathOf(s);
+    if (plen < span * 0.55 && plen > span * 0.08) {
+      const mid = s[Math.floor(s.length / 2)];
+      const xn = (mid.x - minX) / w;
+      const yn = (mid.y - minY) / h;
+      if (xn > 0.2 && xn < 0.82 && yn > 0.18 && yn < 0.82) hasNose = true;
+    }
+  }
+  if (!hasNose) {
+    let innerN = 0;
+    for (const p of pts) {
+      const xn = (p.x - minX) / w;
+      const yn = (p.y - minY) / h;
+      if (xn > 0.38 && xn < 0.7 && yn > 0.32 && yn < 0.68) innerN += 1;
+    }
+    if (innerN >= 6) hasNose = true;
+  }
   return {
     n: clean.length,
     w,
@@ -230,6 +268,8 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     leftJoinsRoof,
     hasCross,
     footX,
+    topTips,
+    hasNose,
   };
 }
 
@@ -246,6 +286,7 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   const dropped = f.descender >= 0.045 || f.belowShare >= 0.12;
   const bitLow = f.descender >= 0.01 || f.belowShare >= 0.025;
   const rose = f.ascender >= 0.04;
+  const centerStem = f.footX > 0.36 && f.footX < 0.64 && !f.hasBottomBar && !f.hasLeftFoot;
 
   if (roundLoop(f) && want !== "ס" && want !== "ם" && want !== "ט" && want !== "ק") return { ok: false, as: "ס" };
   if (f.small && want !== "י" && f.path < 70) return { ok: false, as: "י" };
@@ -255,21 +296,36 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (want === "ו" && dropped) return { ok: false, as: "ן" };
   if (want === "ו" && f.small) return { ok: false, as: "י" };
   if (want === "ו" && f.hasTopBar && f.footX < 0.62) return { ok: false, as: "ז" };
+  if (want === "ו" && f.hasFork) return { ok: false, as: "ע" };
   if (want === "ז" && (dropped || (!f.hasTopBar && f.topShare < 0.18))) return { ok: false, as: dropped ? "ן" : "ו" };
   if (want === "ע" && roundLoop(f)) return { ok: false, as: "ס" };
   if (want === "ע" && stick(f)) return { ok: false, as: "ו" };
+  if (want === "ע" && f.topTips >= 3) return { ok: false, as: "ש" };
+  if (want === "ע" && f.hasTopBar && !f.hasFork) return { ok: false, as: "ז" };
+  if (want === "ע" && f.hasNose && f.closed > 0.4) return { ok: false, as: "ט" };
   if (want === "צ" && (f.hasCross || !f.hasFork)) return { ok: false, as: f.hasCross ? "א" : "" };
+  if (want === "צ" && centerStem && f.n >= 2) return { ok: false, as: "ע" };
   if (want === "ץ" && f.hasCross) return { ok: false, as: "א" };
   if (want === "ץ" && (!f.hasFork || (!dropped && !f.tall))) return { ok: false, as: f.hasFork ? "צ" : "" };
   if (want === "א" && (roundLoop(f) || stick(f))) return { ok: false, as: "" };
   if (want === "ב" && (f.closed > 0.62 || roundLoop(f))) return { ok: false, as: "ם" };
   if (want === "ק" && f.footX < 0.42) return { ok: false, as: "" };
-  if (want === "פ" && f.n < 2 && !f.hasSlash) return { ok: false, as: "כ" };
+  if (want === "ק" && stick(f) && !f.hasTopBar && f.n === 1) return { ok: false, as: "ן" };
+  if (want === "ק" && f.aspect < 0.36 && f.n === 1) return { ok: false, as: "ן" };
+  if (want === "פ" && !f.hasNose) return { ok: false, as: "כ" };
   if (want === "ט" && roundLoop(f) && f.n === 1) return { ok: false, as: "ס" };
   if (want === "ט" && f.hasFork && f.n === 1 && f.closed < 0.4 && !f.hasSlash) return { ok: false, as: "ע" };
+  if (want === "ט" && f.n === 1 && !f.hasNose && !f.hasSlash) return { ok: false, as: f.hasFork ? "ע" : "" };
   if (want === "מ" && roundLoop(f)) return { ok: false, as: "ס" };
+  if (want === "מ" && f.n === 1 && f.hasFork && !f.hasBottomBar) return { ok: false, as: "ע" };
+  if (want === "מ" && f.n === 1 && f.startX > 0.68 && f.endX > 0.68) return { ok: false, as: "" };
+  if (want === "מ" && f.hasNose && f.closed > 0.4) return { ok: false, as: "ט" };
   if (want === "ם" && f.circ > 0.86) return { ok: false, as: "ס" };
-  if (want === "ש" && f.hasTopBar && !f.hasBottomBar && f.n <= 2) return { ok: false, as: "ז" };
+  if (want === "ש") {
+    if (roundLoop(f) || stick(f)) return { ok: false, as: roundLoop(f) ? "ס" : "ו" };
+    if (f.hasTopBar && !f.hasBottomBar) return { ok: false, as: f.leftJoinsRoof || f.n >= 2 ? "ח" : "ז" };
+    if (f.topTips < 3 && !(f.hasFork && f.hasMidArm && !f.hasTopBar)) return { ok: false, as: f.hasFork ? "ע" : "" };
+  }
   if (want === "ת" && !f.hasLeftFoot) return { ok: false, as: f.leftJoinsRoof ? "ח" : "ה" };
   if ((want === "ה" || want === "ח") && f.hasLeftFoot) return { ok: false, as: "ת" };
   if (want === "ח" && !f.leftJoinsRoof) return { ok: false, as: "ה" };
@@ -293,7 +349,7 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
       if (want === "ר" || want === "ד") return { ok: false, as: "ק" };
       return { ok: false, as: "ן" };
     }
-    if (model.band === "small" && (dropped || rose && f.h > 80)) return { ok: false, as: "ו" };
+    if (model.band === "small" && (dropped || (rose && f.h > 80))) return { ok: false, as: "ו" };
     if (want === "ם" && dropped && f.descender > 0.08) return { ok: false, as: "" };
   }
   return { ok: true, as: want };
@@ -390,11 +446,11 @@ const SCORES: Record<string, Scorer> = {
     (roundLoop(f) ? -0.2 : 0.1),
   ר: (f) => (f.n === 1 ? 0.25 : 0.1) + (f.closed < 0.5 ? 0.25 : 0) + (f.startY < 0.4 || f.topShare > 0.28 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
   ש: (f) =>
-    (f.hasMidArm ? 0.3 : 0.08) +
-    (f.wide || f.square ? 0.2 : 0) +
-    (f.closed < 0.55 ? 0.15 : 0) +
-    (f.n >= 1 ? 0.15 : 0) +
-    (roundLoop(f) || stick(f) ? -0.45 : 0.1),
+    (f.topTips >= 3 ? 0.4 : f.hasMidArm ? 0.12 : 0) +
+    (f.wide || f.square ? 0.15 : 0) +
+    (f.closed < 0.55 ? 0.1 : 0) +
+    (f.n >= 1 ? 0.1 : 0) +
+    (roundLoop(f) || stick(f) || f.hasTopBar || f.topTips < 3 ? -0.45 : 0.1),
 };
 
 function scoreOf(id: string, f: Feat): number {
@@ -437,12 +493,17 @@ function ayinMissNote(f: Feat, rivalId: string): string | undefined {
 }
 
 function shinMissNote(f: Feat, rivalId: string): string | undefined {
-  if (rivalId === "ע" || rivalId === "צ") {
+  if (f.topTips < 3 || rivalId === "ע" || rivalId === "צ") {
     return "Shin has three arms, like a W. Two arms is ayin.";
   }
-  if (stick(f) || roundLoop(f)) {
+  if (stick(f) || roundLoop(f) || f.hasTopBar) {
     return "Three arms, like a W, as on the chart. Open at the top.";
   }
+  return undefined;
+}
+
+function yodMissNote(f: Feat): string | undefined {
+  if (f.h > 48 || f.path > 140) return "Yod is the tiny mark in the upper body. A full-height stem is vav.";
   return undefined;
 }
 
@@ -465,30 +526,29 @@ export function verifyLetterInk(
   const qofNote = want === "ק" ? qofMissNote(f, gate) : undefined;
   const ayinNote = want === "ע" ? ayinMissNote(f, rival && rival.id !== want ? rival.id : "") : undefined;
   const shinNote = want === "ש" ? shinMissNote(f, rival && rival.id !== want ? rival.id : "") : undefined;
-  const note = qofNote ?? ayinNote ?? shinNote;
+  const yodNote = want === "י" ? yodMissNote(f) : undefined;
+  const note = qofNote ?? ayinNote ?? shinNote ?? yodNote;
   const tBar = f.hasTopBar && !f.hasBottomBar;
 
   if (want === "ק" && f.footX < 0.42) {
     return { match: "wrong", read: "", score: shape?.score ?? 0, note };
   }
-  if (want === "ק" && lined && !gate.ok && gate.as === "ר") {
-    return { match: "wrong", read: "ר", score: shape?.score ?? 0.12, note };
-  }
-  if ((want === "ר" || want === "ד") && lined && !gate.ok && gate.as === "ק") {
-    return { match: "wrong", read: "ק", score: shape?.score ?? 0.12 };
-  }
   if (tBar && (want === "כ" || want === "ב" || want === "פ" || want === "ס" || want === "ם" || want === "מ")) {
     return { match: "wrong", read: f.leftShare < 0.3 ? "ד" : "ז", score: shape?.score ?? 0 };
   }
 
-  const hangTwins = want === "ק" && gate.ok ? new Set(["ד", "ר", "ן", "ך", "ו", "ה", "נ", "ף"]) : null;
+  if (!gate.ok) {
+    return { match: "wrong", read: gate.as === want ? "" : gate.as, score: shape?.score ?? 0.12, note };
+  }
+
+  const hangTwins = want === "ק" ? new Set(["ד", "ר", "ן", "ך", "ו", "ה", "נ", "ף"]) : null;
   const ayinTwins =
-    want === "ע" && !roundLoop(f) && !stick(f) ? new Set(["ס", "ט", "ם", "מ", "כ", "נ", "ג"]) : null;
+    want === "ע" && !roundLoop(f) && !stick(f) ? new Set(["ס", "ם", "כ", "נ", "ג"]) : null;
   const shinTwins =
-    want === "ש" && !roundLoop(f) && !stick(f) ? new Set(["מ", "ט", "ס", "ם", "א", "ת", "ח"]) : null;
+    want === "ש" && !roundLoop(f) && !stick(f) && f.topTips >= 3 ? new Set(["מ", "ט", "ס", "ם", "א", "ת", "ח"]) : null;
   const descTwins =
-    (want === "ך" || want === "ן" || want === "ף") && gate.ok ? new Set(["ד", "ר", "ו", "ה", "נ", "י", "ח"]) : null;
-  const yodTwins = want === "י" && gate.ok ? new Set(["ד", "ר", "ו", "ן", "ך"]) : null;
+    want === "ך" || want === "ן" || want === "ף" ? new Set(["ד", "ר", "ו", "ה", "נ", "י", "ח"]) : null;
+  const yodTwins = want === "י" ? new Set(["ד", "ר", "ו", "ן", "ך"]) : null;
 
   if (rival && rival.id !== want && rival.score >= 0.52 && rival.score >= (shape?.score ?? 0) + 0.07) {
     if (
@@ -519,7 +579,7 @@ export function verifyLetterInk(
     }
   }
 
-  if (want === "ש" && shape && shape.score >= 0.55 && !roundLoop(f) && !stick(f)) {
+  if (want === "ש" && shape && shape.score >= 0.55 && !roundLoop(f) && !stick(f) && (f.topTips >= 3 || (f.hasFork && f.hasMidArm && !f.hasTopBar))) {
     const lead = shape.score + 0.04 >= (rival?.score ?? 0) || !rival || rival.id === want || Boolean(shinTwins?.has(rival.id));
     if (lead) {
       if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
@@ -528,15 +588,10 @@ export function verifyLetterInk(
   }
 
   if (shape && shape.score >= 0.7 && shape.cover >= 0.6 && shape.extra >= 0.58) {
-    if (lined && !gate.ok && (letterModel(want)?.band === "descender" || letterModel(want)?.band === "hang" || letterModel(want)?.band === "ascender")) {
-      return { match: "wrong", read: gate.as, score: shape.score * 0.4, note };
-    }
-    if (!gate.ok) return { match: "wrong", read: gate.as, score: shape.score * 0.45, note };
     if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
     return { match: "close", read: want, score: shape.score };
   }
 
-  if (!gate.ok) return { match: "wrong", read: gate.as === want ? "" : gate.as, score: shape?.score ?? 0.12, note };
   if (shape && shape.score < 0.42) return { match: "wrong", read: rival && rival.id !== want ? rival.id : "", score: shape.score, note };
 
   let bestId = "";
