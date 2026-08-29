@@ -16,6 +16,8 @@ export const BADGES = [
   { id: "ultimate-100", title: "Crown of the Text", hint: "Perfect score on the Ultimate Challenge" },
   { id: "zakhor", title: "Zakhor", hint: "Finish one Daily keep" },
   { id: "zakhor-7", title: "Seven days of memory", hint: "Seven Daily keep days in a row" },
+  { id: "alefbet-line", title: "Alef to Tav", hint: "Clear Aleph-bet The line" },
+  { id: "alefbet-master", title: "Keeper of the letters", hint: "Clear all three Aleph-bet mastery levels" },
 ] as const;
 
 export type BadgeId = (typeof BADGES)[number]["id"];
@@ -109,6 +111,9 @@ export function evaluateBadges(game: GameSnapshot, dailyStreak: number, keepStre
   if ((Number(game.ultimateBest) || 0) >= 100 || game.ultimatePerfect) out.push("ultimate-100");
   if (keepStreak >= 1) out.push("zakhor");
   if (keepStreak >= 7) out.push("zakhor-7");
+  const ab = game.alefBet?.levels ?? {};
+  if (ab["1"]?.cleared) out.push("alefbet-line");
+  if (ab["1"]?.cleared && ab["2"]?.cleared && ab["3"]?.cleared) out.push("alefbet-master");
   return out;
 }
 

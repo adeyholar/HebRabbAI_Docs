@@ -20,6 +20,9 @@ export const Route = createFileRoute("/game/$chapter/")({ component: ChapterHub 
 
 function ChapterHub() {
   const { chapter: raw } = Route.useParams();
+  if (!/^\d+$/.test(raw)) {
+    return <Navigate to="/game" />;
+  }
   const chapter = clampChapter(Number(raw));
   const game = useStudy((s) => s.game);
   const rec = chapterRecord(game, chapter);

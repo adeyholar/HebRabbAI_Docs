@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { GameMenu } from "@/components/game-menu";
 import { Panel } from "@/components/panel";
 import { CrownBadge } from "@/components/honor-badge";
 import { bbhVocab, glossMatches, shuffle, type VocabItem } from "@/lib/vocab";
@@ -71,6 +72,9 @@ function ChallengePage() {
     const perfect = report.pct >= 100;
     return (
       <>
+        <div className="mb-4">
+          <GameMenu />
+        </div>
         <Panel className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Ultimate Challenge</p>
           <h1 className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">{report.pct}%</h1>
@@ -121,6 +125,10 @@ function ChallengePage() {
   if (!run) {
     const n = bbhVocab().length;
     return (
+      <>
+        <div className="mb-4">
+          <GameMenu />
+        </div>
       <Panel>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Optional</p>
         <h1 className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">Ultimate Challenge</h1>
@@ -147,6 +155,7 @@ function ChallengePage() {
           </Link>
         </p>
       </Panel>
+      </>
     );
   }
 
@@ -164,6 +173,9 @@ function ChallengePage() {
 
   return (
     <>
+      <div className="mb-4">
+        <GameMenu />
+      </div>
       <Panel className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Ultimate Challenge</p>
         <div className="mt-1 flex items-baseline justify-between gap-3">

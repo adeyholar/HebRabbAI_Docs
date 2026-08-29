@@ -1,0 +1,35 @@
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+
+const OPTIONS = [
+  { value: "/game", match: (p: string) => p === "/game" || /^\/game\/\d+/.test(p), label: "BBH vocabulary" },
+  { value: "/game/alefbet", match: (p: string) => p.startsWith("/game/alefbet"), label: "Aleph-bet mastery" },
+  { value: "/challenge", match: (p: string) => p.startsWith("/challenge"), label: "Ultimate Challenge" },
+] as const;
+
+export function GameMenu() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const current = OPTIONS.find((o) => o.match(pathname))?.value ?? "/game";
+
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold uppercase tracking-wide text-muted">Game</span>
+      <select
+        className="mt-1 min-h-12 w-full rounded-[var(--radius-md)] bg-card px-3 text-base font-semibold text-ink shadow-[var(--shadow-border)]"
+        value={current}
+        onChange={(e) => {
+          const to = e.target.value;
+          if (to === "/game") void navigate({ to: "/game" });
+          else if (to === "/game/alefbet") void navigate({ to: "/game/alefbet" });
+          else if (to === "/challenge") void navigate({ to: "/challenge" });
+        }}
+      >
+        {OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}

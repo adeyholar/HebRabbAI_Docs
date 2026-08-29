@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Lock } from "lucide-react";
 import { GameContinue } from "@/components/game-continue";
+import { GameMenu } from "@/components/game-menu";
 import { RewardsBar } from "@/components/rewards-bar";
 import { Panel } from "@/components/panel";
 import { cn } from "@/lib/cn";
@@ -22,7 +23,8 @@ function GameMapPage() {
   return (
     <>
       <Panel className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Game mode</p>
+        <GameMenu />
+        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-primary">Game mode</p>
         <h1 className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">Chapter path</h1>
         <p className="mt-3 max-w-prose text-muted">
           Each BBH chapter is a level. Clear Recognize, Gloss, Spell (lenient), then Spell (strict) to unlock the next. Both spell stages need the right consonants and vowels. Lenient still shows the verse; strict does not.

@@ -12,6 +12,7 @@ import {
   type Rating,
 } from "./srs";
 import {
+  applyAlefBetResult,
   applyStageResult,
   applyUltimateResult,
   defaultGame,
@@ -52,6 +53,10 @@ type StudyState = StudySnapshot & {
   completeGameStage: (
     chapter: number,
     stage: GameStageId,
+    result: { stars: number; score: number; firstTryRate: number },
+  ) => void;
+  completeAlefBetLevel: (
+    level: number,
     result: { stars: number; score: number; firstTryRate: number },
   ) => void;
   startUltimate: (ids: string[]) => void;
@@ -106,6 +111,16 @@ export const useStudy = create<StudyState>()(
         const now = Date.now();
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
         const game = stampRewards(applyStageResult(get().game, chapter, stage, result), streakInfo.streak, get().keepStreak);
+        set({
+          game,
+          ...streakInfo,
+          sessions: get().lastStudyDay === startOfDay(now) ? get().sessions : get().sessions + 1,
+        });
+      },
+      completeAlefBetLevel: (level, result) => {
+        const now = Date.now();
+        const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
+        const game = stampRewards(applyAlefBetResult(get().game, level, result), streakInfo.streak, get().keepStreak);
         set({
           game,
           ...streakInfo,

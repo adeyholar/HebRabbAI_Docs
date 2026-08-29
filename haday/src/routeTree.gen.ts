@@ -27,6 +27,8 @@ import { Route as GameIndexRouteImport } from './routes/game/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as GameChapterIndexRouteImport } from './routes/game/$chapter/index'
 import { Route as GameChapterStageRouteImport } from './routes/game/$chapter/$stage'
+import { Route as GameAlefbetIndexRouteImport } from './routes/game/alefbet/index'
+import { Route as GameAlefbetLevelRouteImport } from './routes/game/alefbet/$level'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -118,6 +120,16 @@ const GameChapterStageRoute = GameChapterStageRouteImport.update({
   path: '/game/$chapter/$stage',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GameAlefbetIndexRoute = GameAlefbetIndexRouteImport.update({
+  id: '/game/alefbet/',
+  path: '/game/alefbet/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameAlefbetLevelRoute = GameAlefbetLevelRouteImport.update({
+  id: '/game/alefbet/$level',
+  path: '/game/alefbet/$level',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -137,7 +149,9 @@ export interface FileRoutesByFullPath {
   '/game/': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
+  '/game/alefbet/$level': typeof GameAlefbetLevelRoute
   '/game/$chapter/': typeof GameChapterIndexRoute
+  '/game/alefbet/': typeof GameAlefbetIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -157,7 +171,9 @@ export interface FileRoutesByTo {
   '/game': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
+  '/game/alefbet/$level': typeof GameAlefbetLevelRoute
   '/game/$chapter': typeof GameChapterIndexRoute
+  '/game/alefbet': typeof GameAlefbetIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -178,7 +194,9 @@ export interface FileRoutesById {
   '/game/': typeof GameIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
+  '/game/alefbet/$level': typeof GameAlefbetLevelRoute
   '/game/$chapter/': typeof GameChapterIndexRoute
+  '/game/alefbet/': typeof GameAlefbetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -200,7 +218,9 @@ export interface FileRouteTypes {
     | '/game/'
     | '/api/auth/$'
     | '/game/$chapter/$stage'
+    | '/game/alefbet/$level'
     | '/game/$chapter/'
+    | '/game/alefbet/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -220,7 +240,9 @@ export interface FileRouteTypes {
     | '/game'
     | '/api/auth/$'
     | '/game/$chapter/$stage'
+    | '/game/alefbet/$level'
     | '/game/$chapter'
+    | '/game/alefbet'
   id:
     | '__root__'
     | '/'
@@ -240,7 +262,9 @@ export interface FileRouteTypes {
     | '/game/'
     | '/api/auth/$'
     | '/game/$chapter/$stage'
+    | '/game/alefbet/$level'
     | '/game/$chapter/'
+    | '/game/alefbet/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -261,7 +285,9 @@ export interface RootRouteChildren {
   GameIndexRoute: typeof GameIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   GameChapterStageRoute: typeof GameChapterStageRoute
+  GameAlefbetLevelRoute: typeof GameAlefbetLevelRoute
   GameChapterIndexRoute: typeof GameChapterIndexRoute
+  GameAlefbetIndexRoute: typeof GameAlefbetIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -392,6 +418,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameChapterStageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/game/alefbet/': {
+      id: '/game/alefbet/'
+      path: '/game/alefbet'
+      fullPath: '/game/alefbet/'
+      preLoaderRoute: typeof GameAlefbetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game/alefbet/$level': {
+      id: '/game/alefbet/$level'
+      path: '/game/alefbet/$level'
+      fullPath: '/game/alefbet/$level'
+      preLoaderRoute: typeof GameAlefbetLevelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -413,7 +453,9 @@ const rootRouteChildren: RootRouteChildren = {
   GameIndexRoute: GameIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   GameChapterStageRoute: GameChapterStageRoute,
+  GameAlefbetLevelRoute: GameAlefbetLevelRoute,
   GameChapterIndexRoute: GameChapterIndexRoute,
+  GameAlefbetIndexRoute: GameAlefbetIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

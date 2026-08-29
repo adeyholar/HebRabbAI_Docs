@@ -46,6 +46,13 @@ export type GameSnapshot = {
   ultimateRun: UltimateRun | null;
   keepStreak: number;
   lastKeepDay: number;
+  alefBet: AlefBetProgress;
+};
+
+export type AlefBetProgress = {
+  unlockedLevel: number;
+  currentLevel: number;
+  levels: Record<string, StageRecord>;
 };
 
 export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
@@ -102,7 +109,16 @@ export function defaultGame(): GameSnapshot {
     ultimateRun: null,
     keepStreak: 0,
     lastKeepDay: 0,
+    alefBet: emptyAlefBet(),
   };
+}
+
+export function emptyAlefBet(): AlefBetProgress {
+  return { unlockedLevel: 1, currentLevel: 1, levels: {} };
+}
+
+function emptyAlefLevel(): StageRecord {
+  return { ...EMPTY_STAGE };
 }
 
 export function hydrateGame(raw: unknown): GameSnapshot {
@@ -134,7 +150,30 @@ export function hydrateGame(raw: unknown): GameSnapshot {
     ultimateRun: hydrateUltimateRun(r.ultimateRun),
     keepStreak: Math.max(0, Number(r.keepStreak) || 0),
     lastKeepDay: Number(r.lastKeepDay) || 0,
+    alefBet: hydrateAlefBet(r.alefBet),
   };
+}
+
+function hydrateAlefBet(raw: unknown): AlefBetProgress {
+  const base = emptyAlefBet();
+  if (!raw || typeof raw !== "object") return base;
+  const r = raw as Partial<AlefBetProgress>;
+  const unlocked = Math.min(3, Math.max(1, Number(r.unlockedLevel) || 1));
+  const current = Math.min(3, Math.max(1, Number(r.currentLevel) || 1));
+  const levels: Record<string, StageRecord> = {};
+  if (r.levels && typeof r.levels === "object") {
+    for (const [key, val] of Object.entries(r.levels)) {
+      if (!val || typeof val !== "object") continue;
+      const rec = val as Partial<StageRecord>;
+      levels[key] = {
+        stars: Number(rec.stars) || 0,
+        best: Number(rec.best) || 0,
+        cleared: Boolean(rec.cleared),
+        attempts: Math.max(Number(rec.attempts) || 0, rec.cleared ? 1 : 0),
+      };
+    }
+  }
+  return { unlockedLevel: unlocked, currentLevel: current, levels };
 }
 
 function hydrateUltimateRun(raw: unknown): UltimateRun | null {
@@ -298,6 +337,43 @@ export function applyStageResult(
   next.currentChapter = cursor.chapter;
   next.currentStage = cursor.stage;
   next.lastPlayDay = Date.now();
+  return next;
+}
+
+export function alefBetLevelRecord(game: GameSnapshot, level: number): StageRecord {
+  return game.alefBet?.levels?.[String(level)] ?? emptyAlefLevel();
+}
+
+export function isAlefBetLevelUnlocked(game: GameSnapshot, level: number): boolean {
+  const n = Math.min(3, Math.max(1, Math.round(level) || 1));
+  return n <= (game.alefBet?.unlockedLevel || 1);
+}
+
+export function applyAlefBetResult(
+  game: GameSnapshot,
+  level: number,
+  result: { stars: number; score: number; firstTryRate: number },
+): GameSnapshot {
+  const next = cloneGame(hydrateGame(game));
+  const n = Math.min(3, Math.max(1, Math.round(level) || 1));
+  const ab = next.alefBet ?? emptyAlefBet();
+  const prev = ab.levels[String(n)] ?? emptyAlefLevel();
+  ab.levels[String(n)] = {
+    stars: Math.max(prev.stars, result.stars),
+    best: Math.max(prev.best, result.score),
+    cleared: true,
+    attempts: (prev.attempts || 0) + 1,
+  };
+  if (n >= ab.unlockedLevel && n < 3) ab.unlockedLevel = n + 1;
+  ab.currentLevel = ab.unlockedLevel;
+  next.alefBet = ab;
+  next.lastPlayDay = Date.now();
+  if (result.firstTryRate >= 0.4) {
+    next.winStreak = (next.winStreak || 0) + 1;
+    next.bestWinStreak = Math.max(next.bestWinStreak || 0, next.winStreak);
+  } else {
+    next.winStreak = 0;
+  }
   return next;
 }
 
