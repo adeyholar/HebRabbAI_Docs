@@ -1,7 +1,7 @@
 import { type HandMatch } from "@/lib/hebrew";
 import { FINAL_DESCENDERS, PAD_BASE, PAD_TOP } from "@/lib/pad-guides";
 import { letterModel, modelGlyph } from "@/lib/letter-models";
-import { matchStrokeModel } from "@/lib/letter-strokes";
+import { matchStrokeModel, rankStrokeModels } from "@/lib/letter-strokes";
 
 export type InkPoint = { x: number; y: number };
 export type InkStroke = InkPoint[];
@@ -25,6 +25,7 @@ type Feat = {
   leftShare: number;
   topShare: number;
   hasTopBar: boolean;
+  hasBottomBar: boolean;
   descender: number;
   belowShare: number;
   ascender: number;
@@ -108,6 +109,17 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
   const topSpan = Number.isFinite(topMinX) ? topMaxX - topMinX : 0;
   const midSpan = Number.isFinite(midMinX) ? midMaxX - midMinX : 0;
   const hasTopBar = topSpan > w * 0.4 && topSpan > Math.max(midSpan, w * 0.18) * 1.2;
+  let botMinX = Infinity;
+  let botMaxX = -Infinity;
+  for (const p of pts) {
+    const yn = (p.y - minY) / h;
+    if (yn > 0.72) {
+      botMinX = Math.min(botMinX, p.x);
+      botMaxX = Math.max(botMaxX, p.x);
+    }
+  }
+  const botSpan = Number.isFinite(botMinX) ? botMaxX - botMinX : 0;
+  const hasBottomBar = botSpan > w * 0.4 && botSpan > Math.max(midSpan, w * 0.18) * 1.15;
   const baseY = height > 0 ? height * PAD_BASE : maxY;
   const topLine = height > 0 ? height * PAD_TOP : minY;
   const descender = height > 0 ? Math.max(0, (maxY - baseY) / height) : 0;
@@ -161,6 +173,7 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     leftShare: left / pts.length,
     topShare: top / pts.length,
     hasTopBar,
+    hasBottomBar,
     descender,
     belowShare,
     ascender,
@@ -195,6 +208,12 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (want === "ץ" && (!f.hasFork || (!dropped && !f.tall))) return { ok: false, as: f.hasFork ? "צ" : "" };
   if (want === "א" && (roundLoop(f) || stick(f))) return { ok: false, as: "" };
   if (want === "ב" && (f.closed > 0.62 || roundLoop(f))) return { ok: false, as: "ם" };
+
+  const tBar = f.hasTopBar && !f.hasBottomBar;
+  if (tBar && (want === "כ" || want === "ב" || want === "פ" || want === "ס" || want === "ם" || want === "מ")) {
+    return { ok: false, as: f.leftShare < 0.3 ? "ד" : "ז" };
+  }
+  if (want === "כ" && !f.hasBottomBar && (stick(f) || f.tall)) return { ok: false, as: "ו" };
 
   if (lined && model) {
     if (model.band === "descender" && !dropped) return { ok: false, as: want };
@@ -268,11 +287,13 @@ const SCORES: Record<string, Scorer> = {
   ט: (f) => (f.closed > 0.35 ? 0.4 : 0.1) + (f.square ? 0.2 : 0) + (f.n <= 3 ? 0.15 : 0) + (stick(f) ? -0.4 : 0.1),
   י: (f) => (f.small ? 0.6 : 0) + (f.n === 1 ? 0.2 : 0) + (f.path < 120 ? 0.15 : -0.2) + (f.tall && !f.small ? -0.4 : 0) + (roundLoop(f) ? -0.5 : 0.05),
   כ: (f) =>
-    (f.closed < 0.55 ? 0.25 : -0.15) +
-    (f.n <= 2 ? 0.2 : 0) +
-    (f.circ > 0.18 && f.circ < 0.65 ? 0.2 : 0) +
+    (f.hasBottomBar ? 0.3 : -0.3) +
+    (f.closed < 0.55 ? 0.15 : -0.15) +
+    (f.n <= 2 ? 0.1 : 0) +
+    (f.circ > 0.18 && f.circ < 0.65 ? 0.15 : 0) +
+    (f.hasTopBar && !f.hasBottomBar ? -0.55 : 0.1) +
     (f.tall ? -0.35 : 0.1) +
-    (roundLoop(f) ? -0.4 : 0.1),
+    (roundLoop(f) || stick(f) ? -0.45 : 0.05),
   ך: (f) => (f.tall ? 0.35 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (roundLoop(f) || f.small ? -0.45 : 0.1),
   ל: (f) => (f.tall ? 0.4 : 0) + (f.startY < 0.3 || f.topShare < 0.35 ? 0.2 : 0) + (f.n <= 2 ? 0.15 : 0) + (roundLoop(f) ? -0.45 : 0.1) + (f.descender > 0.1 ? -0.25 : 0),
   מ: (f) => (f.n <= 3 ? 0.2 : 0) + (f.closed < 0.72 ? 0.25 : -0.2) + (f.square ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
@@ -329,18 +350,28 @@ export function verifyLetterInk(
 
   const lined = (opts?.height ?? 0) > 40;
   const gate = gateLetter(want, f, lined);
-  const shape = matchStrokeModel(strokes, want);
+  const ranked = rankStrokeModels(strokes);
+  const shape = ranked.find((r) => r.id === want) ?? matchStrokeModel(strokes, want);
+  const rival = ranked[0];
 
-  if (shape && shape.score >= 0.58 && shape.cover >= 0.5) {
+  if (rival && rival.id !== want && rival.score >= 0.52 && rival.score >= (shape?.score ?? 0) + 0.07) {
+    if (isNear(want, rival.id) && (shape?.score ?? 0) >= 0.55 && (shape?.extra ?? 0) >= 0.55) {
+      return { match: "close", read: want, score: shape?.score ?? rival.score };
+    }
+    return { match: "wrong", read: rival.id, score: shape?.score ?? 0 };
+  }
+
+  if (shape && shape.score >= 0.7 && shape.cover >= 0.6 && shape.extra >= 0.58) {
     if (lined && !gate.ok && (letterModel(want)?.band === "descender" || letterModel(want)?.band === "hang" || letterModel(want)?.band === "ascender")) {
       return { match: "wrong", read: gate.as, score: shape.score * 0.4 };
     }
-    if (shape.score >= 0.74 && shape.cover >= 0.68) return { match: "exact", read: want, score: shape.score };
+    if (!gate.ok) return { match: "wrong", read: gate.as, score: shape.score * 0.45 };
+    if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
     return { match: "close", read: want, score: shape.score };
   }
 
   if (!gate.ok) return { match: "wrong", read: gate.as, score: shape?.score ?? 0.12 };
-  if (shape && shape.score < 0.42) return { match: "wrong", read: "", score: shape.score };
+  if (shape && shape.score < 0.42) return { match: "wrong", read: rival && rival.id !== want ? rival.id : "", score: shape.score };
 
   let bestId = "";
   let best = -1;
@@ -360,10 +391,10 @@ export function verifyLetterInk(
     return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine };
   }
 
-  if (mine >= 0.55 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
-  if (mine >= 0.38 && (mine + 0.12 >= best || isNear(want, bestId))) return { match: "close", read: want, score: mine };
-  if (isNear(want, bestId) && mine >= 0.28) return { match: "close", read: want, score: mine };
-  if (best >= 0.55 && best > mine + 0.14 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine };
-  if (mine >= 0.36) return { match: "close", read: want, score: mine };
+  if (mine >= 0.58 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
+  if (mine >= 0.48 && (mine + 0.08 >= best || isNear(want, bestId))) return { match: "close", read: want, score: mine };
+  if (isNear(want, bestId) && mine >= 0.42 && best - mine < 0.16) return { match: "close", read: want, score: mine };
+  if (best >= 0.5 && best > mine + 0.1 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine };
+  if (mine >= 0.46) return { match: "close", read: want, score: mine };
   return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine };
 }

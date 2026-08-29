@@ -56,6 +56,8 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
     if (!canvas || !ctx) return;
     const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
+    ctx.fillStyle = "#faf7f0";
+    ctx.fillRect(0, 0, rect.width, rect.height);
     if (guidesRef.current) {
       ctx.save();
       ctx.strokeStyle = "rgba(28, 24, 20, 0.28)";

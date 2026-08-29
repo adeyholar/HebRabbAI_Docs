@@ -211,24 +211,33 @@ function coverage(from: InkPoint[], to: InkPoint[], limit: number): number {
   return hit / from.length;
 }
 
-export function matchStrokeModel(strokes: InkStroke[], expected: string): { score: number; cover: number; extra: number } | null {
-  const models = strokeModels(expected);
-  if (!models.length) return null;
+export function rankStrokeModels(strokes: InkStroke[]): { id: string; score: number; cover: number; extra: number }[] {
   const ink = flatten(strokes);
-  if (ink.length < 6) return null;
+  if (ink.length < 6) return [];
   const b = bbox(ink);
-  if (b.w < 8 && b.h < 8) return null;
+  if (b.w < 8 && b.h < 8) return [];
 
-  let best = { score: 0, cover: 0, extra: 0 };
-  for (const model of models) {
-    const modelPts = model.paths.flatMap((p) => densify(p));
-    const inkU = toUnit(ink, model.aspect);
-    const cover = coverage(modelPts, inkU, 14);
-    const extra = coverage(inkU, modelPts, 16);
-    const score = cover * 0.58 + extra * 0.42;
-    if (score > best.score) best = { score, cover, extra };
+  const ranked: { id: string; score: number; cover: number; extra: number }[] = [];
+  for (const id of Object.keys(MODELS)) {
+    let best = { score: 0, cover: 0, extra: 0 };
+    for (const model of MODELS[id]) {
+      const modelPts = model.paths.flatMap((p) => densify(p));
+      const inkU = toUnit(ink, model.aspect);
+      const cover = coverage(modelPts, inkU, 12);
+      const extra = coverage(inkU, modelPts, 13);
+      const score = cover * 0.5 + extra * 0.5;
+      if (score > best.score) best = { score, cover, extra };
+    }
+    ranked.push({ id, ...best });
   }
-  return best;
+  ranked.sort((a, b) => b.score - a.score);
+  return ranked;
+}
+
+export function matchStrokeModel(strokes: InkStroke[], expected: string): { score: number; cover: number; extra: number } | null {
+  const id = modelGlyph(expected);
+  if (!MODELS[id]) return null;
+  return rankStrokeModels(strokes).find((r) => r.id === id) ?? { score: 0, cover: 0, extra: 0 };
 }
 
 export function modelToPad(

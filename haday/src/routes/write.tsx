@@ -7,7 +7,7 @@ import { VerseCard } from "@/components/verse-card";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
 import { Panel } from "@/components/panel";
-import { dageshCoach, isSingleLetterLemma, matchHandwriting, type HandMatch } from "@/lib/hebrew";
+import { dageshCoach, isSingleLetterLemma, lettersOnly, matchHandwriting, type HandMatch } from "@/lib/hebrew";
 import { checkGlyphInk } from "@/lib/check-glyph";
 import { writingHint } from "@/lib/letter-models";
 import { queueForFocus, useStudy } from "@/lib/store";
@@ -165,7 +165,7 @@ function WritePage() {
           });
           return;
         }
-        applyCheck(next.match, next.read || item.hebrew);
+        applyCheck(next.match, next.match === "wrong" ? next.read : next.read || item.hebrew);
       } finally {
         setBusy(false);
       }
@@ -355,19 +355,26 @@ function WritePage() {
           ) : (
             <>
               <div className="relative mt-4">
-                <InkPad ref={pad} disabled={busy || locked} guides={letterPad} onChange={setEmpty} />
+                <InkPad
+                  ref={pad}
+                  disabled={busy || locked}
+                  guides={letterPad}
+                  model={letterPad ? item.hebrew : null}
+                  showModel={Boolean(letterPad && result && result.match === "wrong")}
+                  onChange={setEmpty}
+                />
                 {empty && !result && (
                   <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted">
                     {letterPad ? "Write the letter between the lines" : "Write the Hebrew here"}
                   </p>
                 )}
               </div>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex gap-2 rounded-[var(--radius-xl)] bg-card p-2 shadow-[var(--shadow-border)]">
                 <Button variant="outline" className="flex-1" onClick={() => pad.current?.undo()} disabled={busy || locked}>
                   Undo
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   className="flex-1"
                   onClick={() => {
                     pad.current?.clear();
@@ -435,13 +442,21 @@ function ResultPanel({
       {!hideAnswer && (
         <p className="mt-1 text-sm text-muted">
           Target <span className="he-word text-lg text-fg">{item.hebrew}</span>
-          {result.read ? (
+          {result.read && lettersOnly(result.read) !== lettersOnly(item.hebrew) ? (
+            <>
+              {" "}
+              · that looks like <span className="he-word text-lg text-fg">{result.read}</span>
+            </>
+          ) : result.read ? (
             <>
               {" "}
               · read as <span className="he-word text-lg text-fg">{result.read}</span>
             </>
           ) : null}
         </p>
+      )}
+      {!hideAnswer && result.match === "wrong" && isSingleLetterLemma(item.hebrew) && (
+        <p className="mt-2 text-sm text-ink">{writingHint(item.hebrew)}</p>
       )}
       {result.note && <p className="mt-2 text-sm text-muted">{result.note}</p>}
       {coach && (
