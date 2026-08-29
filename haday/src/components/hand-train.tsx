@@ -14,6 +14,7 @@ import {
 import { writingHint } from "@/lib/letter-models";
 import { alefKey } from "@/lib/alef";
 import { useStudy } from "@/lib/store";
+import { strokeModelCount } from "@/lib/letter-strokes";
 import { cn } from "@/lib/cn";
 
 const TRAIN_LETTERS = WRITE_LETTERS.filter((l) => l.id !== "sin");
@@ -28,6 +29,8 @@ export function HandTrain() {
   const [okNote, setOkNote] = useState<string | null>(null);
   const [stats, setStats] = useState(handStats);
   const [padKey, setPadKey] = useState(0);
+  const [handI, setHandI] = useState(0);
+  const hands = strokeModelCount(active.letter);
 
   useEffect(() => {
     return subscribeHand(() => setStats(handStats()));
@@ -38,6 +41,7 @@ export function HandTrain() {
     setNote(null);
     setOkNote(null);
     setEmpty(true);
+    setHandI(0);
     setPadKey((k) => k + 1);
   }, [active]);
 
@@ -83,10 +87,10 @@ export function HandTrain() {
       <Panel>
         <h2 className="font-display text-2xl font-bold text-ink">Train my hand</h2>
         <p className="mt-2 text-sm text-muted">
-          Write each letter {HAND_GOAL} times, tracing the faint chart. Those samples blend into one living shape for
-          that letter, and the pass bar eases a little toward your hand. Latin look-alikes (a T for kaf, a P for qof)
-          are still rejected. You do not have to finish the whole alef-bet first; train a letter when you want it to
-          stick.
+          Follow the moving stroke. Write each letter {HAND_GOAL} times. Those copies become your personal database for
+          that letter — later quizzes grade against your hand, not only the printed chart. A billion people will write
+          the same letter differently; the shared shape still has to match. Latin look-alikes (a T for kaf, a P for qof)
+          are still rejected. You do not have to finish the whole alef-bet first.
         </p>
         <p className="mt-2 text-sm text-ink">
           {stats.full} letter{stats.full === 1 ? "" : "s"} ready · {stats.samples} sample
@@ -140,11 +144,22 @@ export function HandTrain() {
             guides
             model={active.letter}
             showModel
+            modelIndex={handI}
+            animate
             onChange={setEmpty}
             className="relative z-10 h-56 shadow-none"
           />
         </div>
-        <p className="mt-1 text-center text-xs text-muted">Trace the faint strokes. Body between the two lines.</p>
+        <p className="mt-1 text-center text-xs text-muted">Follow the moving stroke. Body between the two lines.</p>
+        {hands > 1 && (
+          <button
+            type="button"
+            onClick={() => setHandI((n) => n + 1)}
+            className="mt-2 min-h-11 w-full rounded-[var(--radius-md)] bg-surface px-3 text-sm font-medium text-ink"
+          >
+            Another hand · {(handI % hands) + 1} of {hands}
+          </button>
+        )}
         {note && <p className="mt-2 text-center text-sm text-danger">{note}</p>}
         {okNote && <p className="mt-2 text-center text-sm text-good">{okNote}</p>}
         <div className="mt-3 flex gap-2">

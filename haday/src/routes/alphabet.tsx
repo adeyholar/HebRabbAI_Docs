@@ -43,7 +43,7 @@ function isAlefTab(v: unknown): v is AlefTab {
 const TAB_LABEL: Record<AlefTab, string> = {
   letters: "1 · See",
   vowels: "2 · Vowels",
-  write: "3 · Trace",
+  write: "3 · Follow",
   hand: "4 · My hand",
   drill: "5 · Quiz",
   exam: "6 · Exam",
@@ -78,13 +78,14 @@ function AlphabetPage() {
       <Panel>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Alef-bet</h1>
         <p className="mt-1 text-sm text-muted">
-          Learn the letters here, then test them in Write. Order: see the chart, trace it, save your hand, then quiz.
-          Study Write is the test — this page is the lesson.
+          Learn the letters here, then test them in Write. Follow the moving stroke; passing copies are kept as your
+          hand for later quizzes. Order: see the chart, follow it, save your hand, then quiz. Study Write is the test —
+          this page is the lesson.
         </p>
         <ol className="mt-3 grid grid-cols-2 gap-1.5 text-xs text-muted sm:grid-cols-3">
           <li>1. See the letter</li>
           <li>2. Vowels on ב</li>
-          <li>3. Trace, then practice</li>
+          <li>3. Follow, then practice</li>
           <li>4. Train your hand ×5</li>
           <li>5. Quiz the name</li>
           <li>6. Closed-book exam</li>

@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { PAD_BASE, PAD_TOP } from "@/lib/pad-guides";
 import { staveRegion } from "@/lib/letter-models";
-import { modelToPad } from "@/lib/letter-strokes";
+import { clipPaths, modelToPad } from "@/lib/letter-strokes";
 import { cn } from "@/lib/cn";
 
 type Point = { x: number; y: number };
@@ -23,19 +23,97 @@ type Props = {
   guides?: boolean;
   model?: string | null;
   showModel?: boolean;
+  /** Which handwritten variant to follow (cycles with “Another hand”). */
+  modelIndex?: number;
+  /** Draw the ghost as a moving stroke to copy. Honors reduced-motion. */
+  animate?: boolean;
   onChange?: (empty: boolean) => void;
 };
 
-export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ className, disabled, guides, model, showModel, onChange }, ref) {
+function drawPaths(
+  ctx: CanvasRenderingContext2D,
+  paths: Point[][],
+  style: string,
+  width: number,
+) {
+  ctx.strokeStyle = style;
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  for (const path of paths) {
+    if (path.length < 2) {
+      if (path[0]) {
+        ctx.beginPath();
+        ctx.arc(path[0].x, path[0].y, width / 2, 0, Math.PI * 2);
+        ctx.fillStyle = style;
+        ctx.fill();
+      }
+      continue;
+    }
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+    ctx.stroke();
+  }
+}
+
+export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad(
+  { className, disabled, guides, model, showModel, modelIndex = 0, animate, onChange },
+  ref,
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const strokesRef = useRef<Stroke[]>([]);
   const currentRef = useRef<Stroke | null>(null);
   const guidesRef = useRef(Boolean(guides));
   const modelRef = useRef(model ?? "");
   const showModelRef = useRef(Boolean(showModel));
+  const modelIndexRef = useRef(modelIndex);
+  const animateRef = useRef(Boolean(animate));
+  const followTRef = useRef(1);
+  const followRafRef = useRef(0);
+  const reducedRef = useRef(false);
   guidesRef.current = Boolean(guides);
   modelRef.current = model ?? "";
   showModelRef.current = Boolean(showModel);
+  modelIndexRef.current = modelIndex;
+  animateRef.current = Boolean(animate);
+
+  function hasInk() {
+    return strokesRef.current.length > 0 || Boolean(currentRef.current);
+  }
+
+  function stopFollow() {
+    if (followRafRef.current) cancelAnimationFrame(followRafRef.current);
+    followRafRef.current = 0;
+    followTRef.current = 1;
+  }
+
+  function startFollow() {
+    stopFollow();
+    if (!animateRef.current || !showModelRef.current || !modelRef.current || hasInk() || reducedRef.current) {
+      followTRef.current = 1;
+      redraw();
+      return;
+    }
+    const t0 = performance.now();
+    const drawMs = 2400;
+    const holdMs = 800;
+    const loop = drawMs + holdMs;
+    const tick = (now: number) => {
+      if (hasInk()) {
+        followTRef.current = 1;
+        followRafRef.current = 0;
+        redraw();
+        return;
+      }
+      const e = (now - t0) % loop;
+      followTRef.current = e < drawMs ? e / drawMs : 1;
+      redraw();
+      followRafRef.current = requestAnimationFrame(tick);
+    };
+    followTRef.current = 0;
+    followRafRef.current = requestAnimationFrame(tick);
+  }
 
   function sizeCanvas() {
     const canvas = canvasRef.current;
@@ -77,18 +155,23 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
     }
     if (showModelRef.current && modelRef.current) {
       const region = staveRegion(modelRef.current);
-      const paths = modelToPad(modelRef.current, rect.width, rect.height, region);
+      const full = modelToPad(modelRef.current, rect.width, rect.height, region, modelIndexRef.current);
+      const t = followTRef.current;
       ctx.save();
-      ctx.strokeStyle = "rgba(28, 24, 20, 0.45)";
-      ctx.lineWidth = 4.5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      for (const path of paths) {
-        if (path.length < 2) continue;
-        ctx.beginPath();
-        ctx.moveTo(path[0].x, path[0].y);
-        for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
-        ctx.stroke();
+      drawPaths(ctx, full, "rgba(28, 24, 20, 0.16)", 4.5);
+      if (t < 0.999) {
+        const shown = clipPaths(full, t);
+        drawPaths(ctx, shown, "rgba(28, 24, 20, 0.55)", 5.2);
+        const last = shown[shown.length - 1];
+        const tip = last?.[last.length - 1];
+        if (tip) {
+          ctx.fillStyle = "rgba(28, 24, 20, 0.72)";
+          ctx.beginPath();
+          ctx.arc(tip.x, tip.y, 4.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        drawPaths(ctx, full, "rgba(28, 24, 20, 0.42)", 4.5);
       }
       ctx.restore();
     }
@@ -122,11 +205,18 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
   }
 
   useEffect(() => {
+    reducedRef.current =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     sizeCanvas();
     const onResize = () => sizeCanvas();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [guides, model, showModel]);
+  }, [guides, model, showModel, modelIndex]);
+
+  useEffect(() => {
+    startFollow();
+    return () => stopFollow();
+  }, [animate, model, showModel, modelIndex]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -139,6 +229,7 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       canvas.setPointerCapture(e.pointerId);
       const p = pointFromEvent(e);
       if (!p) return;
+      stopFollow();
       currentRef.current = [p];
       onChange?.(false);
       redraw();
@@ -178,12 +269,13 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       strokesRef.current = [];
       currentRef.current = null;
       onChange?.(true);
-      redraw();
+      startFollow();
     },
     undo: () => {
       strokesRef.current = strokesRef.current.slice(0, -1);
       onChange?.(strokesRef.current.length === 0);
-      redraw();
+      if (strokesRef.current.length === 0) startFollow();
+      else redraw();
     },
     commit: () => {
       if (currentRef.current?.length) {

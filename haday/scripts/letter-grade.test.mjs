@@ -4,7 +4,7 @@ import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
 const { verifyLetterInk, enrollLetterInk } = await jiti.import("/workspace/src/lib/letter-shape.ts");
-const { strokeModels } = await jiti.import("/workspace/src/lib/letter-strokes.ts");
+const { strokeModels, clipPaths } = await jiti.import("/workspace/src/lib/letter-strokes.ts");
 const { staveRegion } = await jiti.import("/workspace/src/lib/letter-models.ts");
 
 const H = 208;
@@ -672,4 +672,39 @@ test("chart tet is not samekh", () => {
   const r = grade(modelInk("ט", 0), "ס");
   assert.equal(r.match, "wrong");
   assert.notEqual(r.read, "ס");
+});
+
+test("Latin P is still not qof even against a hanging-qof sample", () => {
+  const hanging = openHangQof(40);
+  const r = verifyLetterInk(latinP(40), "ק", { height: H, samples: [hanging] });
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "ק");
+  assert.match(r.note || "", /Latin P/);
+});
+
+test("Latin T is still not kaf even against a kaf sample", () => {
+  const r = verifyLetterInk(latinT(), "כ", { height: H, samples: [kafC()] });
+  assert.equal(r.match, "wrong");
+});
+
+test("clipPaths at 0 is empty and at 1 is the full stroke", () => {
+  const paths = [
+    [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ],
+  ];
+  assert.equal(clipPaths(paths, 0).length, 0);
+  const full = clipPaths(paths, 1);
+  assert.equal(full.length, 1);
+  assert.ok(full[0].length >= 2);
+  const mid = clipPaths(paths, 0.5);
+  assert.equal(mid.length, 1);
+  const last = mid[0][mid[0].length - 1];
+  assert.ok(last.x > 40 && last.x < 60, JSON.stringify(last));
+});
+
+test("a fair he still enrolls, Latin P still does not enroll as qof", () => {
+  assert.equal(enrollLetterInk(screenshotHe(12), "ה", { height: H }).ok, true);
+  assert.equal(enrollLetterInk(latinP(2), "ק", { height: H }).ok, false);
 });

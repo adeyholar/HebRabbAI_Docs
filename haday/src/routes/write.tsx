@@ -12,6 +12,7 @@ import { dageshCoach, isSingleLetterLemma, lettersOnly, matchHandwriting, type H
 import { checkGlyphInk } from "@/lib/check-glyph";
 import { writingHint } from "@/lib/letter-models";
 import { saveHandSample } from "@/lib/hand-style";
+import { strokeModelCount } from "@/lib/letter-strokes";
 import { queueForFocus, useStudy } from "@/lib/store";
 import { itemsForWeek, POS_LABEL, shuffle, type VocabItem } from "@/lib/vocab";
 import { takeWriteCheck, writeChecksLeft, WRITE_DAILY_LIMIT } from "@/lib/write-cap";
@@ -62,6 +63,7 @@ function WritePage() {
   const [tries, setTries] = useState(0);
   const [lastInk, setLastInk] = useState<{ x: number; y: number }[][] | null>(null);
   const [handNote, setHandNote] = useState<string | null>(null);
+  const [handI, setHandI] = useState(0);
   const ratedRef = useRef(false);
 
   useEffect(() => {
@@ -91,6 +93,7 @@ function WritePage() {
     setTries(0);
     setLastInk(null);
     setHandNote(null);
+    setHandI(0);
     ratedRef.current = false;
     if (!memorize) {
       setRecallLeft(0);
@@ -282,7 +285,7 @@ function WritePage() {
           {memorize
             ? "Look at the Hebrew while the count runs. Then type or write it from the English. One retry if you miss."
             : letterPad
-              ? "Letters are taught under Alef. Trace the faint chart here, then practice the same letter under Alef → Write."
+              ? "Letters are taught under Alef. Follow the moving stroke here, then practice the same letter under Alef → Write."
               : "English first. Type or scribble the Hebrew. Live check while you type. One retry on a miss."}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -394,11 +397,13 @@ function WritePage() {
                   guides={letterPad}
                   model={letterPad ? item.hebrew : null}
                   showModel={letterPad}
+                  modelIndex={handI}
+                  animate={letterPad}
                   onChange={setEmpty}
                 />
-                {empty && !result && (
+                {empty && !result && !letterPad && (
                   <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted">
-                    {letterPad ? "Trace the faint letter between the lines" : "Write the Hebrew here"}
+                    Write the Hebrew here
                   </p>
                 )}
               </div>
@@ -422,9 +427,21 @@ function WritePage() {
                 </Button>
               </div>
               {letterPad && (
-                <p className="mt-2 text-center text-xs text-muted">
-                  {writingHint(item.hebrew)} Body between the two lines. Finals drop below the bottom line.
-                </p>
+                <>
+                  {strokeModelCount(item.hebrew) > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setHandI((n) => n + 1)}
+                      className="mt-2 min-h-11 w-full rounded-[var(--radius-md)] bg-card px-3 text-sm font-medium text-ink shadow-[var(--shadow-border)]"
+                    >
+                      Another hand · {(handI % strokeModelCount(item.hebrew)) + 1} of {strokeModelCount(item.hebrew)}
+                    </button>
+                  )}
+                  <p className="mt-2 text-center text-xs text-muted">
+                    {writingHint(item.hebrew)} Follow the moving stroke. Body between the two lines. Finals drop below
+                    the bottom line.
+                  </p>
+                </>
               )}
             </>
           )}

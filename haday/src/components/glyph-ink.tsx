@@ -9,6 +9,7 @@ import { type HandMatch } from "@/lib/hebrew";
 import { cn } from "@/lib/cn";
 import { writingHint } from "@/lib/letter-models";
 import { sampleCount, saveHandSample } from "@/lib/hand-style";
+import { strokeModelCount } from "@/lib/letter-strokes";
 
 type Result = { match: HandMatch; read: string; note?: string; counted?: boolean };
 
@@ -32,13 +33,15 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
   const [left, setLeft] = useState(writeChecksLeft);
   const [sample, setSample] = useState(allowSample && trace);
   const [handNote, setHandNote] = useState<string | null>(null);
+  const [handI, setHandI] = useState(0);
   const sampleGlyph = ghost || expected;
   const modelOn = showModel ?? (allowSample && sample);
+  const hands = mode === "letter" ? strokeModelCount(sampleGlyph) : 0;
   const lineHint =
     hint ??
     (mode === "letter"
       ? modelOn
-        ? "Trace the faint strokes. Body between the lines."
+        ? "Follow the moving stroke. Body between the lines. A passing copy is kept as your hand."
         : "No model. Body between the two lines. Lamed above the top; finals below the bottom; qof a little below."
       : writingHint(expected));
 
@@ -98,10 +101,21 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
           guides={mode === "letter"}
           model={mode === "letter" ? sampleGlyph : null}
           showModel={mode === "letter" && modelOn}
+          modelIndex={handI}
+          animate={mode === "letter" && modelOn}
           onChange={setEmpty}
           className="relative z-10 h-56 shadow-none"
         />
       </div>
+      {modelOn && mode === "letter" && hands > 1 && (
+        <button
+          type="button"
+          onClick={() => setHandI((n) => n + 1)}
+          className="mt-2 min-h-11 w-full rounded-[var(--radius-md)] bg-card px-3 text-sm font-medium text-ink shadow-[var(--shadow-border)]"
+        >
+          Another hand · {(handI % hands) + 1} of {hands}
+        </button>
+      )}
       {allowSample && showModel === undefined && (
         <div className="mt-2 flex gap-2">
           <button

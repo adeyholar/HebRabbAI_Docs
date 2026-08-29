@@ -21,7 +21,7 @@ export async function checkGlyphInk(
       bar: handBar(expected),
     });
     if (local.match === "exact" || local.match === "close" || local.match === "wrong") {
-      if (local.match === "exact" && strokes?.length) {
+      if ((local.match === "exact" || local.match === "close") && strokes?.length) {
         rememberPassingHand(expected, strokes, opts?.height);
       }
       return { match: local.match, read: local.read, note: local.note, counted: true };

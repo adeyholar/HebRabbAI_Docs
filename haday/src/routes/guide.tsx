@@ -138,13 +138,13 @@ function GuidePage() {
         </p>
         <ol className="mt-3 list-decimal space-y-2 ps-5 text-sm text-ink">
           <li>See — tap a letter on the chart.</li>
-          <li>Trace — copy the faint strokes, then write it without the model.</li>
+          <li>Follow — copy the moving stroke. Passing copies are kept as your hand for later quizzes.</li>
           <li>My hand — save five traces so later grading follows your writing.</li>
           <li>Quiz, then Exam from memory.</li>
         </ol>
         <p className="mt-3 text-sm text-muted">
-          A miss on Write opens Practice under Alef for that letter. Qof is not a Latin P. Vav stays between the two
-          lines — a long stem below is final nun.
+          A miss on Write opens Practice under Alef for that letter. Follow the moving stroke; your copies grade later
+          quizzes. Qof is not a Latin P. Vav stays between the two lines — a long stem below is final nun.
         </p>
       </Panel>
 
@@ -160,8 +160,9 @@ function GuidePage() {
             each letter. The next round leads with the weak ones, not a fixed deck of twelve.
           </li>
           <li>
-            <strong>Your hand.</strong> Five traces become one living shape plus a slightly kinder pass bar. Chart gates
-            still reject a Latin T for kaf or a P for qof.
+            <strong>Your hand.</strong> Follow the moving stroke. Five traces become one living shape plus a slightly
+            kinder pass bar. If the ink matches a known-good shape, it still counts — a Latin T for kaf or a P for qof
+            does not.
           </li>
           <li>
             <strong>Quiz and Match.</strong> Those decks sit near the edge of what you can do — not only the same easy
@@ -183,7 +184,7 @@ function GuidePage() {
           <Tool name="Quiz" to="/quiz" body="Multiple choice or type the English gloss. Rounds mix BBH lemmas with real Tanakh forms and sit near what you can still miss." />
           <Tool name="Match" to="/match" body="Select the pair: Hebrew tile to English tile, then pick the lemma from a pad. Misses come back. Boards mix Tanakh forms." />
           <Tool name="Lex" to="/browse" body="Browse the week’s lemmas with verses." />
-          <Tool name="Alef" to="/alphabet" body="The lesson for the letters: See → Trace → My hand → Quiz → Exam. Study Write is the test." />
+          <Tool name="Alef" to="/alphabet" body="The lesson for the letters: See → Follow the moving stroke → My hand → Quiz → Exam. Study Write is the test. Passing copies become your grader." />
         </dl>
         <p className="mt-4 text-sm text-muted">
           On Home, pick a course week before you drill. Weak cards can be focused from the Needs work list.

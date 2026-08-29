@@ -292,7 +292,7 @@ function baseLetter(expected: string): string {
   return modelGlyph(expected);
 }
 
-function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: string } {
+function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: string; stave?: boolean } {
   const model = letterModel(want);
   const dropped = f.descender >= 0.045 || f.belowShare >= 0.12;
   const bitLow = f.descender >= 0.01 || f.belowShare >= 0.025;
@@ -353,19 +353,19 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (want === "כ" && !f.hasBottomBar && (stick(f) || f.tall)) return { ok: false, as: "ו" };
 
   if (lined && model) {
-    if (model.band === "descender" && !dropped) return { ok: false, as: want };
-    if (model.band === "hang" && !bitLow) return { ok: false, as: want === "ק" ? "ר" : want };
-    if (model.band === "ascender" && !rose) return { ok: false, as: want };
+    if (model.band === "descender" && !dropped) return { ok: false, as: want, stave: true };
+    if (model.band === "hang" && !bitLow) return { ok: false, as: want === "ק" ? "ר" : want, stave: true };
+    if (model.band === "ascender" && !rose) return { ok: false, as: want, stave: true };
     if (model.band === "body" && dropped && f.descender > 0.09 && FINAL_DESCENDERS.has(want === "כ" ? "ך" : want === "נ" ? "ן" : want === "פ" ? "ף" : want === "צ" ? "ץ" : "")) {
       const asFinal = want === "כ" ? "ך" : want === "נ" ? "ן" : want === "פ" ? "ף" : want === "צ" ? "ץ" : "";
-      if (asFinal) return { ok: false, as: asFinal };
+      if (asFinal) return { ok: false, as: asFinal, stave: true };
     }
     if (model.band === "body" && dropped && f.descender > 0.12 && want !== "ק" && want !== "ו") {
-      if (want === "ר" || want === "ד") return { ok: false, as: "ק" };
-      return { ok: false, as: "ן" };
+      if (want === "ר" || want === "ד") return { ok: false, as: "ק", stave: true };
+      return { ok: false, as: "ן", stave: true };
     }
-    if (model.band === "small" && (dropped || (rose && f.h > 80))) return { ok: false, as: "ו" };
-    if (want === "ם" && dropped && f.descender > 0.08) return { ok: false, as: "" };
+    if (model.band === "small" && (dropped || (rose && f.h > 80))) return { ok: false, as: "ו", stave: true };
+    if (want === "ם" && dropped && f.descender > 0.08) return { ok: false, as: "", stave: true };
   }
   return { ok: true, as: want };
 }
@@ -493,7 +493,7 @@ function isNear(a: string, b: string): boolean {
   return NEAR.some((g) => g.includes(a) && g.includes(b));
 }
 
-function qofMissNote(f: Feat, gate: { ok: boolean; as: string }): string | undefined {
+function qofMissNote(f: Feat, gate: { ok: boolean; as: string; stave?: boolean }): string | undefined {
   if (f.footX < 0.42) {
     return "That looks like a Latin P. Qof’s leg is on the right, like resh, hanging a little below the line.";
   }
@@ -503,7 +503,7 @@ function qofMissNote(f: Feat, gate: { ok: boolean; as: string }): string | undef
   return undefined;
 }
 
-function vavMissNote(f: Feat, gate: { ok: boolean; as: string }): string | undefined {
+function vavMissNote(f: Feat, gate: { ok: boolean; as: string; stave?: boolean }): string | undefined {
   if (gate.as === "ן" || f.descender >= 0.12 || f.belowShare >= 0.22) {
     return "Vav sits between the two lines — a short inverted L. A long stem below the line is final nun.";
   }
@@ -606,7 +606,6 @@ export function verifyLetterInk(
   const samekhNote = want === "ס" ? samekhMissNote(f, rival && rival.id !== want ? rival.id : gate.as) : undefined;
   const note = qofNote ?? vavNote ?? ayinNote ?? shinNote ?? yodNote ?? samekhNote;
   const tBar = f.hasTopBar && !f.hasBottomBar;
-
   if (want === "ק" && f.footX < 0.42) {
     return { match: "wrong", read: "", score: shape?.score ?? 0, note };
   }
@@ -614,19 +613,18 @@ export function verifyLetterInk(
     return { match: "wrong", read: f.leftShare < 0.3 ? "ד" : "ז", score: shape?.score ?? 0 };
   }
 
+  let proto = shape?.score ?? 0;
+  for (const sample of opts?.samples ?? []) {
+    const sc = scoreInkToPaths(strokes, sample);
+    if (sc.score > proto) proto = sc.score;
+  }
+
   if (!gate.ok) {
     return { match: "wrong", read: gate.as === want ? "" : gate.as, score: shape?.score ?? 0.12, note };
   }
 
-  if (opts?.samples?.length) {
-    let best = 0;
-    for (const sample of opts.samples) {
-      const sc = scoreInkToPaths(strokes, sample);
-      if (sc.score > best) best = sc.score;
-    }
-    if (best >= (opts?.bar ?? 0.64)) {
-      return { match: best >= Math.max(0.8, (opts?.bar ?? 0.64) + 0.12) ? "exact" : "close", read: want, score: best };
-    }
+  if (opts?.samples?.length && proto >= (opts?.bar ?? 0.64)) {
+    return { match: proto >= Math.max(0.8, (opts?.bar ?? 0.64) + 0.12) ? "exact" : "close", read: want, score: proto };
   }
 
   const hangTwins = want === "ק" ? new Set(["ד", "ר", "ן", "ך", "ו", "ה", "נ", "ף"]) : null;

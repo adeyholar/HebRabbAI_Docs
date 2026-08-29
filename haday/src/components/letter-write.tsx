@@ -175,7 +175,7 @@ export function LetterWrite() {
           {right} / {deckLen}
         </p>
         <p className="mt-2 text-sm text-muted">
-          {level === "copy" ? "Trace & practice complete." : "Lines-only round complete."}
+          {level === "copy" ? "Follow & practice complete." : "Lines-only round complete."}
         </p>
         {level === "copy" && passed && (
           <p className="mt-2 text-sm text-ink">Next: write on the stave with no model. Lamed above, finals below.</p>
@@ -222,7 +222,7 @@ export function LetterWrite() {
             setBeat("trace");
             resetPad();
           }}
-          label="1 · Trace & practice"
+          label="1 · Follow & practice"
         />
         <KindBtn
           on={level === "stave"}
@@ -238,7 +238,7 @@ export function LetterWrite() {
       <p className="mt-2 text-center text-xs text-muted">
         {level === "copy"
           ? beat === "trace"
-            ? "Trace the faint strokes between the two lines."
+            ? "Follow the moving stroke between the two lines. A passing copy is kept as your hand for later quizzes."
             : "Practice the same letter. Model is off. Keep the body between the lines."
           : "From the name only. Body between the lines. Lamed above the top; finals below the bottom."}
       </p>
@@ -259,7 +259,7 @@ export function LetterWrite() {
           </>
         ) : beat === "trace" ? (
           <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Trace {name}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Follow {name}</p>
             <p className="he-word mt-2 text-6xl">{glyph}</p>
             <p className="mt-1 text-sm text-muted">{sound}</p>
           </>
@@ -283,7 +283,7 @@ export function LetterWrite() {
         hint={
           kind === "letter"
             ? level === "copy" && beat === "trace"
-              ? "Trace the faint strokes. Body sits between the two lines."
+              ? "Follow the moving stroke. Body sits between the two lines. Your copy grades later quizzes."
               : "No model. Body between the lines. Lamed above the top line. Finals below the bottom line."
             : undefined
         }

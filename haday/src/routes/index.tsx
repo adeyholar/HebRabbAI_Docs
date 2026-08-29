@@ -226,7 +226,7 @@ function Home() {
           </div>
           <Link to="/alphabet" search={{ tab: "write", letter: "" }} className="flex-1">
             <Button className="w-full" variant="outline" size="lg">
-              Learn letters · trace
+              Learn letters · follow
             </Button>
           </Link>
           <Link to="/alphabet" search={{ tab: "exam", letter: "" }} className="flex-1">
