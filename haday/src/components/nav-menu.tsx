@@ -99,40 +99,39 @@ export function NavMenu({
       onMouseEnter={() => {
         if (canHover()) setOpen(true);
       }}
-      onMouseLeave={() => {
-        if (canHover()) setOpen(false);
-      }}
     >
-      {layout === "header" ? <NavTip label={label} side={tipSide}>{trigger}</NavTip> : trigger}
+      {layout === "header" && !open ? <NavTip label={label} side={tipSide}>{trigger}</NavTip> : trigger}
       {open && (
-        <ul
-          role="menu"
+        <div
           className={cn(
-            "absolute z-50 min-w-44 overflow-hidden rounded-[var(--radius-md)] bg-card py-1 shadow-[var(--shadow-border)]",
-            drop === "down" ? "top-full end-0 mt-1" : "bottom-full start-1/2 mb-2 -translate-x-1/2",
+            "absolute z-50",
+            drop === "down" ? "end-0 top-full pt-2" : "bottom-full start-1/2 -translate-x-1/2 pb-2",
           )}
         >
-          {items.map((item) => {
-            const ItemIcon = item.icon;
-            return (
-              <li key={item.to} role="none">
-                <Link
-                  role="menuitem"
-                  to={item.to}
-                  onClick={() => setOpen(false)}
-                  className="flex min-h-11 items-center gap-2 px-3 text-sm font-medium text-ink hover:bg-surface"
-                >
-                  <ItemIcon className="size-4 shrink-0 text-primary" strokeWidth={1.8} />
-                  <span>
-                    {item.label}
-                    {item.hint ? <span className="mt-0.5 block text-xs font-normal text-muted">{item.hint}</span> : null}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+          <ul role="menu" className="min-w-48 rounded-[var(--radius-md)] bg-card py-1 shadow-[var(--shadow-border)]">
+            {items.map((item) => {
+              const ItemIcon = item.icon;
+              return (
+                <li key={item.to} role="none">
+                  <Link
+                    role="menuitem"
+                    to={item.to}
+                    onClick={() => setOpen(false)}
+                    className="flex min-h-12 items-center gap-2 px-3 text-sm font-medium text-ink hover:bg-surface"
+                  >
+                    <ItemIcon className="size-4 shrink-0 text-primary" strokeWidth={1.8} />
+                    <span>
+                      {item.label}
+                      {item.hint ? <span className="mt-0.5 block text-xs font-normal text-muted">{item.hint}</span> : null}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );
 }
+
