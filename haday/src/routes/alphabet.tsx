@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/panel";
 import {
@@ -24,34 +24,75 @@ import { ClosedBook } from "@/components/closed-book";
 import { playGrade } from "@/lib/sfx";
 import { useStudy } from "@/lib/store";
 
-export const Route = createFileRoute("/alphabet")({ component: AlphabetPage });
+export const Route = createFileRoute("/alphabet")({
+  validateSearch: (s: Record<string, unknown>): { tab?: AlefTab; letter?: string } => {
+    const letter = typeof s.letter === "string" && s.letter ? s.letter : undefined;
+    const tab = isAlefTab(s.tab) ? s.tab : letter ? "write" : undefined;
+    return { ...(tab ? { tab } : {}), ...(letter ? { letter } : {}) };
+  },
+  component: AlphabetPage,
+});
+
+const ALEF_TABS = ["letters", "vowels", "write", "hand", "drill", "exam"] as const;
+type AlefTab = (typeof ALEF_TABS)[number];
+
+function isAlefTab(v: unknown): v is AlefTab {
+  return typeof v === "string" && (ALEF_TABS as readonly string[]).includes(v);
+}
+
+const TAB_LABEL: Record<AlefTab, string> = {
+  letters: "1 · See",
+  vowels: "2 · Vowels",
+  write: "3 · Trace",
+  hand: "4 · My hand",
+  drill: "5 · Quiz",
+  exam: "6 · Exam",
+};
 
 function AlphabetPage() {
-  const [tab, setTab] = useState<"letters" | "vowels" | "write" | "hand" | "drill" | "exam">("letters");
+  const navigate = useNavigate({ from: "/alphabet" });
+  const search = Route.useSearch();
+  const tab: AlefTab = search.tab ?? "letters";
+  const setAlefQueue = useStudy((s) => s.setAlefQueue);
   const [active, setActive] = useState<HebrewLetter>(CONSONANTS[0]);
+
+  useEffect(() => {
+    if (!search.letter) return;
+    const found = WRITE_LETTERS.find((l) => l.id === search.letter);
+    if (!found) return;
+    setAlefQueue([alefKey("letter", found.id)]);
+    setActive(CONSONANTS.find((c) => c.id === found.id) ?? found);
+  }, [search.letter, setAlefQueue]);
+
+  function setTab(next: AlefTab) {
+    void navigate({
+      search: {
+        ...(next !== "letters" ? { tab: next } : {}),
+        ...(next === "write" || next === "hand" ? { letter: search.letter } : {}),
+      },
+    });
+  }
 
   return (
     <>
       <Panel>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Alef-bet</h1>
         <p className="mt-1 text-sm text-muted">
-          Consonants right to left, a closed-book exam from memory, and practice that follows what you miss. Train your
-          handwriting so Write grades your hand, not only the printed chart. Syllable cuts live under Game → Syllables.
+          Learn the letters here, then test them in Write. Order: see the chart, trace it, save your hand, then quiz.
+          Study Write is the test — this page is the lesson.
         </p>
+        <ol className="mt-3 grid grid-cols-2 gap-1.5 text-xs text-muted sm:grid-cols-3">
+          <li>1. See the letter</li>
+          <li>2. Vowels on ב</li>
+          <li>3. Trace, then practice</li>
+          <li>4. Train your hand ×5</li>
+          <li>5. Quiz the name</li>
+          <li>6. Closed-book exam</li>
+        </ol>
         <div className="mt-4 flex flex-wrap gap-2">
-          {(["letters", "vowels", "write", "hand", "drill", "exam"] as const).map((t) => (
+          {ALEF_TABS.map((t) => (
             <Button key={t} size="sm" variant={tab === t ? "primary" : "outline"} onClick={() => setTab(t)}>
-              {t === "letters"
-                ? "Letters"
-                : t === "vowels"
-                  ? "Vowels"
-                  : t === "write"
-                    ? "Write"
-                    : t === "hand"
-                      ? "My hand"
-                      : t === "drill"
-                        ? "Quiz"
-                        : "Exam"}
+              {TAB_LABEL[t]}
             </Button>
           ))}
         </div>

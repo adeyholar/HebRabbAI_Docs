@@ -521,6 +521,24 @@ test("a long hanging stem is final nun, not vav or yod", () => {
   assert.equal(grade(ink, "י").match, "wrong");
 });
 
+function screenshotVav(below = 16) {
+  const x = 252;
+  return [line(x - 30, TOP + 4, x, TOP + 8, 10).concat(line(x, TOP + 8, x, BASE + below, 22).slice(1))];
+}
+
+test("screenshot-like inverted L vav that nicks the baseline counts", () => {
+  const r = grade(screenshotVav(16), "ו");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ו");
+});
+
+test("two-stroke vav sitting on the line counts", () => {
+  const x = 250;
+  const r = grade([line(x - 28, TOP + 6, x, TOP + 6, 10), line(x, TOP + 6, x, BASE + 4, 20)], "ו");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ו");
+});
+
 test("pe without a nose is not pe", () => {
   const r = grade(kafC(), "פ");
   assert.equal(r.match, "wrong");

@@ -307,10 +307,10 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (want === "ס" && f.hasNose && f.n >= 2 && f.closed < 0.55) return { ok: false, as: "ט" };
   if (want === "ם" && f.closed < 0.45) return { ok: false, as: "" };
   if (want === "י" && (dropped || f.path > 140 || f.h > 48)) return { ok: false, as: "ו" };
-  if (want === "ו" && dropped) return { ok: false, as: "ן" };
+  if (want === "ו" && (f.descender >= 0.12 || f.belowShare >= 0.22)) return { ok: false, as: "ן" };
   if (want === "ו" && f.small) return { ok: false, as: "י" };
   if (want === "ו" && f.hasTopBar && f.footX < 0.62) return { ok: false, as: "ז" };
-  if (want === "ו" && f.hasFork) return { ok: false, as: "ע" };
+  if (want === "ו" && f.hasFork && !f.hasTopBar && f.aspect > 0.62) return { ok: false, as: "ע" };
   if (want === "ז" && (dropped || (!f.hasTopBar && f.topShare < 0.18))) return { ok: false, as: dropped ? "ן" : "ו" };
   if (want === "ע" && roundLoop(f)) return { ok: false, as: "ס" };
   if (want === "ע" && stick(f)) return { ok: false, as: "ו" };
@@ -360,7 +360,7 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
       const asFinal = want === "כ" ? "ך" : want === "נ" ? "ן" : want === "פ" ? "ף" : want === "צ" ? "ץ" : "";
       if (asFinal) return { ok: false, as: asFinal };
     }
-    if (model.band === "body" && dropped && f.descender > 0.12 && want !== "ק") {
+    if (model.band === "body" && dropped && f.descender > 0.12 && want !== "ק" && want !== "ו") {
       if (want === "ר" || want === "ד") return { ok: false, as: "ק" };
       return { ok: false, as: "ן" };
     }
@@ -503,6 +503,14 @@ function qofMissNote(f: Feat, gate: { ok: boolean; as: string }): string | undef
   return undefined;
 }
 
+function vavMissNote(f: Feat, gate: { ok: boolean; as: string }): string | undefined {
+  if (gate.as === "ן" || f.descender >= 0.12 || f.belowShare >= 0.22) {
+    return "Vav sits between the two lines — a short inverted L. A long stem below the line is final nun.";
+  }
+  if (gate.as === "ז") return "Vav’s hook is tiny, on the right stem. A wide roof bar is zayin.";
+  return undefined;
+}
+
 function ayinMissNote(f: Feat, rivalId: string): string | undefined {
   if (roundLoop(f)) return "Ayin is open at the top — two arms like a Y, not a closed oval.";
   if (stick(f)) return "Two arms meeting like a Y, as on the chart. Not a single stem.";
@@ -561,6 +569,7 @@ export function enrollLetterInk(
       ok: false,
       note:
         (want === "ק" ? qofMissNote(f, gate) : undefined) ||
+        (want === "ו" ? vavMissNote(f, gate) : undefined) ||
         (want === "ע" ? ayinMissNote(f, gate.as) : undefined) ||
         (want === "ש" ? shinMissNote(f, gate.as) : undefined) ||
         (want === "י" ? yodMissNote(f) : undefined) ||
@@ -590,11 +599,12 @@ export function verifyLetterInk(
   const shape = ranked.find((r) => r.id === want) ?? matchStrokeModel(strokes, want);
   const rival = ranked[0];
   const qofNote = want === "ק" ? qofMissNote(f, gate) : undefined;
+  const vavNote = want === "ו" ? vavMissNote(f, gate) : undefined;
   const ayinNote = want === "ע" ? ayinMissNote(f, rival && rival.id !== want ? rival.id : "") : undefined;
   const shinNote = want === "ש" ? shinMissNote(f, rival && rival.id !== want ? rival.id : "") : undefined;
   const yodNote = want === "י" ? yodMissNote(f) : undefined;
   const samekhNote = want === "ס" ? samekhMissNote(f, rival && rival.id !== want ? rival.id : gate.as) : undefined;
-  const note = qofNote ?? ayinNote ?? shinNote ?? yodNote ?? samekhNote;
+  const note = qofNote ?? vavNote ?? ayinNote ?? shinNote ?? yodNote ?? samekhNote;
   const tBar = f.hasTopBar && !f.hasBottomBar;
 
   if (want === "ק" && f.footX < 0.42) {

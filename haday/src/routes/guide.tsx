@@ -128,6 +128,27 @@ function GuidePage() {
       </Panel>
 
       <Panel className="mb-3">
+        <h2 className="font-display text-2xl font-bold text-ink">Learn the letters first</h2>
+        <p className="mt-2 text-sm text-muted">
+          Study Write (Chapter 1) is the test. The lesson lives under{" "}
+          <Link to="/alphabet" search={{ tab: "write", letter: "" }} className="font-semibold text-primary">
+            Alef
+          </Link>{" "}
+          at the bottom of the screen:
+        </p>
+        <ol className="mt-3 list-decimal space-y-2 ps-5 text-sm text-ink">
+          <li>See — tap a letter on the chart.</li>
+          <li>Trace — copy the faint strokes, then write it without the model.</li>
+          <li>My hand — save five traces so later grading follows your writing.</li>
+          <li>Quiz, then Exam from memory.</li>
+        </ol>
+        <p className="mt-3 text-sm text-muted">
+          A miss on Write opens Practice under Alef for that letter. Qof is not a Latin P. Vav stays between the two
+          lines — a long stem below is final nun.
+        </p>
+      </Panel>
+
+      <Panel className="mb-3">
         <h2 className="font-display text-2xl font-bold text-ink">How the path adapts</h2>
         <ul className="mt-3 list-disc space-y-2 ps-5 text-sm text-ink">
           <li>
@@ -162,7 +183,7 @@ function GuidePage() {
           <Tool name="Quiz" to="/quiz" body="Multiple choice or type the English gloss. Rounds mix BBH lemmas with real Tanakh forms and sit near what you can still miss." />
           <Tool name="Match" to="/match" body="Select the pair: Hebrew tile to English tile, then pick the lemma from a pad. Misses come back. Boards mix Tanakh forms." />
           <Tool name="Lex" to="/browse" body="Browse the week’s lemmas with verses." />
-          <Tool name="Alef" to="/alphabet" body="Letters, vowel charts, Write, and My hand — train each letter five times so later writing is graded against your hand." />
+          <Tool name="Alef" to="/alphabet" body="The lesson for the letters: See → Trace → My hand → Quiz → Exam. Study Write is the test." />
         </dl>
         <p className="mt-4 text-sm text-muted">
           On Home, pick a course week before you drill. Weak cards can be focused from the Needs work list.

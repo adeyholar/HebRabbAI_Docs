@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { InkPad, type InkPadHandle } from "@/components/ink-pad";
 import { HebrewType } from "@/components/hebrew-type";
@@ -7,6 +7,7 @@ import { VerseCard } from "@/components/verse-card";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
 import { Panel } from "@/components/panel";
+import { WRITE_LETTERS } from "@/lib/alphabet";
 import { dageshCoach, isSingleLetterLemma, lettersOnly, matchHandwriting, type HandMatch } from "@/lib/hebrew";
 import { checkGlyphInk } from "@/lib/check-glyph";
 import { writingHint } from "@/lib/letter-models";
@@ -17,6 +18,11 @@ import { takeWriteCheck, writeChecksLeft, WRITE_DAILY_LIMIT } from "@/lib/write-
 import { cn } from "@/lib/cn";
 import { GradeBanner } from "@/components/grade-banner";
 import { playGrade } from "@/lib/sfx";
+
+function studyLetterId(item: VocabItem): string | undefined {
+  if (item.id.startsWith("ch1-")) return item.id.slice(4);
+  return WRITE_LETTERS.find((l) => l.letter === item.hebrew)?.id;
+}
 
 type WriteMode = "write" | "memorize";
 type InputMethod = "pad" | "type";
@@ -275,7 +281,9 @@ function WritePage() {
         <p className="mt-1 text-sm text-muted">
           {memorize
             ? "Look at the Hebrew while the count runs. Then type or write it from the English. One retry if you miss."
-            : "English first. Type or scribble the Hebrew. Live check while you type. One retry on a miss."}
+            : letterPad
+              ? "Letters are taught under Alef. Trace the faint chart here, then practice the same letter under Alef → Write."
+              : "English first. Type or scribble the Hebrew. Live check while you type. One retry on a miss."}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button
@@ -306,6 +314,19 @@ function WritePage() {
         <p className="mt-3 text-sm font-medium tabular-nums text-ink">
           {i + 1} / {round.length} · {left} pad checks left today
         </p>
+        {letterPad && (
+          <p className="mt-3 text-sm text-ink">
+            Learning path:{" "}
+            <Link
+              to="/alphabet"
+              search={{ tab: "write", letter: studyLetterId(item) ?? "" }}
+              className="font-semibold text-primary"
+            >
+              Alef → Trace {item.gloss}
+            </Link>
+            <span className="text-muted"> · then My hand · then test here.</span>
+          </p>
+        )}
       </Panel>
 
       <div className="mt-3 rounded-[var(--radius-xl)] bg-card px-5 py-6 text-center shadow-[var(--shadow-border)]">
@@ -372,12 +393,12 @@ function WritePage() {
                   disabled={busy || locked}
                   guides={letterPad}
                   model={letterPad ? item.hebrew : null}
-                  showModel={Boolean(letterPad && result && result.match === "wrong")}
+                  showModel={letterPad}
                   onChange={setEmpty}
                 />
                 {empty && !result && (
                   <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted">
-                    {letterPad ? "Write the letter between the lines" : "Write the Hebrew here"}
+                    {letterPad ? "Trace the faint letter between the lines" : "Write the Hebrew here"}
                   </p>
                 )}
               </div>
@@ -490,15 +511,28 @@ function ResultPanel({
         <p className="mt-2 text-sm text-ink">{writingHint(item.hebrew)}</p>
       )}
       {result.note && <p className="mt-2 text-sm text-muted">{result.note}</p>}
-      {!ok && isSingleLetterLemma(item.hebrew) && ink && (
+      {!ok && isSingleLetterLemma(item.hebrew) && (
         <div className="mt-3">
-          <Button type="button" variant="outline" className="w-full" onClick={onSaveHand}>
-            Save as my handwriting
-          </Button>
-          <p className="mt-1 text-xs text-muted">
-            Keep this if it is your {item.hebrew}. A Latin look-alike will not save.
-          </p>
-          {handNote && <p className="mt-1 text-sm text-ink">{handNote}</p>}
+          {ink && (
+            <>
+              <Button type="button" variant="outline" className="w-full" onClick={onSaveHand}>
+                Save as my handwriting
+              </Button>
+              <p className="mt-1 text-xs text-muted">
+                Keep this if it is your {item.hebrew}. A Latin look-alike will not save.
+              </p>
+              {handNote && <p className="mt-1 text-sm text-ink">{handNote}</p>}
+            </>
+          )}
+          {studyLetterId(item) && (
+            <Link
+              to="/alphabet"
+              search={{ tab: "write", letter: studyLetterId(item) ?? "" }}
+              className="mt-3 flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] bg-primary px-3 text-sm font-semibold text-primary-foreground"
+            >
+              Practice {item.gloss}: trace it under Alef
+            </Link>
+          )}
         </div>
       )}
       {coach && (
