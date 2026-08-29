@@ -165,7 +165,7 @@ function WritePage() {
           });
           return;
         }
-        applyCheck(next.match, next.match === "wrong" ? next.read : next.read || item.hebrew);
+        applyCheck(next.match, next.match === "wrong" ? next.read : next.read || item.hebrew, next.note);
       } finally {
         setBusy(false);
       }
@@ -446,11 +446,6 @@ function ResultPanel({
             <>
               {" "}
               · that looks like <span className="he-word text-lg text-fg">{result.read}</span>
-            </>
-          ) : result.read ? (
-            <>
-              {" "}
-              · read as <span className="he-word text-lg text-fg">{result.read}</span>
             </>
           ) : null}
         </p>

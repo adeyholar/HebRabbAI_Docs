@@ -122,7 +122,7 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
               ? result.note
               : ok
                 ? `Read as ${result.read || expected}`
-                : `Not that ${mode}. Target: ${expected}${result.read ? ` · I read ${result.read}` : ""}`}
+                : `Not that ${mode}. Target: ${expected}${result.read && result.read !== expected ? ` · that looks like ${result.read}` : ""}`}
           </p>
         </div>
       )}

@@ -79,8 +79,8 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       const region = staveRegion(modelRef.current);
       const paths = modelToPad(modelRef.current, rect.width, rect.height, region);
       ctx.save();
-      ctx.strokeStyle = "rgba(28, 24, 20, 0.28)";
-      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(28, 24, 20, 0.45)";
+      ctx.lineWidth = 4.5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       for (const path of paths) {

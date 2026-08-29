@@ -33,7 +33,7 @@ const MODELS: Record<string, LetterModel> = {
   ף: { glyph: "ף", band: "descender", hint: "Final fay: pe that drops below the line." },
   צ: { glyph: "צ", band: "body", hint: "Two arms and a base. On the line, not a long tail." },
   ץ: { glyph: "ץ", band: "descender", hint: "Final tsadee: a Y whose stem drops below the line." },
-  ק: { glyph: "ק", band: "hang", hint: "Like resh, with the leg hanging a little below the line." },
+  ק: { glyph: "ק", band: "hang", hint: "Like resh: open on the left, right leg hanging a little below the line. Not a Latin P." },
   ר: { glyph: "ר", band: "body", hint: "Rounded roof and right stem. No extra left wall." },
   ש: { glyph: "ש", band: "body", hint: "Three arms, like a W. Shin-dot right, sin-dot left." },
   ת: { glyph: "ת", band: "body", hint: "Like chet, with a small left foot on the floor." },

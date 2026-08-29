@@ -113,8 +113,9 @@ const MODELS: Record<string, StrokeModel[]> = {
     { aspect: 0.5, paths: [P(24, 10, 52, 50, 52, 96), P(80, 10, 52, 50)] },
   ],
   ק: [
-    { aspect: 0.55, paths: [P(22, 14, 72, 14, 72, 94)] },
-    { aspect: 0.58, paths: [P(20, 14, 74, 14, 74, 94), P(74, 14, 38, 58)] },
+    { aspect: 0.62, paths: [P(20, 12, 78, 12, 78, 96)] },
+    { aspect: 0.62, paths: [P(18, 12, 80, 12, 80, 96), P(80, 12, 36, 58)] },
+    { aspect: 0.7, paths: [P(78, 96, 78, 12, 22, 12, 14, 38, 22, 64, 78, 64)] },
   ],
   ר: [
     { aspect: 0.72, paths: [P(22, 16, 78, 16, 78, 86)] },
@@ -176,22 +177,12 @@ function bbox(pts: InkPoint[]) {
   return { minX, minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) };
 }
 
-/** Fit ink into 0–100, keeping shape. Big or small is the same after this. */
-function toUnit(pts: InkPoint[], targetAspect: number): InkPoint[] {
+/** Fit ink into 0–100, filling the box. Aspect is scored separately. */
+function toUnit(pts: InkPoint[]): InkPoint[] {
   const b = bbox(pts);
-  const boxW = 100;
-  const boxH = 100;
-  const want = targetAspect;
-  const have = b.w / b.h;
-  let dw = boxW;
-  let dh = boxH;
-  if (have > want) dh = boxW / have;
-  else dw = boxH * have;
-  const ox = (boxW - dw) / 2;
-  const oy = (boxH - dh) / 2;
   return pts.map((p) => ({
-    x: ox + ((p.x - b.minX) / b.w) * dw,
-    y: oy + ((p.y - b.minY) / b.h) * dh,
+    x: ((p.x - b.minX) / b.w) * 100,
+    y: ((p.y - b.minY) / b.h) * 100,
   }));
 }
 
@@ -221,11 +212,14 @@ export function rankStrokeModels(strokes: InkStroke[]): { id: string; score: num
   for (const id of Object.keys(MODELS)) {
     let best = { score: 0, cover: 0, extra: 0 };
     for (const model of MODELS[id]) {
-      const modelPts = model.paths.flatMap((p) => densify(p));
-      const inkU = toUnit(ink, model.aspect);
+      const modelPts = toUnit(model.paths.flatMap((p) => densify(p)));
+      const inkU = toUnit(ink);
       const cover = coverage(modelPts, inkU, 12);
       const extra = coverage(inkU, modelPts, 13);
-      const score = cover * 0.5 + extra * 0.5;
+      const aInk = b.w / b.h;
+      const rel = aInk > model.aspect ? aInk / model.aspect : model.aspect / aInk;
+      const aspectMul = rel > 1.7 ? 0.8 : rel > 1.4 ? 0.92 : 1;
+      const score = (cover * 0.5 + extra * 0.5) * aspectMul;
       if (score > best.score) best = { score, cover, extra };
     }
     ranked.push({ id, ...best });
