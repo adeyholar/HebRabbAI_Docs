@@ -1,5 +1,6 @@
-import { foldLetterGlyph, type HandMatch } from "@/lib/hebrew";
-import { FINAL_DESCENDERS, PAD_BASE, QOF } from "@/lib/pad-guides";
+import { type HandMatch } from "@/lib/hebrew";
+import { FINAL_DESCENDERS, PAD_BASE, PAD_TOP } from "@/lib/pad-guides";
+import { letterModel, modelGlyph } from "@/lib/letter-models";
 
 export type InkPoint = { x: number; y: number };
 export type InkStroke = InkPoint[];
@@ -25,6 +26,7 @@ type Feat = {
   hasTopBar: boolean;
   descender: number;
   belowShare: number;
+  ascender: number;
   hasSlash: boolean;
   hasFork: boolean;
 };
@@ -106,7 +108,9 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
   const midSpan = Number.isFinite(midMinX) ? midMaxX - midMinX : 0;
   const hasTopBar = topSpan > w * 0.4 && topSpan > Math.max(midSpan, w * 0.18) * 1.2;
   const baseY = height > 0 ? height * PAD_BASE : maxY;
+  const topLine = height > 0 ? height * PAD_TOP : minY;
   const descender = height > 0 ? Math.max(0, (maxY - baseY) / height) : 0;
+  const ascender = height > 0 ? Math.max(0, (topLine - minY) / height) : 0;
   let below = 0;
   if (height > 0) {
     for (const p of pts) {
@@ -158,6 +162,7 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     hasTopBar,
     descender,
     belowShare,
+    ascender,
     hasSlash,
     hasFork,
   };
@@ -168,9 +173,41 @@ function clamp01(n: number): number {
 }
 
 function baseLetter(expected: string): string {
-  const g = foldLetterGlyph(expected);
-  if (g.startsWith("ש")) return "ש";
-  return g.replace(/[^\u05D0-\u05EA]/g, "").slice(0, 1);
+  return modelGlyph(expected);
+}
+
+function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: string } {
+  const model = letterModel(want);
+  const dropped = f.descender >= 0.045 || f.belowShare >= 0.12;
+  const bitLow = f.descender >= 0.018 || f.belowShare >= 0.05;
+  const rose = f.ascender >= 0.04;
+
+  if (roundLoop(f) && want !== "ס" && want !== "ם" && want !== "ט") return { ok: false, as: "ס" };
+  if (f.small && want !== "י" && f.path < 70) return { ok: false, as: "י" };
+  if (want === "ס" && (f.hasSlash || f.closed < 0.48 || f.circ < 0.3 || f.n > 2)) return { ok: false, as: "" };
+  if (want === "ם" && f.closed < 0.45) return { ok: false, as: "" };
+  if (want === "י" && (f.tall || dropped || f.path > 140)) return { ok: false, as: "ו" };
+  if (want === "ו" && (f.hasTopBar || dropped || f.small)) return { ok: false, as: f.hasTopBar ? "ז" : dropped ? "ן" : "י" };
+  if (want === "ז" && (dropped || (!f.hasTopBar && f.topShare < 0.18))) return { ok: false, as: dropped ? "ן" : "ו" };
+  if (want === "ע" && (!f.hasFork || roundLoop(f))) return { ok: false, as: "" };
+  if (want === "צ" && !f.hasFork) return { ok: false, as: "" };
+  if (want === "ץ" && (!f.hasFork || (!dropped && !f.tall))) return { ok: false, as: f.hasFork ? "צ" : "" };
+  if (want === "א" && (roundLoop(f) || stick(f))) return { ok: false, as: "" };
+  if (want === "ב" && (f.closed > 0.62 || roundLoop(f))) return { ok: false, as: "ם" };
+
+  if (lined && model) {
+    if (model.band === "descender" && !dropped) return { ok: false, as: want };
+    if (model.band === "hang" && !bitLow) return { ok: false, as: want };
+    if (model.band === "ascender" && !rose) return { ok: false, as: want };
+    if (model.band === "body" && dropped && f.descender > 0.09 && FINAL_DESCENDERS.has(want === "כ" ? "ך" : want === "נ" ? "ן" : want === "פ" ? "ף" : want === "צ" ? "ץ" : "")) {
+      const asFinal = want === "כ" ? "ך" : want === "נ" ? "ן" : want === "פ" ? "ף" : want === "צ" ? "ץ" : "";
+      if (asFinal) return { ok: false, as: asFinal };
+    }
+    if (model.band === "body" && dropped && f.descender > 0.12 && want !== "ק") return { ok: false, as: "ן" };
+    if (model.band === "small" && (dropped || rose && f.h > 80)) return { ok: false, as: "ו" };
+    if (want === "ם" && dropped && f.descender > 0.08) return { ok: false, as: "" };
+  }
+  return { ok: true, as: want };
 }
 
 function roundLoop(f: Feat): boolean {
@@ -289,26 +326,9 @@ export function verifyLetterInk(
   if (!f || !want) return { match: "empty", read: "", score: 0 };
   if (f.path < 16) return { match: "empty", read: "", score: 0 };
 
-  const ROUND = new Set(["ס", "ם", "ט"]);
-  if (roundLoop(f) && !ROUND.has(want)) return { match: "wrong", read: "ס", score: 0.15 };
-  if (f.small && want !== "י" && f.path < 70) return { match: "wrong", read: "י", score: 0.15 };
-  if (want === "ס" && (f.hasSlash || f.closed < 0.48 || f.circ < 0.3 || f.n > 2)) {
-    return { match: "wrong", read: f.hasSlash ? "" : "", score: 0.1 };
-  }
-
   const lined = (opts?.height ?? 0) > 40;
-  const dropped = f.descender >= 0.04 || f.belowShare >= 0.1;
-  const bitLow = f.descender >= 0.018 || f.belowShare >= 0.05;
-  if (lined && FINAL_DESCENDERS.has(want) && !dropped) {
-    return { match: "wrong", read: want, score: 0.12 };
-  }
-  if (lined && want === QOF && !bitLow) {
-    return { match: "wrong", read: want, score: 0.12 };
-  }
-  if (lined && dropped && !FINAL_DESCENDERS.has(want) && want !== QOF && f.descender > 0.09) {
-    const asFinal = want === "כ" ? "ך" : want === "נ" ? "ן" : want === "פ" ? "ף" : want === "צ" ? "ץ" : "";
-    if (asFinal) return { match: "wrong", read: asFinal, score: 0.15 };
-  }
+  const gate = gateLetter(want, f, lined);
+  if (!gate.ok) return { match: "wrong", read: gate.as, score: 0.12 };
 
   let bestId = "";
   let best = -1;
@@ -322,26 +342,16 @@ export function verifyLetterInk(
   const mine = scoreOf(want, f);
 
   if (opts?.trace) {
-    if (want === "ז" && f.hasTopBar && mine >= 0.22) return { match: "close", read: want, score: Math.max(mine, 0.45) };
-    if (want === "ץ" && f.hasFork && (f.tall || f.descender > 0.02)) {
-      return { match: "exact", read: "ץ", score: Math.max(mine, 0.7) };
-    }
-    if (want === "צ" && f.hasFork && !f.tall) return { match: "close", read: "צ", score: Math.max(mine, 0.5) };
-    if (["ה", "ח", "ת", "א", "ד", "ר"].includes(want) && f.path > 35 && !roundLoop(f) && !stick(f) && !f.hasSlash) {
-      return { match: mine >= 0.45 ? "exact" : "close", read: want, score: Math.max(mine, 0.5) };
-    }
-    if (mine >= 0.36) return { match: mine >= 0.55 ? "exact" : "close", read: want, score: mine };
-    if (best >= 0.62 && best > mine + 0.22 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine };
-    if (f.path > 35 && mine >= 0.22) return { match: "close", read: want, score: mine };
+    if (mine >= 0.5 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
+    if (mine >= 0.34) return { match: "close", read: want, score: mine };
+    if (best >= 0.62 && best > mine + 0.2 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine };
     return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine };
   }
 
   if (mine >= 0.55 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
   if (mine >= 0.38 && (mine + 0.12 >= best || isNear(want, bestId))) return { match: "close", read: want, score: mine };
-  if (isNear(want, bestId) && mine >= 0.25) return { match: "close", read: want, score: mine };
-
+  if (isNear(want, bestId) && mine >= 0.28) return { match: "close", read: want, score: mine };
   if (best >= 0.55 && best > mine + 0.14 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine };
-
-  if (mine >= 0.32) return { match: "close", read: want, score: mine };
+  if (mine >= 0.36) return { match: "close", read: want, score: mine };
   return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine };
 }

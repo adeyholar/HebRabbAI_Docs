@@ -7,6 +7,7 @@ import { playGrade } from "@/lib/sfx";
 import { writeChecksLeft } from "@/lib/write-cap";
 import { type HandMatch } from "@/lib/hebrew";
 import { cn } from "@/lib/cn";
+import { ghostStyle, writingHint } from "@/lib/letter-models";
 
 type Result = { match: HandMatch; read: string; note?: string; counted?: boolean };
 
@@ -29,6 +30,8 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
   const [sample, setSample] = useState(allowSample && trace);
   const sampleGlyph = ghost || expected;
   const showSample = allowSample && sample;
+  const ghostPos = ghostStyle(expected);
+  const hint = writingHint(expected);
 
   const locked = result
     ? result.match === "exact" || result.match === "close" || (tries >= 2 && result.counted !== false && result.match !== "empty")
@@ -71,8 +74,8 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
       <div className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] bg-card shadow-[var(--shadow-border)]">
         {showSample && sampleGlyph && (
           <p
-            className="pointer-events-none absolute inset-x-0 z-0 grid place-items-center select-none he-word text-[5.5rem] leading-none text-ink/35"
-            style={{ top: "24%", height: "42%" }}
+            className="pointer-events-none absolute inset-x-0 z-0 grid place-items-center select-none he-word leading-none text-ink/35"
+            style={{ top: ghostPos.top, height: ghostPos.height, fontSize: ghostPos.fontSize }}
           >
             {sampleGlyph}
           </p>
@@ -100,12 +103,7 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
         </div>
       )}
       <p className="mt-1 text-center text-xs text-muted">
-        {allowSample
-          ? showSample
-            ? "Faint model between the lines. Finals drop below the bottom line; qof a little."
-            : "Show expected puts the target on the pad. Body between the lines; finals below."
-          : "Body between the lines. Finals drop below; qof a little below."}{" "}
-        {left} checks left today
+        {hint} {left} checks left today
       </p>
       <div className="mt-2 flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => pad.current?.undo()} disabled={locked || busy}>
