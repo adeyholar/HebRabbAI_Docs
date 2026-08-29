@@ -7,6 +7,7 @@ import { GAME_CHAPTER_TITLES } from "@/lib/vocab";
 import {
   firstIndexForChapter,
   hasHebrewVoice,
+  isAppleMobile,
   keepSpeechAlive,
   listenPlaylist,
   loadListenIndex,
@@ -57,8 +58,16 @@ function ListenPage() {
 
   useEffect(() => {
     if (!playing) return;
-    const id = window.setInterval(keepSpeechAlive, 8_000);
-    return () => window.clearInterval(id);
+    const ms = isAppleMobile() ? 4_000 : 8_000;
+    const id = window.setInterval(keepSpeechAlive, ms);
+    const onVis = () => {
+      if (document.visibilityState === "visible") keepSpeechAlive();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [playing]);
 
   useEffect(() => {
@@ -92,7 +101,7 @@ function ListenPage() {
 
   function startFrom(start: number, kick = false) {
     if (!speechSupported()) {
-      setStatus("This browser cannot speak text. Try Safari or Chrome, and unmute the phone.");
+      setStatus("This browser cannot speak text. On iPhone use Safari. On Android use Chrome. Unmute the phone.");
       return;
     }
     stopRef.current.stop = false;
@@ -107,9 +116,9 @@ function ListenPage() {
     }
     void navigator.wakeLock?.request("screen").catch(() => {});
     void (async () => {
-      await waitForVoices();
-      if (stopRef.current.stop || gen !== playGen.current) return;
-      setHeVoice(hasHebrewVoice());
+      void waitForVoices().then(() => {
+        if (gen === playGen.current) setHeVoice(hasHebrewVoice());
+      });
       let at = start;
       while (!stopRef.current.stop && gen === playGen.current) {
         const card = list[at];
@@ -159,14 +168,18 @@ function ListenPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Hands-free</p>
         <h1 className="mt-1 font-display text-4xl font-bold text-ink">Listen</h1>
         <p className="mt-3 text-muted">
-          Hebrew once, a brief pause, then English. Modern Israeli pronunciation. Warm default — Slow or Faster if you want.
+          Hebrew once (modern Israeli), a brief pause, then English. Works in Safari and Chrome on phone and laptop.
+          Warm default — Slow or Faster if you want.
         </p>
         {!supported && (
-          <p className="mt-2 text-sm text-danger">This browser has no speech engine. Open the site in Safari or Chrome.</p>
+          <p className="mt-2 text-sm text-danger">
+            This browser has no speech engine. iPhone: open in Safari. Android: open in Chrome. Then unmute.
+          </p>
         )}
         {supported && !heVoice && (
           <p className="mt-2 text-sm text-muted">
-            Hebrew uses a lively woman voice when this phone has one. Add a Hebrew voice in system settings if you only hear English. Modern Israeli pronunciation, not academic reconstruction.
+            No Hebrew voice on this device yet, so you hear modern Israeli transliteration (vav as v). On iPhone: Settings
+            → Accessibility → Spoken Content → Voices → Hebrew. On Android: install a Hebrew voice in Google TTS.
           </p>
         )}
         {status && <p className="mt-2 text-sm font-semibold text-primary">{status}</p>}
@@ -244,7 +257,8 @@ function ListenPage() {
           ))}
         </div>
         <p className="mt-3 text-xs text-muted">
-          Turn the ringer/volume up. You should hear a short chime, then “Ready,” then the words. Keep the screen on.
+          Turn the ringer and media volume up. You should hear a short chime, then the words. Keep the screen on.
+          iPhone: Safari is the most reliable. Android: Chrome. Unmute media, not just the ringer.
         </p>
       </Panel>
     </>
