@@ -706,6 +706,54 @@ test("a slash through the body is not samekh", () => {
   assert.equal(r.match, "wrong");
 });
 
+function handwrittenTet(ox) {
+  const bowl = curve(
+    [
+      { x: ox + 8, y: TOP + 8 },
+      { x: ox, y: TOP + 42 },
+      { x: ox + 10, y: BASE - 6 },
+      { x: ox + 28, y: BASE - 2 },
+      { x: ox + 48, y: BASE - 8 },
+      { x: ox + 56, y: TOP + 38 },
+      { x: ox + 50, y: TOP + 6 },
+    ],
+    10,
+  );
+  const nose = line(ox + 48, TOP + 10, ox + 30, TOP + 44, 10);
+  return [bowl, nose];
+}
+
+test("screenshot-like open U tet with an inner hook counts", () => {
+  const r = grade(handwrittenTet(240), "ט");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ט");
+});
+
+test("five side-by-side handwritten tets count as tet, not alef", () => {
+  const ink = [80, 170, 260, 350, 440].flatMap((ox) => handwrittenTet(ox));
+  const r = grade(ink, "ט");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ט");
+});
+
+test("open U without a nose is not tet", () => {
+  const bowl = curve(
+    [
+      { x: 220, y: TOP + 8 },
+      { x: 210, y: TOP + 42 },
+      { x: 230, y: BASE - 6 },
+      { x: 260, y: BASE - 2 },
+      { x: 290, y: BASE - 8 },
+      { x: 300, y: TOP + 38 },
+      { x: 290, y: TOP + 6 },
+    ],
+    10,
+  );
+  const r = grade([bowl], "ט");
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "ט");
+});
+
 test("Latin P is still not qof even against a hanging-qof sample", () => {
   const hanging = openHangQof(40);
   const r = verifyLetterInk(latinP(40), "ק", { height: H, samples: [hanging] });

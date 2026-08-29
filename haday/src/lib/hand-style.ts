@@ -1,4 +1,4 @@
-import { enrollLetterInk, type InkStroke } from "@/lib/letter-shape";
+import { enrollLetterInk, primaryLetterInk, type InkStroke } from "@/lib/letter-shape";
 import { modelGlyph } from "@/lib/letter-models";
 import { scoreInkToPaths } from "@/lib/letter-strokes";
 
@@ -225,7 +225,7 @@ export function saveHandSample(
   const id = letterId(expected);
   const enrolled = enrollLetterInk(strokes, expected, { height: opts?.height });
   if (!enrolled.ok) return { ok: false, n: sampleCount(expected), note: enrolled.note };
-  const packed = compactStrokes(strokes);
+  const packed = compactStrokes(primaryLetterInk(strokes, expected));
   if (!packed.length) return { ok: false, n: 0, note: "Draw the letter larger, between the two lines." };
   const bank = loadHand();
   const st = asState(bank[id]);

@@ -290,6 +290,71 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
   };
 }
 
+/** Side-by-side copies of a letter (a practice row) become separate blobs. */
+export function clusterLetterBlobs(strokes: InkStroke[]): InkStroke[][] {
+  const clean = strokes.map((s) => s.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))).filter((s) => s.length);
+  if (clean.length < 2) return clean.length ? [clean] : [];
+  const items = clean.map((s) => {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const p of s) {
+      minX = Math.min(minX, p.x);
+      maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y);
+      maxY = Math.max(maxY, p.y);
+    }
+    return { s, minX, maxX, minY, maxY, mid: (minX + maxX) / 2, w: Math.max(1, maxX - minX) };
+  });
+  items.sort((a, b) => a.mid - b.mid);
+  const widths = items.map((it) => it.w).sort((a, b) => a - b);
+  const medW = widths[Math.floor(widths.length / 2)] || 1;
+  const gapCut = Math.max(medW * 0.4, 16);
+  const groups: (typeof items)[] = [[items[0]]];
+  for (let i = 1; i < items.length; i++) {
+    const prev = groups[groups.length - 1];
+    const prevMax = Math.max(...prev.map((p) => p.maxX));
+    if (items[i].minX - prevMax > gapCut) groups.push([items[i]]);
+    else prev.push(items[i]);
+  }
+  if (groups.length < 2 || groups.length > 8) return [clean];
+  const blobs = groups
+    .map((g) => g.map((x) => x.s))
+    .filter((b) => {
+      const pts = b.flat();
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const p of pts) {
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y);
+        maxY = Math.max(maxY, p.y);
+      }
+      return maxX - minX > 10 && maxY - minY > 14;
+    });
+  return blobs.length >= 2 ? blobs : [clean];
+}
+
+/** Best single copy when the pad has a row of the same letter. */
+export function primaryLetterInk(strokes: InkStroke[], expected?: string): InkStroke[] {
+  const blobs = clusterLetterBlobs(strokes);
+  if (blobs.length < 2) return strokes;
+  if (!expected) return blobs[Math.floor(blobs.length / 2)];
+  let best = blobs[0];
+  let bestSc = -1;
+  for (const b of blobs) {
+    const sc = matchStrokeModel(b, expected)?.score ?? 0;
+    if (sc > bestSc) {
+      bestSc = sc;
+      best = b;
+    }
+  }
+  return best;
+}
+
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }
@@ -333,8 +398,8 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (want === "ק" && stick(f) && !f.hasTopBar && f.n === 1) return { ok: false, as: "ן" };
   if (want === "ק" && f.aspect < 0.36 && f.n === 1) return { ok: false, as: "ן" };
   if (want === "פ" && !f.hasNose) return { ok: false, as: "כ" };
-  if (want === "ט" && roundLoop(f) && f.n === 1) return { ok: false, as: "ס" };
-  if (want === "ט" && f.hasFork && f.n === 1 && f.closed < 0.4 && !f.hasSlash) return { ok: false, as: "ע" };
+  if (want === "ט" && roundLoop(f) && f.n === 1 && !f.hasNose) return { ok: false, as: "ס" };
+  if (want === "ט" && f.hasFork && f.n === 1 && f.closed < 0.4 && !f.hasSlash && !f.hasNose) return { ok: false, as: "ע" };
   if (want === "ט" && f.n === 1 && !f.hasNose && !f.hasSlash) return { ok: false, as: f.hasFork ? "ע" : "" };
   if (want === "ט" && !f.hasNose && f.closed > 0.42 && !f.hasSlash) return { ok: false, as: "ס" };
   if (want === "מ" && roundLoop(f)) return { ok: false, as: "ס" };
@@ -431,9 +496,9 @@ const SCORES: Record<string, Scorer> = {
     (f.n === 1 ? 0.1 : 0) +
     (roundLoop(f) || f.small || f.hasTopBar ? -0.5 : 0.1),
   ט: (f) =>
-    (f.hasNose && f.closed > 0.35 ? 0.45 : f.closed > 0.35 ? 0.15 : 0.1) +
-    (f.square ? 0.15 : 0) +
-    (f.n <= 3 ? 0.1 : 0) +
+    (f.hasNose ? 0.5 : f.closed > 0.35 ? 0.15 : 0.1) +
+    (f.square || (f.aspect > 0.5 && f.aspect < 1.45) ? 0.12 : 0) +
+    (f.n <= 3 ? 0.12 : f.n <= 6 ? 0.05 : -0.12) +
     (stick(f) || (roundLoop(f) && !f.hasNose) ? -0.45 : 0.1),
   י: (f) => (f.small ? 0.6 : 0) + (f.n === 1 ? 0.2 : 0) + (f.path < 120 ? 0.15 : -0.2) + (f.tall && !f.small ? -0.4 : 0) + (roundLoop(f) ? -0.5 : 0.05),
   כ: (f) =>
@@ -548,19 +613,28 @@ function samekhMissNote(f: Feat, rivalId: string): string | undefined {
   return undefined;
 }
 
+function tetMissNote(f: Feat, rivalId: string): string | undefined {
+  if (rivalId === "א") return "Tet is a rounded U with a small inner hook. Not an X.";
+  if (rivalId === "ס") return "Tet stays open at the top, with a hook inside. A closed body is samekh.";
+  if (rivalId === "ע") return "Tet needs the small inner hook. Two empty arms is ayin.";
+  void f;
+  return undefined;
+}
+
 /** Save this ink as the student’s hand only if it is not a known imposter. */
 export function enrollLetterInk(
   strokes: InkStroke[],
   expected: string,
   opts?: { height?: number },
 ): { ok: boolean; note?: string } {
+  const ink = primaryLetterInk(strokes, expected);
   const want = baseLetter(expected);
-  const f = analyze(strokes, opts?.height ?? 0);
+  const f = analyze(ink, opts?.height ?? 0);
   if (!f || !want) return { ok: false, note: "Draw the letter larger, between the two lines." };
   if (f.path < (want === "י" ? 7 : 16)) return { ok: false, note: "Draw the letter larger, between the two lines." };
   const lined = (opts?.height ?? 0) > 40;
   const gate = gateLetter(want, f, lined);
-  const ranked = rankStrokeModels(strokes);
+  const ranked = rankStrokeModels(ink);
   const shape = ranked.find((r) => r.id === want);
   const rival = ranked[0];
   const tBar = f.hasTopBar && !f.hasBottomBar && f.closed < 0.35 && f.circ < 0.28;
@@ -580,6 +654,7 @@ export function enrollLetterInk(
         (want === "ע" ? ayinMissNote(f, gate.as) : undefined) ||
         (want === "ש" ? shinMissNote(f, gate.as) : undefined) ||
         (want === "י" ? yodMissNote(f) : undefined) ||
+        (want === "ט" ? tetMissNote(f, gate.as) : undefined) ||
         `Use the chart form for this letter.${named}`,
     };
   }
@@ -593,8 +668,21 @@ export function enrollLetterInk(
 export function verifyLetterInk(
   strokes: InkStroke[],
   expected: string,
-  opts?: { trace?: boolean; height?: number; samples?: InkStroke[][]; bar?: number },
+  opts?: { trace?: boolean; height?: number; samples?: InkStroke[][]; bar?: number; noSplit?: boolean },
 ): { match: HandMatch; read: string; score: number; note?: string } {
+  if (!opts?.noSplit) {
+    const blobs = clusterLetterBlobs(strokes);
+    if (blobs.length >= 2 && blobs.length <= 8) {
+      const inner = { ...opts, noSplit: true };
+      const rs = blobs.map((b) => verifyLetterInk(b, expected, inner));
+      const good = rs.filter((r) => r.match === "exact" || r.match === "close");
+      if (good.length >= Math.ceil(blobs.length * 0.5)) {
+        good.sort((a, b) => b.score - a.score);
+        return good[0];
+      }
+    }
+  }
+
   const want = baseLetter(expected);
   const f = analyze(strokes, opts?.height ?? 0);
   if (!f || !want) return { match: "empty", read: "", score: 0 };
@@ -611,7 +699,8 @@ export function verifyLetterInk(
   const shinNote = want === "ש" ? shinMissNote(f, rival && rival.id !== want ? rival.id : "") : undefined;
   const yodNote = want === "י" ? yodMissNote(f) : undefined;
   const samekhNote = want === "ס" ? samekhMissNote(f, rival && rival.id !== want ? rival.id : gate.as) : undefined;
-  const note = qofNote ?? vavNote ?? ayinNote ?? shinNote ?? yodNote ?? samekhNote;
+  const tetNote = want === "ט" ? tetMissNote(f, rival && rival.id !== want ? rival.id : gate.as) : undefined;
+  const note = qofNote ?? vavNote ?? ayinNote ?? shinNote ?? yodNote ?? samekhNote ?? tetNote;
   const tBar = f.hasTopBar && !f.hasBottomBar && f.closed < 0.35 && f.circ < 0.28;
   if (want === "ק" && f.footX < 0.42) {
     return { match: "wrong", read: "", score: shape?.score ?? 0, note };
@@ -647,6 +736,10 @@ export function verifyLetterInk(
     want === "ס" && !f.hasSlash && (f.closed > 0.28 || f.hasTopBar || f.n >= 2 || f.circ > 0.16)
       ? new Set(["ט", "ם", "מ", "ע", "כ", "ת", "ה", "ח", "ד", "ז"])
       : null;
+  const tetTwins =
+    want === "ט" && (f.hasNose || f.n >= 2)
+      ? new Set(["א", "ע", "ס", "ם", "מ", "צ", "ש"])
+      : null;
 
   if (rival && rival.id !== want && rival.score >= 0.52 && rival.score >= (shape?.score ?? 0) + 0.07) {
     if (
@@ -656,7 +749,8 @@ export function verifyLetterInk(
       descTwins?.has(rival.id) ||
       yodTwins?.has(rival.id) ||
       heTwins?.has(rival.id) ||
-      samekhTwins?.has(rival.id)
+      samekhTwins?.has(rival.id) ||
+      tetTwins?.has(rival.id)
     ) {
       /* stretch-fill twins */
     } else if (isNear(want, rival.id) && (shape?.score ?? 0) >= 0.55 && (shape?.extra ?? 0) >= 0.55) {
@@ -689,6 +783,14 @@ export function verifyLetterInk(
 
   if (want === "ס" && shape && shape.score >= 0.5 && !f.hasSlash && (f.closed > 0.28 || f.hasTopBar || f.n >= 2 || f.circ > 0.16)) {
     const lead = shape.score + 0.04 >= (rival?.score ?? 0) || !rival || rival.id === want || Boolean(samekhTwins?.has(rival.id));
+    if (lead) {
+      if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
+      return { match: "close", read: want, score: shape.score };
+    }
+  }
+
+  if (want === "ט" && shape && shape.score >= 0.48 && (f.hasNose || f.n >= 2) && !roundLoop(f)) {
+    const lead = shape.score + 0.04 >= (rival?.score ?? 0) || !rival || rival.id === want || Boolean(tetTwins?.has(rival.id));
     if (lead) {
       if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
       return { match: "close", read: want, score: shape.score };
