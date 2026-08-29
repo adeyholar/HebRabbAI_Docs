@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 
 type Kind = "letter" | "vowel";
 type WriteLevel = "copy" | "stave";
+type Beat = "trace" | "practice";
 
 const LEVEL_KEY = "davar-alef-write-level";
 
@@ -39,6 +40,7 @@ export function LetterWrite() {
   );
   const [unlocked, setUnlocked] = useState(loadUnlocked);
   const [level, setLevel] = useState<WriteLevel>(queued.length ? "stave" : "copy");
+  const [beat, setBeat] = useState<Beat>("trace");
   const [letterDeck, setLetterDeck] = useState(() => WRITE_LETTERS);
   const [vowelDeck, setVowelDeck] = useState(() => VOWELS);
   const [i, setI] = useState(0);
@@ -74,6 +76,7 @@ export function LetterWrite() {
     if (q.length) setLevel("stave");
     setI(0);
     setRight(0);
+    setBeat("trace");
     setPadKey((n) => n + 1);
   }, [queue]);
 
@@ -90,6 +93,7 @@ export function LetterWrite() {
     setKind(next);
     setI(0);
     setRight(0);
+    setBeat("trace");
     resetPad();
   }
 
@@ -107,6 +111,7 @@ export function LetterWrite() {
     );
     setI(0);
     setRight(0);
+    setBeat("trace");
     resetPad();
   }
 
@@ -122,6 +127,7 @@ export function LetterWrite() {
       });
     }
     resetPad();
+    setBeat("trace");
   }
 
   function pickVowel(v: HebrewVowel) {
@@ -136,9 +142,15 @@ export function LetterWrite() {
       });
     }
     resetPad();
+    setBeat("trace");
   }
 
   function next(ok: boolean) {
+    if (level === "copy" && beat === "trace") {
+      setBeat("practice");
+      resetPad();
+      return;
+    }
     const key = letter ? alefKey("letter", letter.id) : vowel ? alefKey("vowel", vowel.id) : null;
     if (key) rate(key, ok ? "good" : "again");
     if (ok) setRight((n) => n + 1);
@@ -151,6 +163,7 @@ export function LetterWrite() {
       return;
     }
     setI((n) => n + 1);
+    setBeat("trace");
     resetPad();
   }
 
@@ -162,7 +175,7 @@ export function LetterWrite() {
           {right} / {deckLen}
         </p>
         <p className="mt-2 text-sm text-muted">
-          {level === "copy" ? "Copy round complete." : "Lines-only round complete."}
+          {level === "copy" ? "Trace & practice complete." : "Lines-only round complete."}
         </p>
         {level === "copy" && passed && (
           <p className="mt-2 text-sm text-ink">Next: write on the stave with no model. Lamed above, finals below.</p>
@@ -206,15 +219,17 @@ export function LetterWrite() {
           on={level === "copy"}
           onClick={() => {
             setLevel("copy");
+            setBeat("trace");
             resetPad();
           }}
-          label="1 · Copy"
+          label="1 · Trace & practice"
         />
         <KindBtn
           on={level === "stave"}
           onClick={() => {
             if (!unlocked && !queue.length) return;
             setLevel("stave");
+            setBeat("practice");
             resetPad();
           }}
           label={unlocked || queue.length ? "2 · Lines" : "2 · Lines (locked)"}
@@ -222,12 +237,15 @@ export function LetterWrite() {
       </div>
       <p className="mt-2 text-center text-xs text-muted">
         {level === "copy"
-          ? "Learning: trace the model between the two lines."
-          : "No model. Body between the lines. Lamed rises above the top line. Finals drop below the bottom line."}
+          ? beat === "trace"
+            ? "Trace the faint strokes between the two lines."
+            : "Practice the same letter. Model is off. Keep the body between the lines."
+          : "From the name only. Body between the lines. Lamed above the top; finals below the bottom."}
       </p>
 
       <p className="mt-3 text-sm tabular-nums text-muted">
-        {i + 1} / {deckLen} · {right} correct
+        {i + 1} / {deckLen}
+        {level === "copy" ? ` · ${beat === "trace" ? "trace" : "practice"}` : ""} · {right} correct
       </p>
 
       <div className="mt-3 rounded-[var(--radius-xl)] bg-card px-5 py-6 text-center shadow-[var(--shadow-border)]">
@@ -239,28 +257,34 @@ export function LetterWrite() {
             <p className="mt-1 font-display text-3xl font-bold text-ink">{name}</p>
             <p className="mt-1 text-sm text-muted">{sound}</p>
           </>
-        ) : (
+        ) : beat === "trace" ? (
           <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Copy {name}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Trace {name}</p>
             <p className="he-word mt-2 text-6xl">{glyph}</p>
             <p className="mt-1 text-sm text-muted">{sound}</p>
+          </>
+        ) : (
+          <>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Practice {name}</p>
+            <p className="he-word mt-2 text-6xl">{glyph}</p>
+            <p className="mt-1 text-sm text-muted">Same letter. Lines only — no strokes to copy.</p>
           </>
         )}
       </div>
 
       <GlyphInk
-        key={`${kind}-${level}-${i}-${padKey}`}
+        key={`${kind}-${level}-${beat}-${i}-${padKey}`}
         expected={glyph}
         mode={kind}
-        trace={level === "copy"}
+        trace={level === "copy" && beat === "trace"}
         ghost={glyph}
         allowSample={false}
-        showModel={level === "copy" && kind === "letter"}
+        showModel={level === "copy" && beat === "trace" && kind === "letter"}
         hint={
           kind === "letter"
-            ? level === "copy"
+            ? level === "copy" && beat === "trace"
               ? "Trace the faint strokes. Body sits between the two lines."
-              : "No model. Body between the lines. Lamed above the top line. Finals below the bottom line. Qof a little below."
+              : "No model. Body between the lines. Lamed above the top line. Finals below the bottom line."
             : undefined
         }
         onPass={(ok) => next(ok)}
