@@ -49,10 +49,10 @@ Do not translate.`
 
 The assigned vowel is written: ${target || "(unknown)"}
 
-Students write the vowel on the consonant bet (ב) unless the vowel uses a vowel letter (he, waw, or yod).
+Students write the vowel on the consonant bet (ב) unless the vowel uses a vowel letter (he, vav, or yod).
 
-1. Transcribe exactly what you see, including ב or ו/י/ה and the niqqud (and dagesh if present). Example shapes: בָ qamets, בַ patah, בֵ tsere, בֶ segol, בִ hireq, בֹ holem, בֻ qibbuts, בְ shewa, בוּ shureq, בוֹ holem-waw.
-2. These pairs are different vowels: qamets בָ vs patah בַ; tsere בֵ vs segol בֶ; shureq בוּ vs qibbuts בֻ; holem בֹ vs holem-waw בוֹ.
+1. Transcribe exactly what you see, including ב or ו/י/ה and the niqqud (and dagesh if present). Example shapes: בָ qamets, בַ patah, בֵ tsere, בֶ segol, בִ hireq, בֹ holem, בֻ qibbuts, בְ shewa, בוּ shureq, בוֹ holem-vav.
+2. These pairs are different vowels: qamets בָ vs patah בַ; tsere בֵ vs segol בֶ; shureq בוּ vs qibbuts בֻ; holem בֹ vs holem-vav בוֹ.
 
 Reply JSON only:
 {"hebrew":"...glyph...","verdict":"exact"|"close"|"different"}

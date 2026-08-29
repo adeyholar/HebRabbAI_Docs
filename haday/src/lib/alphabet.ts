@@ -13,7 +13,7 @@ export const CONSONANTS: HebrewLetter[] = [
   { id: "gimel", letter: "ג", name: "Gimel", sound: "g", translit: "g" },
   { id: "dalet", letter: "ד", name: "Dalet", sound: "d", translit: "d" },
   { id: "he", letter: "ה", name: "He", sound: "h", translit: "h" },
-  { id: "vav", letter: "ו", name: "Waw", sound: "v / w", translit: "w" },
+  { id: "vav", letter: "ו", name: "Vav", sound: "v / w", translit: "w" },
   { id: "zayin", letter: "ז", name: "Zayin", sound: "z", translit: "z" },
   { id: "het", letter: "ח", name: "Het", sound: "ch (Bach)", translit: "ḥ" },
   { id: "tet", letter: "ט", name: "Tet", sound: "t", translit: "ṭ" },
@@ -79,8 +79,8 @@ export const VOWELS: HebrewVowel[] = [
   { id: "seghol-he", mark: "בֶה", name: "Seghol He", sound: "e as in better", translit: "eh", vowelClass: "e", kind: "he" },
   { id: "holem-he", mark: "בֹה", name: "Holem He", sound: "o as in role", translit: "ô", vowelClass: "o", kind: "he" },
 
-  { id: "holem-waw", mark: "בוֹ", name: "Holem Waw", sound: "o as in role", translit: "ô", vowelClass: "o", kind: "waw", note: "Unchangeable long o — the waw is the vowel letter." },
-  { id: "shureq", mark: "בוּ", name: "Shureq", sound: "û as in ruler (dot in the waw)", translit: "û", vowelClass: "u", kind: "waw", note: "The dot in the waw is the vowel û, not dagesh forte. Unchangeable." },
+  { id: "holem-waw", mark: "בוֹ", name: "Holem Vav", sound: "o as in role", translit: "ô", vowelClass: "o", kind: "waw", note: "Unchangeable long o — the vav is the vowel letter." },
+  { id: "shureq", mark: "בוּ", name: "Shureq", sound: "û as in ruler (dot in the vav)", translit: "û", vowelClass: "u", kind: "waw", note: "The dot in the vav is the vowel û, not dagesh forte. Unchangeable." },
 
   { id: "tsere-yod", mark: "בֵי", name: "Tsere Yod", sound: "e as in they", translit: "ê", vowelClass: "e", kind: "yod", note: "Unchangeable long e." },
   { id: "seghol-yod", mark: "בֶי", name: "Seghol Yod", sound: "e as in better", translit: "ê", vowelClass: "e", kind: "yod" },
@@ -93,7 +93,7 @@ export const VOWEL_GROUPS: Array<{ id: VowelKind; title: string; blurb: string }
   { id: "reduced", title: "Reduced vowels", blurb: "Hateph vowels. No i-class or u-class." },
   { id: "shewa", title: "Shewa", blurb: "Not a full vowel. Vocal shewa is a brief murmur; silent shewa has no sound." },
   { id: "he", title: "Vowel letters with he", blurb: "He is a vowel letter only at the end of a word." },
-  { id: "waw", title: "Vowel letters with waw", blurb: "Unchangeable. Shureq is û — the dot in the waw, not dagesh forte." },
+  { id: "waw", title: "Vowel letters with vav", blurb: "Unchangeable. Shureq is û — the dot in the vav, not dagesh forte." },
   { id: "yod", title: "Vowel letters with yod", blurb: "Unchangeable long vowels with yod." },
 ];
 

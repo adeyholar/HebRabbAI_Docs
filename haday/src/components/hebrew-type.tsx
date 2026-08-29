@@ -38,7 +38,7 @@ const MARKS: PadKeyDef[] = [
 
 const VOWEL_LETTERS: PadKeyDef[] = [
   { id: "shureq", insert: "וּ", show: "וּ", name: "Shureq" },
-  { id: "holem-waw", insert: "וֹ", show: "וֹ", name: "Holem waw" },
+  { id: "holem-waw", insert: "וֹ", show: "וֹ", name: "Holem vav" },
   { id: "hireq-yod", insert: "ִי", show: "◌ִי", name: "Hireq yod" },
   { id: "tsere-yod", insert: "ֵי", show: "◌ֵי", name: "Tsere yod" },
   { id: "qamets-he", insert: "ָה", show: "◌ָה", name: "Qamets he" },

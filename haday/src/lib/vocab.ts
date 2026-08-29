@@ -520,7 +520,7 @@ export function alphabetVocab(): VocabItem[] {
     hebrew: l.letter,
     translit: l.translit,
     gloss: l.name,
-    alts: [l.name.toLowerCase(), l.id, l.sound, l.translit].filter(Boolean),
+    alts: [l.name.toLowerCase(), l.id, l.sound, l.translit, ...(l.id === "vav" ? ["waw"] : [])].filter(Boolean),
     pos: "particle" as const,
     chapter: 1,
     freq: 0,
