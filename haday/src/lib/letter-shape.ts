@@ -31,11 +31,23 @@ type Feat = {
   ascender: number;
   hasSlash: boolean;
   hasFork: boolean;
+  hasMidArm: boolean;
+  hasLeftFoot: boolean;
+  leftJoinsRoof: boolean;
+  hasCross: boolean;
   footX: number;
 };
 
 function dist(a: InkPoint, b: InkPoint): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function segmentsCross(a1: InkPoint, a2: InkPoint, b1: InkPoint, b2: InkPoint): boolean {
+  const d = (a2.x - a1.x) * (b2.y - b1.y) - (a2.y - a1.y) * (b2.x - b1.x);
+  if (Math.abs(d) < 1e-6) return false;
+  const t = ((b1.x - a1.x) * (b2.y - b1.y) - (b1.y - a1.y) * (b2.x - b1.x)) / d;
+  const u = ((b1.x - a1.x) * (a2.y - a1.y) - (b1.y - a1.y) * (a2.x - a1.x)) / d;
+  return t > 0.12 && t < 0.88 && u > 0.12 && u < 0.88;
 }
 
 function pathOf(s: InkStroke): number {
@@ -93,6 +105,7 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
   let topMaxX = -Infinity;
   let midMinX = Infinity;
   let midMaxX = -Infinity;
+  const topBins = [0, 0, 0, 0, 0];
   for (const p of pts) {
     const xn = (p.x - minX) / w;
     const yn = (p.y - minY) / h;
@@ -101,6 +114,7 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     if (yn < 0.28) {
       topMinX = Math.min(topMinX, p.x);
       topMaxX = Math.max(topMaxX, p.x);
+      topBins[Math.max(0, Math.min(4, Math.floor(xn * 5)))] += 1;
     }
     if (yn > 0.35 && yn < 0.75) {
       midMinX = Math.min(midMinX, p.x);
@@ -109,7 +123,8 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
   }
   const topSpan = Number.isFinite(topMinX) ? topMaxX - topMinX : 0;
   const midSpan = Number.isFinite(midMinX) ? midMaxX - midMinX : 0;
-  const hasTopBar = topSpan > w * 0.4 && topSpan > Math.max(midSpan, w * 0.18) * 1.2;
+  const topFill = topBins.filter((n) => n >= 2).length;
+  const hasTopBar = topFill >= 3 && topSpan > w * 0.4 && topSpan > Math.max(midSpan, w * 0.18) * 1.2;
   let botMinX = Infinity;
   let botMaxX = -Infinity;
   for (const p of pts) {
@@ -164,6 +179,27 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     }
   }
   const hasFork = topL >= 4 && topR >= 4;
+  let topMid = 0;
+  let gapFill = 0;
+  let blMin = Infinity;
+  let blMax = -Infinity;
+  for (const p of pts) {
+    const xn = (p.x - minX) / w;
+    const yn = (p.y - minY) / h;
+    if (yn < 0.52 && xn > 0.28 && xn < 0.72) topMid += 1;
+    if (xn < 0.28 && yn > 0.12 && yn < 0.32) gapFill += 1;
+    if (yn > 0.75 && xn < 0.55) {
+      blMin = Math.min(blMin, p.x);
+      blMax = Math.max(blMax, p.x);
+    }
+  }
+  const hasMidArm = topMid >= 3;
+  const leftJoinsRoof = gapFill >= 3;
+  const hasLeftFoot = Number.isFinite(blMin) && blMax - blMin > w * 0.16;
+  let hasCross = false;
+  if (clean.length === 2 && strokeStraight(clean[0]) && strokeStraight(clean[1])) {
+    hasCross = segmentsCross(clean[0][0], clean[0][clean[0].length - 1], clean[1][0], clean[1][clean[1].length - 1]);
+  }
   return {
     n: clean.length,
     w,
@@ -189,6 +225,10 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
     ascender,
     hasSlash,
     hasFork,
+    hasMidArm,
+    hasLeftFoot,
+    leftJoinsRoof,
+    hasCross,
     footX,
   };
 }
@@ -211,16 +251,29 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (f.small && want !== "י" && f.path < 70) return { ok: false, as: "י" };
   if (want === "ס" && (f.hasSlash || f.closed < 0.48 || f.circ < 0.3 || f.n > 2)) return { ok: false, as: "" };
   if (want === "ם" && f.closed < 0.45) return { ok: false, as: "" };
-  if (want === "י" && (f.tall || dropped || f.path > 140)) return { ok: false, as: "ו" };
-  if (want === "ו" && (f.hasTopBar || dropped || f.small)) return { ok: false, as: f.hasTopBar ? "ז" : dropped ? "ן" : "י" };
+  if (want === "י" && (dropped || f.path > 140 || f.h > 48)) return { ok: false, as: "ו" };
+  if (want === "ו" && dropped) return { ok: false, as: "ן" };
+  if (want === "ו" && f.small) return { ok: false, as: "י" };
+  if (want === "ו" && f.hasTopBar && f.footX < 0.62) return { ok: false, as: "ז" };
   if (want === "ז" && (dropped || (!f.hasTopBar && f.topShare < 0.18))) return { ok: false, as: dropped ? "ן" : "ו" };
   if (want === "ע" && roundLoop(f)) return { ok: false, as: "ס" };
   if (want === "ע" && stick(f)) return { ok: false, as: "ו" };
-  if (want === "צ" && !f.hasFork) return { ok: false, as: "" };
+  if (want === "צ" && (f.hasCross || !f.hasFork)) return { ok: false, as: f.hasCross ? "א" : "" };
+  if (want === "ץ" && f.hasCross) return { ok: false, as: "א" };
   if (want === "ץ" && (!f.hasFork || (!dropped && !f.tall))) return { ok: false, as: f.hasFork ? "צ" : "" };
   if (want === "א" && (roundLoop(f) || stick(f))) return { ok: false, as: "" };
   if (want === "ב" && (f.closed > 0.62 || roundLoop(f))) return { ok: false, as: "ם" };
   if (want === "ק" && f.footX < 0.42) return { ok: false, as: "" };
+  if (want === "פ" && f.n < 2 && !f.hasSlash) return { ok: false, as: "כ" };
+  if (want === "ט" && roundLoop(f) && f.n === 1) return { ok: false, as: "ס" };
+  if (want === "ט" && f.hasFork && f.n === 1 && f.closed < 0.4 && !f.hasSlash) return { ok: false, as: "ע" };
+  if (want === "מ" && roundLoop(f)) return { ok: false, as: "ס" };
+  if (want === "ם" && f.circ > 0.86) return { ok: false, as: "ס" };
+  if (want === "ש" && f.hasTopBar && !f.hasBottomBar && f.n <= 2) return { ok: false, as: "ז" };
+  if (want === "ת" && !f.hasLeftFoot) return { ok: false, as: f.leftJoinsRoof ? "ח" : "ה" };
+  if ((want === "ה" || want === "ח") && f.hasLeftFoot) return { ok: false, as: "ת" };
+  if (want === "ח" && !f.leftJoinsRoof) return { ok: false, as: "ה" };
+  if (want === "ה" && f.leftJoinsRoof) return { ok: false, as: "ח" };
 
   const tBar = f.hasTopBar && !f.hasBottomBar;
   if (tBar && (want === "כ" || want === "ב" || want === "פ" || want === "ס" || want === "ם" || want === "מ")) {
@@ -253,7 +306,7 @@ function boxLoop(f: Feat): boolean {
   return f.closed > 0.45 && f.square && f.circ < 0.8;
 }
 function stick(f: Feat): boolean {
-  return f.tall && f.n <= 2 && f.closed < 0.34 && f.circ < 0.28;
+  return f.tall && f.n <= 2 && f.closed < 0.34 && f.circ < 0.28 && !f.hasFork;
 }
 
 type Scorer = (f: Feat) => number;
@@ -336,7 +389,12 @@ const SCORES: Record<string, Scorer> = {
     (f.footX > 0.5 ? 0.25 : -0.5) +
     (roundLoop(f) ? -0.2 : 0.1),
   ר: (f) => (f.n === 1 ? 0.25 : 0.1) + (f.closed < 0.5 ? 0.25 : 0) + (f.startY < 0.4 || f.topShare > 0.28 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
-  ש: (f) => (f.n >= 1 ? 0.15 : 0) + (f.wide || f.square ? 0.25 : 0) + (f.closed < 0.55 ? 0.2 : 0) + (f.n >= 2 ? 0.2 : 0) + (roundLoop(f) || stick(f) ? -0.45 : 0.1),
+  ש: (f) =>
+    (f.hasMidArm ? 0.3 : 0.08) +
+    (f.wide || f.square ? 0.2 : 0) +
+    (f.closed < 0.55 ? 0.15 : 0) +
+    (f.n >= 1 ? 0.15 : 0) +
+    (roundLoop(f) || stick(f) ? -0.45 : 0.1),
 };
 
 function scoreOf(id: string, f: Feat): number {
@@ -378,6 +436,16 @@ function ayinMissNote(f: Feat, rivalId: string): string | undefined {
   return undefined;
 }
 
+function shinMissNote(f: Feat, rivalId: string): string | undefined {
+  if (rivalId === "ע" || rivalId === "צ") {
+    return "Shin has three arms, like a W. Two arms is ayin.";
+  }
+  if (stick(f) || roundLoop(f)) {
+    return "Three arms, like a W, as on the chart. Open at the top.";
+  }
+  return undefined;
+}
+
 /** Every alef-bet letter (and finals) is scored. Trace mode verifies the shown letter, not the whole alphabet. */
 export function verifyLetterInk(
   strokes: InkStroke[],
@@ -387,7 +455,7 @@ export function verifyLetterInk(
   const want = baseLetter(expected);
   const f = analyze(strokes, opts?.height ?? 0);
   if (!f || !want) return { match: "empty", read: "", score: 0 };
-  if (f.path < 16) return { match: "empty", read: "", score: 0 };
+  if (f.path < (want === "י" ? 7 : 16)) return { match: "empty", read: "", score: 0 };
 
   const lined = (opts?.height ?? 0) > 40;
   const gate = gateLetter(want, f, lined);
@@ -396,7 +464,8 @@ export function verifyLetterInk(
   const rival = ranked[0];
   const qofNote = want === "ק" ? qofMissNote(f, gate) : undefined;
   const ayinNote = want === "ע" ? ayinMissNote(f, rival && rival.id !== want ? rival.id : "") : undefined;
-  const note = qofNote ?? ayinNote;
+  const shinNote = want === "ש" ? shinMissNote(f, rival && rival.id !== want ? rival.id : "") : undefined;
+  const note = qofNote ?? ayinNote ?? shinNote;
   const tBar = f.hasTopBar && !f.hasBottomBar;
 
   if (want === "ק" && f.footX < 0.42) {
@@ -414,11 +483,22 @@ export function verifyLetterInk(
 
   const hangTwins = want === "ק" && gate.ok ? new Set(["ד", "ר", "ן", "ך", "ו", "ה", "נ", "ף"]) : null;
   const ayinTwins =
-    want === "ע" && !roundLoop(f) && !stick(f) ? new Set(["ס", "ט", "ם", "מ", "ש", "כ", "נ", "ג"]) : null;
+    want === "ע" && !roundLoop(f) && !stick(f) ? new Set(["ס", "ט", "ם", "מ", "כ", "נ", "ג"]) : null;
+  const shinTwins =
+    want === "ש" && !roundLoop(f) && !stick(f) ? new Set(["מ", "ט", "ס", "ם", "א", "ת", "ח"]) : null;
+  const descTwins =
+    (want === "ך" || want === "ן" || want === "ף") && gate.ok ? new Set(["ד", "ר", "ו", "ה", "נ", "י", "ח"]) : null;
+  const yodTwins = want === "י" && gate.ok ? new Set(["ד", "ר", "ו", "ן", "ך"]) : null;
 
   if (rival && rival.id !== want && rival.score >= 0.52 && rival.score >= (shape?.score ?? 0) + 0.07) {
-    if (hangTwins?.has(rival.id) || ayinTwins?.has(rival.id)) {
-      /* stretch-fill twins — qof hang / open Y vs oval */
+    if (
+      hangTwins?.has(rival.id) ||
+      ayinTwins?.has(rival.id) ||
+      shinTwins?.has(rival.id) ||
+      descTwins?.has(rival.id) ||
+      yodTwins?.has(rival.id)
+    ) {
+      /* stretch-fill twins */
     } else if (isNear(want, rival.id) && (shape?.score ?? 0) >= 0.55 && (shape?.extra ?? 0) >= 0.55) {
       return { match: "close", read: want, score: shape?.score ?? rival.score };
     } else {
@@ -426,8 +506,21 @@ export function verifyLetterInk(
     }
   }
 
-  if (want === "ע" && shape && shape.score >= 0.55 && !roundLoop(f) && !stick(f) && !f.hasTopBar) {
+  if (want === "י" && shape && shape.score >= 0.5 && f.descender < 0.04 && f.h < 48) {
+    if (shape.score >= 0.82 && shape.cover >= 0.72) return { match: "exact", read: want, score: shape.score };
+    return { match: "close", read: want, score: shape.score };
+  }
+
+  if (want === "ע" && shape && shape.score >= 0.5 && !roundLoop(f) && !stick(f) && !f.hasTopBar) {
     const lead = shape.score + 0.04 >= (rival?.score ?? 0) || !rival || rival.id === want || Boolean(ayinTwins?.has(rival.id));
+    if (lead) {
+      if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
+      return { match: "close", read: want, score: shape.score };
+    }
+  }
+
+  if (want === "ש" && shape && shape.score >= 0.55 && !roundLoop(f) && !stick(f)) {
+    const lead = shape.score + 0.04 >= (rival?.score ?? 0) || !rival || rival.id === want || Boolean(shinTwins?.has(rival.id));
     if (lead) {
       if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
       return { match: "close", read: want, score: shape.score };

@@ -136,6 +136,56 @@ function tsadeY() {
   ];
 }
 
+function chartShin() {
+  const L = 250;
+  const R = 390;
+  const M = 320;
+  return [
+    line(L, TOP + 12, L + 6, BASE - 4, 20),
+    curve(
+      [
+        { x: L + 6, y: BASE - 4 },
+        { x: M, y: TOP + 10 },
+        { x: R - 6, y: BASE - 4 },
+      ],
+      16,
+    ),
+    line(R - 6, BASE - 4, R, TOP + 12, 20),
+  ];
+}
+
+function screenshotShin() {
+  return [
+    curve(
+      [
+        { x: 250, y: TOP + 28 },
+        { x: 258, y: BASE - 8 },
+        { x: 280, y: BASE - 4 },
+        { x: 300, y: TOP + 36 },
+        { x: 318, y: BASE - 6 },
+        { x: 340, y: BASE - 2 },
+        { x: 358, y: TOP + 8 },
+      ],
+      12,
+    ),
+  ];
+}
+
+function oneStrokeW() {
+  return [
+    curve(
+      [
+        { x: 240, y: TOP + 16 },
+        { x: 248, y: BASE - 4 },
+        { x: 290, y: TOP + 20 },
+        { x: 330, y: BASE - 4 },
+        { x: 372, y: TOP + 12 },
+      ],
+      16,
+    ),
+  ];
+}
+
 test("chart qof (open resh + hanging right leg) counts", () => {
   const r = grade(openHangQof(), "ק");
   assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
@@ -253,4 +303,61 @@ test("tsade with a right foot is not ayin", () => {
   const r = grade(tsadeY(), "ע");
   assert.equal(r.match, "wrong");
   assert.ok(r.read === "צ" || r.read === "ץ", JSON.stringify(r));
+});
+
+test("chart shin (three arms like a W) counts", () => {
+  const r = grade(chartShin(), "ש");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ש");
+});
+
+test("screenshot-like lopsided W counts as shin", () => {
+  const r = grade(screenshotShin(), "ש");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ש");
+});
+
+test("screenshot-like lopsided W counts as dotted shin", () => {
+  const r = grade(screenshotShin(), "שׁ");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ש");
+});
+
+test("one-stroke W counts as shin", () => {
+  const r = grade(oneStrokeW(), "ש");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ש");
+});
+
+test("two-arm ayin is not shin", () => {
+  const r = grade(chartAyin(), "ש");
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "ש");
+});
+
+test("closed oval is not shin", () => {
+  const r = grade(
+    [
+      curve(
+        [
+          { x: 280, y: TOP + 10 },
+          { x: 360, y: TOP + 10 },
+          { x: 370, y: BASE - 10 },
+          { x: 280, y: BASE - 10 },
+          { x: 270, y: TOP + 20 },
+          { x: 280, y: TOP + 10 },
+        ],
+        10,
+      ),
+    ],
+    "ש",
+  );
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "ש");
+});
+
+test("a single stem is not shin", () => {
+  const r = grade([line(320, TOP + 8, 320, BASE - 4)], "ש");
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "ש");
 });

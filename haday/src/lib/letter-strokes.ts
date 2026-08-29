@@ -53,10 +53,7 @@ const MODELS: Record<string, StrokeModel[]> = {
     { aspect: 0.9, paths: [P(22, 22, 18, 78, 50, 90, 82, 72, 78, 22), P(70, 28, 52, 48)] },
     { aspect: 0.92, paths: [P(18, 18, 18, 84, 82, 84, 82, 18), P(82, 18, 42, 52)] },
   ],
-  י: [
-    { aspect: 0.55, paths: [P(38, 22, 62, 22, 62, 52)] },
-    { aspect: 0.4, paths: [P(48, 22, 48, 48)] },
-  ],
+  י: [{ aspect: 0.55, paths: [P(38, 22, 62, 22, 62, 52)] }],
   כ: [
     { aspect: 0.85, paths: [P(24, 18, 78, 18, 86, 50, 78, 84, 24, 84)] },
     { aspect: 0.88, paths: [P(22, 16, 82, 16, 82, 84, 22, 84)] },
@@ -73,16 +70,12 @@ const MODELS: Record<string, StrokeModel[]> = {
   מ: [
     { aspect: 0.95, paths: [P(18, 82, 22, 28, 48, 16, 50, 52), P(50, 18, 82, 18, 82, 82, 48, 82)] },
     { aspect: 0.95, paths: [P(50, 10, 16, 88), P(50, 10, 84, 88), P(16, 88, 84, 88)] },
-    { aspect: 0.9, paths: [P(20, 84, 22, 20, 78, 20, 80, 84)] },
   ],
   ם: [
     { aspect: 0.95, paths: [P(22, 16, 80, 16, 80, 84, 22, 84, 22, 16)] },
     { aspect: 0.92, paths: [P(20, 18, 80, 18, 80, 82, 20, 82, 20, 18)] },
   ],
-  נ: [
-    { aspect: 0.7, paths: [P(28, 16, 72, 16, 72, 84, 24, 84)] },
-    { aspect: 0.65, paths: [P(30, 16, 74, 16, 74, 86)] },
-  ],
+  נ: [{ aspect: 0.7, paths: [P(28, 16, 72, 16, 72, 84, 24, 84)] }],
   ן: [
     { aspect: 0.28, paths: [P(40, 14, 62, 14, 62, 96)] },
     { aspect: 0.22, paths: [P(50, 10, 50, 96)] },
@@ -128,6 +121,8 @@ const MODELS: Record<string, StrokeModel[]> = {
     { aspect: 1.05, paths: [P(14, 28, 18, 84), P(18, 84, 50, 28, 82, 84), P(82, 84, 86, 28)] },
     { aspect: 1.05, paths: [P(14, 18, 14, 84, 50, 84, 50, 18), P(50, 84, 86, 84, 86, 18)] },
     { aspect: 1.0, paths: [P(16, 22, 16, 86, 50, 86, 84, 86, 84, 22), P(50, 86, 50, 36)] },
+    { aspect: 1.1, paths: [P(12, 20, 18, 88, 50, 22, 82, 88, 88, 18)] },
+    { aspect: 1.0, paths: [P(16, 38, 20, 88), P(20, 88, 48, 42, 76, 88), P(76, 88, 86, 12)] },
   ],
   ת: [
     { aspect: 0.88, paths: [P(20, 16, 82, 16, 82, 88), P(20, 16, 20, 88, 42, 88)] },
@@ -221,7 +216,7 @@ export function rankStrokeModels(strokes: InkStroke[]): { id: string; score: num
       const extra = coverage(inkU, modelPts, 13);
       const aInk = b.w / b.h;
       const rel = aInk > model.aspect ? aInk / model.aspect : model.aspect / aInk;
-      const aspectMul = rel > 1.7 ? 0.8 : rel > 1.4 ? 0.92 : 1;
+      const aspectMul = rel > 2.2 ? 0.6 : rel > 1.7 ? 0.75 : rel > 1.4 ? 0.9 : 1;
       const score = (cover * 0.5 + extra * 0.5) * aspectMul;
       if (score > best.score) best = { score, cover, extra };
     }
@@ -245,8 +240,8 @@ export function modelToPad(
 ): InkPoint[][] {
   const model = strokeModel(expected);
   if (!model) return [];
-  const padW = width * 0.62;
   const padH = height * (region.bottom - region.top);
+  const padW = Math.min(width * 0.62, padH * Math.max(model.aspect, 0.32) * 1.28);
   const ox = (width - padW) / 2;
   const oy = height * region.top;
   return model.paths.map((path) =>
