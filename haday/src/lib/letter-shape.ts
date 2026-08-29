@@ -162,7 +162,13 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
   let hasSlash = false;
   for (const s of clean) {
     if (s === longest) continue;
-    if (strokeStraight(s) && pathOf(s) > span * 0.32) hasSlash = true;
+    if (strokeStraight(s) && pathOf(s) > span * 0.32) {
+      const mid = s[Math.floor(s.length / 2)];
+      const xn = (mid.x - minX) / w;
+      const yn = (mid.y - minY) / h;
+      // A cap sitting on the roof is not a slash. A real slash crosses the body.
+      if (xn > 0.18 && xn < 0.82 && yn > 0.22 && yn < 0.8) hasSlash = true;
+    }
   }
   if (clean.length === 1 && longest.length > 8) {
     const mid = longest[Math.floor(longest.length / 2)];
@@ -303,8 +309,8 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (f.small && want !== "י" && f.path < 70) return { ok: false, as: "י" };
   if (want === "ס" && f.hasSlash) return { ok: false, as: "" };
   if (want === "ס" && f.n > 4) return { ok: false, as: "" };
-  if (want === "ס" && f.n === 1 && f.closed < 0.32 && f.circ < 0.22) return { ok: false, as: "" };
-  if (want === "ס" && f.hasNose && f.n >= 2 && f.closed < 0.55) return { ok: false, as: "ט" };
+  if (want === "ס" && f.n === 1 && f.closed < 0.28 && f.circ < 0.18 && !f.hasTopBar) return { ok: false, as: "" };
+  if (want === "ס" && f.hasNose && f.n >= 2 && f.closed < 0.4 && !f.hasTopBar) return { ok: false, as: "ט" };
   if (want === "ם" && f.closed < 0.45) return { ok: false, as: "" };
   if (want === "י" && (dropped || f.path > 140 || f.h > 48)) return { ok: false, as: "ו" };
   if (want === "ו" && (f.descender >= 0.12 || f.belowShare >= 0.22)) return { ok: false, as: "ן" };
@@ -346,7 +352,7 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (want === "ח" && !f.leftJoinsRoof) return { ok: false, as: "ה" };
   if (want === "ה" && f.leftJoinsRoof) return { ok: false, as: "ח" };
 
-  const tBar = f.hasTopBar && !f.hasBottomBar;
+  const tBar = f.hasTopBar && !f.hasBottomBar && f.closed < 0.35 && f.circ < 0.28;
   if (tBar && (want === "כ" || want === "ב" || want === "פ" || want === "ס" || want === "ם" || want === "מ")) {
     return { ok: false, as: f.leftShare < 0.3 ? "ד" : "ז" };
   }
@@ -444,11 +450,12 @@ const SCORES: Record<string, Scorer> = {
   ם: (f) => (boxLoop(f) || (f.closed > 0.5 && f.square) ? 0.55 : f.closed > 0.35 ? 0.25 : 0) + (f.square ? 0.2 : 0) + (f.circ > 0.8 ? -0.3 : 0.1) + (stick(f) ? -0.5 : 0.1),
   נ: (f) => (f.n <= 2 ? 0.25 : 0) + (f.closed < 0.5 ? 0.25 : 0) + (!f.small && !f.tall ? 0.15 : 0) + (roundLoop(f) || (f.tall && f.n === 1) ? -0.4 : 0.1),
   ס: (f) =>
-    ((roundLoop(f) || (f.closed > 0.42 && f.circ > 0.22)) && !f.hasSlash ? 0.65 : f.closed > 0.35 ? 0.25 : 0) +
+    ((roundLoop(f) || (f.closed > 0.35 && f.circ > 0.16) || (f.hasTopBar && f.closed > 0.28)) && !f.hasSlash ? 0.65 : f.closed > 0.3 ? 0.25 : 0) +
     (f.n <= 2 ? 0.15 : f.n <= 4 && !f.hasSlash ? 0.08 : -0.35) +
     (f.square ? 0.1 : 0) +
-    (f.hasSlash || f.closed < 0.35 ? -0.55 : 0.1) +
-    (f.hasNose && f.n >= 2 ? -0.25 : 0),
+    (f.hasTopBar ? 0.12 : 0) +
+    (f.hasSlash || f.closed < 0.28 ? -0.55 : 0.1) +
+    (f.hasNose && f.n >= 2 && !f.hasTopBar ? -0.25 : 0),
   פ: (f) => (f.closed < 0.6 ? 0.25 : -0.1) + (f.n <= 2 ? 0.2 : 0) + (f.tall ? -0.3 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.15),
   ף: (f) => (f.tall ? 0.3 : 0) + (f.descender > 0.04 || f.belowShare > 0.1 ? 0.4 : -0.35) + (f.n <= 2 ? 0.1 : 0) + (f.wide || roundLoop(f) || f.small ? -0.35 : 0.1),
   צ: (f) => (f.hasFork ? 0.4 : 0.1) + (f.n <= 3 ? 0.15 : 0) + (f.closed < 0.55 ? 0.15 : 0) + (f.tall ? -0.2 : 0.1) + (roundLoop(f) || stick(f) ? -0.4 : 0.1),
@@ -536,8 +543,8 @@ function yodMissNote(f: Feat): string | undefined {
 }
 
 function samekhMissNote(f: Feat, rivalId: string): string | undefined {
-  if (rivalId === "ט") return "Samekh is only the closed oval. The little inner hook is tet.";
-  if (f.hasSlash) return "Closed oval. No slash through it.";
+  if (rivalId === "ט") return "Samekh is closed, with a small cap that overhangs left. The inner hook is tet.";
+  if (f.hasSlash) return "No slash through the body. A small cap on top is part of samekh.";
   return undefined;
 }
 
@@ -556,7 +563,7 @@ export function enrollLetterInk(
   const ranked = rankStrokeModels(strokes);
   const shape = ranked.find((r) => r.id === want);
   const rival = ranked[0];
-  const tBar = f.hasTopBar && !f.hasBottomBar;
+  const tBar = f.hasTopBar && !f.hasBottomBar && f.closed < 0.35 && f.circ < 0.28;
   if (want === "ק" && f.footX < 0.42) {
     return { ok: false, note: qofMissNote(f, gate) ?? "That looks like a Latin P. Qof’s leg is on the right." };
   }
@@ -605,7 +612,7 @@ export function verifyLetterInk(
   const yodNote = want === "י" ? yodMissNote(f) : undefined;
   const samekhNote = want === "ס" ? samekhMissNote(f, rival && rival.id !== want ? rival.id : gate.as) : undefined;
   const note = qofNote ?? vavNote ?? ayinNote ?? shinNote ?? yodNote ?? samekhNote;
-  const tBar = f.hasTopBar && !f.hasBottomBar;
+  const tBar = f.hasTopBar && !f.hasBottomBar && f.closed < 0.35 && f.circ < 0.28;
   if (want === "ק" && f.footX < 0.42) {
     return { match: "wrong", read: "", score: shape?.score ?? 0, note };
   }
@@ -637,8 +644,8 @@ export function verifyLetterInk(
   const yodTwins = want === "י" ? new Set(["ד", "ר", "ו", "ן", "ך"]) : null;
   const heTwins = want === "ה" && !f.leftJoinsRoof ? new Set(["ח", "ת", "ד", "ר"]) : null;
   const samekhTwins =
-    want === "ס" && !f.hasSlash && (f.closed > 0.55 || (f.closed > 0.38 && !f.hasNose) || f.n >= 2)
-      ? new Set(["ט", "ם", "מ", "ע", "כ", "ת", "ה", "ח"])
+    want === "ס" && !f.hasSlash && (f.closed > 0.28 || f.hasTopBar || f.n >= 2 || f.circ > 0.16)
+      ? new Set(["ט", "ם", "מ", "ע", "כ", "ת", "ה", "ח", "ד", "ז"])
       : null;
 
   if (rival && rival.id !== want && rival.score >= 0.52 && rival.score >= (shape?.score ?? 0) + 0.07) {
@@ -680,7 +687,7 @@ export function verifyLetterInk(
     }
   }
 
-  if (want === "ס" && shape && shape.score >= 0.5 && !f.hasSlash && (f.closed > 0.38 || f.n >= 2 || f.circ > 0.22)) {
+  if (want === "ס" && shape && shape.score >= 0.5 && !f.hasSlash && (f.closed > 0.28 || f.hasTopBar || f.n >= 2 || f.circ > 0.16)) {
     const lead = shape.score + 0.04 >= (rival?.score ?? 0) || !rival || rival.id === want || Boolean(samekhTwins?.has(rival.id));
     if (lead) {
       if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };

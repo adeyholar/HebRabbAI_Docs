@@ -674,6 +674,38 @@ test("chart tet is not samekh", () => {
   assert.notEqual(r.read, "ס");
 });
 
+function screenshotCappedSamekh() {
+  const cy = (TOP + BASE) / 2;
+  const loop = curve(
+    [
+      { x: 318, y: cy - 22 },
+      { x: 342, y: cy - 20 },
+      { x: 350, y: cy },
+      { x: 340, y: cy + 22 },
+      { x: 320, y: cy + 26 },
+      { x: 300, y: cy + 8 },
+      { x: 302, y: cy - 8 },
+      { x: 314, y: cy - 18 },
+    ],
+    10,
+  );
+  const cap = line(316, cy - 20, 298, cy - 28, 8);
+  return [loop, cap];
+}
+
+test("screenshot-like samekh with a left cap counts", () => {
+  const r = grade(screenshotCappedSamekh(), "ס");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ס");
+});
+
+test("a slash through the body is not samekh", () => {
+  const loop = oval(240, (TOP + BASE) / 2, 40, 34);
+  const slash = line(210, TOP + 16, 270, BASE - 16, 16);
+  const r = grade([loop, slash], "ס");
+  assert.equal(r.match, "wrong");
+});
+
 test("Latin P is still not qof even against a hanging-qof sample", () => {
   const hanging = openHangQof(40);
   const r = verifyLetterInk(latinP(40), "ק", { height: H, samples: [hanging] });
