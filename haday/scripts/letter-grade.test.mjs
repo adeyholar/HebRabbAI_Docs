@@ -3,7 +3,7 @@ import test from "node:test";
 import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
-const { verifyLetterInk } = await jiti.import("/workspace/src/lib/letter-shape.ts");
+const { verifyLetterInk, enrollLetterInk } = await jiti.import("/workspace/src/lib/letter-shape.ts");
 const { strokeModels } = await jiti.import("/workspace/src/lib/letter-strokes.ts");
 const { staveRegion } = await jiti.import("/workspace/src/lib/letter-models.ts");
 
@@ -579,5 +579,27 @@ test("joined chet still counts as chet", () => {
 test("chart he is not chet", () => {
   const r = grade(modelInk("ה", 0), "ח");
   assert.equal(r.match, "wrong");
+  assert.equal(r.read, "ה");
+});
+
+test("a fair handwritten he can be saved as a sample", () => {
+  const r = enrollLetterInk(screenshotHe(12), "ה", { height: H });
+  assert.equal(r.ok, true, JSON.stringify(r));
+});
+
+test("Latin P cannot be saved as qof", () => {
+  const r = enrollLetterInk(latinP(2), "ק", { height: H });
+  assert.equal(r.ok, false);
+});
+
+test("Latin T cannot be saved as kaf", () => {
+  const r = enrollLetterInk(latinT(), "כ", { height: H });
+  assert.equal(r.ok, false);
+});
+
+test("a saved he sample matches a similar he", () => {
+  const sample = screenshotHe(12);
+  const r = verifyLetterInk(screenshotHe(16), "ה", { height: H, samples: [sample] });
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
   assert.equal(r.read, "ה");
 });

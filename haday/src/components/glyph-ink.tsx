@@ -8,6 +8,7 @@ import { writeChecksLeft } from "@/lib/write-cap";
 import { type HandMatch } from "@/lib/hebrew";
 import { cn } from "@/lib/cn";
 import { writingHint } from "@/lib/letter-models";
+import { sampleCount, saveHandSample } from "@/lib/hand-style";
 
 type Result = { match: HandMatch; read: string; note?: string; counted?: boolean };
 
@@ -30,6 +31,7 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
   const [tries, setTries] = useState(0);
   const [left, setLeft] = useState(writeChecksLeft);
   const [sample, setSample] = useState(allowSample && trace);
+  const [handNote, setHandNote] = useState<string | null>(null);
   const sampleGlyph = ghost || expected;
   const modelOn = showModel ?? (allowSample && sample);
   const lineHint =
@@ -50,6 +52,7 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
     setEmpty(true);
     setResult(null);
     setTries(0);
+    setHandNote(null);
   }
 
   async function check() {
@@ -68,6 +71,16 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
     setResult(next);
     playGrade(next.match === "exact" || next.match === "close");
     setBusy(false);
+  }
+
+  function saveHand() {
+    const strokes = pad.current?.getStrokes() ?? [];
+    const next = saveHandSample(expected, strokes, { height: pad.current?.getHeight() ?? 0, replace: true });
+    if (!next.ok) {
+      setHandNote(next.note || "That doesn’t match this letter.");
+      return;
+    }
+    setHandNote(`Saved as your ${expected} (${next.n} of 5). Later writing will use it.`);
   }
 
   function selfGrade(pass: boolean) {
@@ -124,6 +137,18 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
                 ? `Read as ${result.read || expected}`
                 : `Not that ${mode}. Target: ${expected}${result.read && result.read !== expected ? ` · that looks like ${result.read}` : ""}`}
           </p>
+          {result.match === "wrong" && mode === "letter" && (
+            <div className="mt-3">
+              <Button type="button" variant="outline" className="w-full" onClick={saveHand}>
+                Save as my handwriting
+              </Button>
+              <p className="mt-1 text-center text-xs text-muted">
+                Keep this if it is your {expected}. Chart look-alikes still will not save. {sampleCount(expected)} of 5
+                stored.
+              </p>
+              {handNote && <p className="mt-1 text-center text-sm text-ink">{handNote}</p>}
+            </div>
+          )}
         </div>
       )}
       {result && result.match === "empty" && (

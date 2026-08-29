@@ -1,5 +1,6 @@
 import { matchLetter, matchVowel, type HandMatch } from "@/lib/hebrew";
 import { verifyLetterInk, type InkStroke } from "@/lib/letter-shape";
+import { rememberPassingHand, samplesFor } from "@/lib/hand-style";
 import { readHandwriting } from "@/lib/read-handwriting";
 import { takeWriteCheck } from "@/lib/write-cap";
 
@@ -13,8 +14,15 @@ export async function checkGlyphInk(
   opts?: { trace?: boolean; height?: number },
 ): Promise<GlyphCheck> {
   if (mode === "letter") {
-    const local = verifyLetterInk(strokes ?? [], expected, { trace: opts?.trace, height: opts?.height });
+    const local = verifyLetterInk(strokes ?? [], expected, {
+      trace: opts?.trace,
+      height: opts?.height,
+      samples: samplesFor(expected),
+    });
     if (local.match === "exact" || local.match === "close" || local.match === "wrong") {
+      if (local.match === "exact" && strokes?.length) {
+        rememberPassingHand(expected, strokes, opts?.height);
+      }
       return { match: local.match, read: local.read, note: local.note, counted: true };
     }
   }

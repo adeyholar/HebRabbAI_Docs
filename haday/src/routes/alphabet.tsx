@@ -18,6 +18,7 @@ import { cn } from "@/lib/cn";
 import { GradeBanner } from "@/components/grade-banner";
 import { GlyphInk } from "@/components/glyph-ink";
 import { LetterWrite } from "@/components/letter-write";
+import { HandTrain } from "@/components/hand-train";
 import { ClosedBook } from "@/components/closed-book";
 import { playGrade } from "@/lib/sfx";
 import { useStudy } from "@/lib/store";
@@ -25,7 +26,7 @@ import { useStudy } from "@/lib/store";
 export const Route = createFileRoute("/alphabet")({ component: AlphabetPage });
 
 function AlphabetPage() {
-  const [tab, setTab] = useState<"letters" | "vowels" | "write" | "drill" | "exam">("letters");
+  const [tab, setTab] = useState<"letters" | "vowels" | "write" | "hand" | "drill" | "exam">("letters");
   const [active, setActive] = useState<HebrewLetter>(CONSONANTS[0]);
 
   return (
@@ -33,11 +34,11 @@ function AlphabetPage() {
       <Panel>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Alef-bet</h1>
         <p className="mt-1 text-sm text-muted">
-          Consonants right to left, a closed-book exam from memory, and practice that follows what you miss. Syllable
-          cuts (open/closed, shewa, dagesh) live under Game → Syllables.
+          Consonants right to left, a closed-book exam from memory, and practice that follows what you miss. Train your
+          handwriting so Write grades your hand, not only the printed chart. Syllable cuts live under Game → Syllables.
         </p>
-        <div className="mt-4 flex gap-2">
-          {(["letters", "vowels", "write", "drill", "exam"] as const).map((t) => (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(["letters", "vowels", "write", "hand", "drill", "exam"] as const).map((t) => (
             <Button key={t} size="sm" variant={tab === t ? "primary" : "outline"} onClick={() => setTab(t)}>
               {t === "letters"
                 ? "Letters"
@@ -45,9 +46,11 @@ function AlphabetPage() {
                   ? "Vowels"
                   : t === "write"
                     ? "Write"
-                    : t === "drill"
-                      ? "Quiz"
-                      : "Exam"}
+                    : t === "hand"
+                      ? "My hand"
+                      : t === "drill"
+                        ? "Quiz"
+                        : "Exam"}
             </Button>
           ))}
         </div>
@@ -111,6 +114,8 @@ function AlphabetPage() {
       )}
 
       {tab === "write" && <LetterWrite />}
+
+      {tab === "hand" && <HandTrain />}
 
       {tab === "drill" && <FoundationQuiz />}
 

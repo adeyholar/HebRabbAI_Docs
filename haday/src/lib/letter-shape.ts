@@ -1,7 +1,7 @@
 import { type HandMatch } from "@/lib/hebrew";
 import { FINAL_DESCENDERS, PAD_BASE, PAD_TOP } from "@/lib/pad-guides";
 import { letterModel, modelGlyph } from "@/lib/letter-models";
-import { matchStrokeModel, rankStrokeModels } from "@/lib/letter-strokes";
+import { matchStrokeModel, rankStrokeModels, scoreInkToPaths } from "@/lib/letter-strokes";
 
 export type InkPoint = { x: number; y: number };
 export type InkStroke = InkPoint[];
@@ -518,11 +518,51 @@ function yodMissNote(f: Feat): string | undefined {
   return undefined;
 }
 
+/** Save this ink as the student’s hand only if it is not a known imposter. */
+export function enrollLetterInk(
+  strokes: InkStroke[],
+  expected: string,
+  opts?: { height?: number },
+): { ok: boolean; note?: string } {
+  const want = baseLetter(expected);
+  const f = analyze(strokes, opts?.height ?? 0);
+  if (!f || !want) return { ok: false, note: "Draw the letter larger, between the two lines." };
+  if (f.path < (want === "י" ? 7 : 16)) return { ok: false, note: "Draw the letter larger, between the two lines." };
+  const lined = (opts?.height ?? 0) > 40;
+  const gate = gateLetter(want, f, lined);
+  const ranked = rankStrokeModels(strokes);
+  const shape = ranked.find((r) => r.id === want);
+  const rival = ranked[0];
+  const tBar = f.hasTopBar && !f.hasBottomBar;
+  if (want === "ק" && f.footX < 0.42) {
+    return { ok: false, note: qofMissNote(f, gate) ?? "That looks like a Latin P. Qof’s leg is on the right." };
+  }
+  if (tBar && (want === "כ" || want === "ב" || want === "פ" || want === "ס" || want === "ם" || want === "מ")) {
+    return { ok: false, note: "That looks like a Latin T. This letter needs an open back and a floor." };
+  }
+  if (!gate.ok) {
+    const named = gate.as && gate.as !== want ? ` That looks more like ${gate.as}.` : "";
+    return {
+      ok: false,
+      note:
+        (want === "ק" ? qofMissNote(f, gate) : undefined) ||
+        (want === "ע" ? ayinMissNote(f, gate.as) : undefined) ||
+        (want === "ש" ? shinMissNote(f, gate.as) : undefined) ||
+        (want === "י" ? yodMissNote(f) : undefined) ||
+        `Use the chart form for this letter.${named}`,
+    };
+  }
+  if (rival && rival.id !== want && !isNear(want, rival.id) && rival.score >= 0.72 && rival.score >= (shape?.score ?? 0) + 0.18) {
+    return { ok: false, note: `That looks more like ${rival.id}. Use the chart form.` };
+  }
+  return { ok: true };
+}
+
 /** Every alef-bet letter (and finals) is scored. Trace mode verifies the shown letter, not the whole alphabet. */
 export function verifyLetterInk(
   strokes: InkStroke[],
   expected: string,
-  opts?: { trace?: boolean; height?: number },
+  opts?: { trace?: boolean; height?: number; samples?: InkStroke[][] },
 ): { match: HandMatch; read: string; score: number; note?: string } {
   const want = baseLetter(expected);
   const f = analyze(strokes, opts?.height ?? 0);
@@ -550,6 +590,17 @@ export function verifyLetterInk(
 
   if (!gate.ok) {
     return { match: "wrong", read: gate.as === want ? "" : gate.as, score: shape?.score ?? 0.12, note };
+  }
+
+  if (opts?.samples?.length) {
+    let best = 0;
+    for (const sample of opts.samples) {
+      const sc = scoreInkToPaths(strokes, sample);
+      if (sc.score > best) best = sc.score;
+    }
+    if (best >= 0.64) {
+      return { match: best >= 0.8 ? "exact" : "close", read: want, score: best };
+    }
   }
 
   const hangTwins = want === "ק" ? new Set(["ד", "ר", "ן", "ך", "ו", "ה", "נ", "ף"]) : null;

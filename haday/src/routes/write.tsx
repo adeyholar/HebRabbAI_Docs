@@ -10,6 +10,7 @@ import { Panel } from "@/components/panel";
 import { dageshCoach, isSingleLetterLemma, lettersOnly, matchHandwriting, type HandMatch } from "@/lib/hebrew";
 import { checkGlyphInk } from "@/lib/check-glyph";
 import { writingHint } from "@/lib/letter-models";
+import { saveHandSample } from "@/lib/hand-style";
 import { queueForFocus, useStudy } from "@/lib/store";
 import { itemsForWeek, POS_LABEL, shuffle, type VocabItem } from "@/lib/vocab";
 import { takeWriteCheck, writeChecksLeft, WRITE_DAILY_LIMIT } from "@/lib/write-cap";
@@ -53,6 +54,8 @@ function WritePage() {
   const [inputMethod, setInputMethod] = useState<InputMethod>("type");
   const [typed, setTyped] = useState("");
   const [tries, setTries] = useState(0);
+  const [lastInk, setLastInk] = useState<{ x: number; y: number }[][] | null>(null);
+  const [handNote, setHandNote] = useState<string | null>(null);
   const ratedRef = useRef(false);
 
   useEffect(() => {
@@ -80,6 +83,8 @@ function WritePage() {
     setTyped("");
     setResult(null);
     setTries(0);
+    setLastInk(null);
+    setHandNote(null);
     ratedRef.current = false;
     if (!memorize) {
       setRecallLeft(0);
@@ -113,6 +118,8 @@ function WritePage() {
     pad.current?.clear();
     setEmpty(true);
     setTyped("");
+    setLastInk(null);
+    setHandNote(null);
     setI((n) => n + 1);
   }
 
@@ -121,6 +128,8 @@ function WritePage() {
     pad.current?.clear();
     setEmpty(true);
     setTyped("");
+    setLastInk(null);
+    setHandNote(null);
   }
 
   function restartRound() {
@@ -150,6 +159,9 @@ function WritePage() {
     const strokes = pad.current?.getStrokes() ?? [];
     const image = pad.current?.toImage();
     if (!strokes.length && !image) return;
+
+    setLastInk(strokes);
+    setHandNote(null);
 
     if (isSingleLetterLemma(item.hebrew)) {
       setBusy(true);
@@ -404,7 +416,25 @@ function WritePage() {
         </p>
       )}
       {result && result.match !== "empty" && (
-        <ResultPanel item={item} result={result} canRetry={canRetry} hideAnswer={canRetry} onNext={nextCard} onRetry={retryOnce} />
+        <ResultPanel
+          item={item}
+          result={result}
+          canRetry={canRetry}
+          hideAnswer={canRetry}
+          ink={lastInk}
+          handNote={handNote}
+          onSaveHand={() => {
+            if (!lastInk) return;
+            const next = saveHandSample(item.hebrew, lastInk, { height: pad.current?.getHeight() ?? 0, replace: true });
+            setHandNote(
+              next.ok
+                ? `Saved as your handwriting (${next.n} of 5). Later writing will use it.`
+                : next.note || "That doesn’t match this letter.",
+            );
+          }}
+          onNext={nextCard}
+          onRetry={retryOnce}
+        />
       )}
     </>
   );
@@ -415,6 +445,9 @@ function ResultPanel({
   result,
   canRetry,
   hideAnswer,
+  ink,
+  handNote,
+  onSaveHand,
   onNext,
   onRetry,
 }: {
@@ -422,6 +455,9 @@ function ResultPanel({
   result: Result;
   canRetry: boolean;
   hideAnswer: boolean;
+  ink: { x: number; y: number }[][] | null;
+  handNote: string | null;
+  onSaveHand: () => void;
   onNext: () => void;
   onRetry: () => void;
 }) {
@@ -454,6 +490,17 @@ function ResultPanel({
         <p className="mt-2 text-sm text-ink">{writingHint(item.hebrew)}</p>
       )}
       {result.note && <p className="mt-2 text-sm text-muted">{result.note}</p>}
+      {!ok && isSingleLetterLemma(item.hebrew) && ink && (
+        <div className="mt-3">
+          <Button type="button" variant="outline" className="w-full" onClick={onSaveHand}>
+            Save as my handwriting
+          </Button>
+          <p className="mt-1 text-xs text-muted">
+            Keep this if it is your {item.hebrew}. A Latin look-alike will not save.
+          </p>
+          {handNote && <p className="mt-1 text-sm text-ink">{handNote}</p>}
+        </div>
+      )}
       {coach && (
         <p className="mt-3 rounded-[var(--radius-md)] bg-surface px-3 py-2 text-sm text-ink">
           {coach}

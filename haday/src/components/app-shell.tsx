@@ -23,6 +23,8 @@ import {
 import { cn } from "@/lib/cn";
 import { snapshotOf, useStudy } from "@/lib/store";
 import { loadProgress, saveProgress } from "@/lib/progress";
+import { loadHand, mergeHand, subscribeHand } from "@/lib/hand-style";
+import { loadHandBank, saveHandBank } from "@/lib/hand-sync";
 import { RedirectToSignIn, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { BrandLockup } from "@/components/brand-lockup";
@@ -75,7 +77,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
     let cancelled = false;
     let unsub: (() => void) | undefined;
+    let unsubHand: (() => void) | undefined;
     let timer: number | undefined;
+    let handTimer: number | undefined;
 
     (async () => {
       let remote: Awaited<ReturnType<typeof loadProgress>> | undefined;
@@ -119,12 +123,28 @@ export function AppShell({ children }: { children: ReactNode }) {
           void saveProgress({ data: snapshotOf(state) }).catch(() => {});
         }, 700);
       });
+
+      try {
+        const remoteHand = await loadHandBank();
+        if (!cancelled) mergeHand(remoteHand);
+      } catch {
+        /* keep local samples */
+      }
+      if (cancelled) return;
+      unsubHand = subscribeHand(() => {
+        window.clearTimeout(handTimer);
+        handTimer = window.setTimeout(() => {
+          void saveHandBank({ data: loadHand() }).catch(() => {});
+        }, 800);
+      });
     })();
 
     return () => {
       cancelled = true;
       unsub?.();
+      unsubHand?.();
       if (timer !== undefined) window.clearTimeout(timer);
+      if (handTimer !== undefined) window.clearTimeout(handTimer);
     };
   }, [isLogin, userId]);
 

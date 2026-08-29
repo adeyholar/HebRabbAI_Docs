@@ -226,6 +226,20 @@ export function rankStrokeModels(strokes: InkStroke[]): { id: string; score: num
   return ranked;
 }
 
+/** Chamfer a live scribble against stored unit-space paths (a user’s own sample). */
+export function scoreInkToPaths(
+  strokes: InkStroke[],
+  paths: InkPoint[][],
+): { score: number; cover: number; extra: number } {
+  const ink = flatten(strokes);
+  if (ink.length < 6 || !paths.length) return { score: 0, cover: 0, extra: 0 };
+  const modelPts = toUnit(paths.flatMap((p) => densify(p)));
+  const inkU = toUnit(ink);
+  const cover = coverage(modelPts, inkU, 14);
+  const extra = coverage(inkU, modelPts, 15);
+  return { score: cover * 0.5 + extra * 0.5, cover, extra };
+}
+
 export function matchStrokeModel(strokes: InkStroke[], expected: string): { score: number; cover: number; extra: number } | null {
   const id = modelGlyph(expected);
   if (!MODELS[id]) return null;

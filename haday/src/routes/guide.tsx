@@ -130,11 +130,11 @@ function GuidePage() {
         <h2 className="font-display text-2xl font-bold text-ink">Study toolbox</h2>
         <dl className="mt-3 space-y-3 text-sm">
           <Tool name="Drill" to="/drill" body="Flip cards. Grade yourself. SRS brings weak words back." />
-          <Tool name="Write" to="/write" body="Type or hand-write the Hebrew. Memorize mode hides the lemma first." />
+          <Tool name="Write" to="/write" body="Type or hand-write the Hebrew. Memorize mode hides the lemma first. After a miss you can save that scribble as your handwriting." />
           <Tool name="Quiz" to="/quiz" body="Multiple choice or type the English gloss." />
           <Tool name="Match" to="/match" body="Select the pair: Hebrew tile to English tile, then pick the lemma from a pad. Misses come back." />
           <Tool name="Lex" to="/browse" body="Browse the week’s lemmas with verses." />
-          <Tool name="Alef" to="/alphabet" body="Letters, vowel charts, and quizzes — including shewa and shureq." />
+          <Tool name="Alef" to="/alphabet" body="Letters, vowel charts, Write, and My hand — train each letter five times so later writing is graded against your hand." />
         </dl>
         <p className="mt-4 text-sm text-muted">
           On Home, pick a course week before you drill. Weak cards can be focused from the Needs work list.
