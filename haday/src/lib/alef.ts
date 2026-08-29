@@ -1,7 +1,8 @@
 import { VOWELS, WRITE_LETTERS } from "@/lib/alphabet";
-import { pickStudyRound, type FocusMode } from "@/lib/store";
+import { pickByBkt } from "@/lib/bkt";
+import type { FocusMode } from "@/lib/store";
 import { isWeak, type CardState } from "@/lib/srs";
-import { shuffle, type VocabItem } from "@/lib/vocab";
+import { shuffle } from "@/lib/vocab";
 
 export type AlefKind = "letter" | "vowel";
 
@@ -49,29 +50,13 @@ export function alefByKeys(keys: string[]): AlefItem[] {
   return keys.map((k) => map.get(k)).filter((x): x is AlefItem => Boolean(x));
 }
 
-function asStub(item: AlefItem): VocabItem {
-  return {
-    id: item.key,
-    hebrew: item.glyph,
-    translit: "",
-    gloss: item.name,
-    alts: [],
-    pos: "particle",
-    chapter: 1,
-    freq: 0,
-  };
-}
-
 export function pickAlefRound(
   pool: AlefItem[],
-  cards: Record<string, CardState>,
-  focus: FocusMode,
+  _cards: Record<string, CardState>,
+  _focus: FocusMode,
   limit = 12,
 ): AlefItem[] {
-  const stubs = pool.map(asStub);
-  const picked = pickStudyRound(stubs, cards, focus, limit);
-  const map = new Map(pool.map((x) => [x.key, x]));
-  return picked.map((s) => map.get(s.id)).filter((x): x is AlefItem => Boolean(x));
+  return pickByBkt(pool, limit);
 }
 
 export function alefWeakKeys(cards: Record<string, CardState>): string[] {

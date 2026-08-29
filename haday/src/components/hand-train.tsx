@@ -12,12 +12,15 @@ import {
   subscribeHand,
 } from "@/lib/hand-style";
 import { writingHint } from "@/lib/letter-models";
+import { alefKey } from "@/lib/alef";
+import { useStudy } from "@/lib/store";
 import { cn } from "@/lib/cn";
 
 const TRAIN_LETTERS = WRITE_LETTERS.filter((l) => l.id !== "sin");
 
 export function HandTrain() {
   const pad = useRef<InkPadHandle>(null);
+  const rate = useStudy((s) => s.rate);
   const [active, setActive] = useState<HebrewLetter>(TRAIN_LETTERS[0]);
   const [empty, setEmpty] = useState(true);
   const [n, setN] = useState(() => sampleCount(active.letter));
@@ -49,6 +52,7 @@ export function HandTrain() {
     const strokes = pad.current?.getStrokes() ?? [];
     const height = pad.current?.getHeight() ?? 0;
     const next = saveHandSample(active.letter, strokes, { height, replace: true });
+    rate(alefKey("letter", active.id), next.ok ? "good" : "again");
     if (!next.ok) {
       setNote(next.note || "That doesn’t match this letter.");
       setOkNote(null);
@@ -79,10 +83,10 @@ export function HandTrain() {
       <Panel>
         <h2 className="font-display text-2xl font-bold text-ink">Train my hand</h2>
         <p className="mt-2 text-sm text-muted">
-          Write each letter {HAND_GOAL} times, tracing the faint chart. HaDay keeps those samples and grades your later
-          writing against <em>your</em> hand — not only the printed block form. Latin look-alikes (a T for kaf, a P for
-          qof) are still rejected. You do not have to finish the whole alef-bet first; train a letter when you want it
-          to stick.
+          Write each letter {HAND_GOAL} times, tracing the faint chart. Those samples blend into one living shape for
+          that letter, and the pass bar eases a little toward your hand. Latin look-alikes (a T for kaf, a P for qof)
+          are still rejected. You do not have to finish the whole alef-bet first; train a letter when you want it to
+          stick.
         </p>
         <p className="mt-2 text-sm text-ink">
           {stats.full} letter{stats.full === 1 ? "" : "s"} ready · {stats.samples} sample

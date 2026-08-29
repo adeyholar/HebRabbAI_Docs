@@ -107,3 +107,9 @@ export function isWeak(card: CardState | undefined): boolean {
   const c = hydrateCard(card);
   return c.misses > 0 || c.lapses > 0 || weaknessScore(c) >= 0.28;
 }
+
+/** Queue a look-alike without counting a miss on it. */
+export function nudgeDue(card: CardState | undefined, now = Date.now()): CardState {
+  const prev = hydrateCard(card, now);
+  return { ...prev, due: Math.min(prev.due || now, now) };
+}

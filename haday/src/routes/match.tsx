@@ -5,8 +5,10 @@ import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
 import { GradeBanner } from "@/components/grade-banner";
 import { Panel } from "@/components/panel";
-import { itemsForWeek, shuffle, type VocabItem } from "@/lib/vocab";
-import { pickStudyRound, useStudy } from "@/lib/store";
+import { shuffle, type VocabItem } from "@/lib/vocab";
+import { pickEloDeck } from "@/lib/elo";
+import { weekPlayPool } from "@/lib/tanakh-pool";
+import { useStudy } from "@/lib/store";
 import { playGrade } from "@/lib/sfx";
 import { cn } from "@/lib/cn";
 
@@ -23,7 +25,7 @@ function MatchPage() {
   const week = useStudy((s) => s.week);
   const focus = useStudy((s) => s.focus);
   const rate = useStudy((s) => s.rate);
-  const pool = useMemo(() => itemsForWeek(week), [week]);
+  const pool = useMemo(() => weekPlayPool(week), [week]);
   const [seed, setSeed] = useState(0);
   const [board, setBoard] = useState<VocabItem[]>([]);
   const [heTiles, setHeTiles] = useState<Tile[]>([]);
@@ -40,7 +42,16 @@ function MatchPage() {
   const [wrongN, setWrongN] = useState(0);
 
   useEffect(() => {
-    const items = pickStudyRound(pool, useStudy.getState().cards, focus, 6);
+    const picked = pickEloDeck(pool, useStudy.getState().cards, 10);
+    const seen = new Set<string>();
+    const items: VocabItem[] = [];
+    for (const x of picked) {
+      const g = shortGloss(x);
+      if (seen.has(g)) continue;
+      seen.add(g);
+      items.push(x);
+      if (items.length >= 6) break;
+    }
     setBoard(items);
     setHeTiles(shuffle(items.map((x) => ({ id: x.id, kind: "he" as const, label: x.hebrew }))));
     setEnTiles(shuffle(items.map((x) => ({ id: x.id, kind: "en" as const, label: shortGloss(x) }))));

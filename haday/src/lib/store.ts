@@ -6,6 +6,7 @@ import {
   hydrateCard,
   isMastered,
   isWeak,
+  nudgeDue,
   startOfDay,
   weaknessScore,
   type CardState,
@@ -26,6 +27,10 @@ import {
 } from "./game";
 import { stampRewards } from "./rewards";
 import type { ProgressPayload } from "./progress";
+import { twinsOf } from "./confusion";
+import { observeBkt } from "./bkt";
+import { updateElo } from "./elo";
+import { findStudyItem } from "./tanakh-pool";
 
 type ProgressMap = Record<string, CardState>;
 export type FocusMode = "due" | "weak";
@@ -101,8 +106,22 @@ export const useStudy = create<StudyState>()(
         const next = applyRating(prev, rating, now);
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
         const game = stampRewards(get().game, streakInfo.streak, get().keepStreak);
+        const cards = { ...get().cards, [id]: next };
+        if (rating === "again") {
+          for (const twin of twinsOf(id)) {
+            if (twin === id) continue;
+            cards[twin] = nudgeDue(cards[twin], now);
+          }
+        }
+        if (id.startsWith("alef:") || id.startsWith("ch1-")) {
+          observeBkt(id, rating !== "again");
+        }
+        const item = findStudyItem(id);
+        if (item && item.chapter >= 2) {
+          updateElo(item, rating !== "again");
+        }
         set({
-          cards: { ...get().cards, [id]: next },
+          cards,
           ...streakInfo,
           game,
           sessions: get().lastStudyDay === startOfDay(now) ? get().sessions : get().sessions + 1,

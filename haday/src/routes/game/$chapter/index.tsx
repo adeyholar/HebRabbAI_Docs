@@ -49,8 +49,9 @@ function ChapterHub() {
         </h1>
         <p className="mt-3 text-muted">{meta?.blurb}</p>
         <p className="mt-2 text-sm text-muted">
-          {pool.length} {chapter === 1 ? "letters" : "lemmas"} · {GAME_STAGES.filter((s) => rec.stages[s.id].cleared).length}/4
-          stages
+          {pool.length} {chapter === 1 ? "letters" : "lemmas"}
+          {chapter > 1 ? " · Recognize, Gloss, and Spell (lenient) mix in real Tanakh forms" : ""} ·{" "}
+          {GAME_STAGES.filter((s) => rec.stages[s.id].cleared).length}/4 stages
         </p>
         <div className="mt-4">
           <GameContinue />

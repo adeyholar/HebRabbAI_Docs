@@ -13,6 +13,7 @@ import {
   type QuizKind,
 } from "@/lib/alphabet";
 import { alefByKeys, alefKey } from "@/lib/alef";
+import { pickByBkt } from "@/lib/bkt";
 import { shuffle } from "@/lib/vocab";
 import { cn } from "@/lib/cn";
 import { GradeBanner } from "@/components/grade-banner";
@@ -144,7 +145,11 @@ function FoundationQuiz() {
       .map((x) => WRITE_LETTERS.find((l) => l.id === x.id))
       .filter((x): x is HebrewLetter => Boolean(x));
     if (q.length && isLetter) return q;
-    return shuffle(kind === "letter-scribble" ? WRITE_LETTERS : CONSONANTS);
+    const source = kind === "letter-scribble" ? WRITE_LETTERS : CONSONANTS;
+    return pickByBkt(
+      source.map((l) => ({ id: alefKey("letter", l.id), letter: l })),
+      12,
+    ).map((x) => x.letter);
   }, [seed, kind, queue, isLetter]);
   const vowelDeck = useMemo(() => {
     const q = alefByKeys(queue)
@@ -152,7 +157,10 @@ function FoundationQuiz() {
       .map((x) => VOWELS.find((v) => v.id === x.id))
       .filter((x): x is HebrewVowel => Boolean(x));
     if (q.length && !isLetter) return q;
-    return shuffle(VOWELS);
+    return pickByBkt(
+      VOWELS.map((v) => ({ id: alefKey("vowel", v.id), vowel: v })),
+      10,
+    ).map((x) => x.vowel);
   }, [seed, kind, queue, isLetter]);
   const total = isLetter ? letterDeck.length : vowelDeck.length;
 

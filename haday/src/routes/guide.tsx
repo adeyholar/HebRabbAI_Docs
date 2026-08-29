@@ -26,8 +26,9 @@ function GuidePage() {
               Game mode
             </Link>
             <span className="text-ink"> — </span>
-            one path through chapters 1–19. Stages unlock in order. Use Continue. The Game menu also opens Aleph-bet
-            mastery, Syllables (learn a rule with a Tanakh line, then quiz), and Ultimate Challenge.
+            one path through chapters 1–19. Stages unlock in order. Use Continue. Recognize, Gloss, and Spell (lenient)
+            mix real Tanakh surface forms with the BBH lemmas. The Game menu also opens Aleph-bet mastery, Syllables
+            (learn a rule with a Tanakh line, then quiz), and Ultimate Challenge.
           </li>
           <li>
             <Link to="/" hash="study-mode" className="inline-flex items-center gap-1.5 font-semibold text-primary">
@@ -127,12 +128,39 @@ function GuidePage() {
       </Panel>
 
       <Panel className="mb-3">
+        <h2 className="font-display text-2xl font-bold text-ink">How the path adapts</h2>
+        <ul className="mt-3 list-disc space-y-2 ps-5 text-sm text-ink">
+          <li>
+            <strong>Look-alikes.</strong> A miss on he queues het, dalet queues resh, kaf queues bet, qamets queues
+            pathach, shin queues sin. The twin comes due now — it is not marked wrong for you.
+          </li>
+          <li>
+            <strong>Letters you do not know first.</strong> Write, My hand, and Alef Quiz all update how well you know
+            each letter. The next round leads with the weak ones, not a fixed deck of twelve.
+          </li>
+          <li>
+            <strong>Your hand.</strong> Five traces become one living shape plus a slightly kinder pass bar. Chart gates
+            still reject a Latin T for kaf or a P for qof.
+          </li>
+          <li>
+            <strong>Quiz and Match.</strong> Those decks sit near the edge of what you can do — not only the same easy
+            lemmas.
+          </li>
+          <li>
+            <strong>Tanakh forms.</strong> Game Recognize, Gloss, and Spell (lenient) mix inflected words from the
+            Tanakh (בִּנְךָ for “son”, וַיֹּאמֶר for “to say”). A new round draws a different sample so you meet more of
+            the text, not only the citation form. Spell (strict), Write, and Drill stay on the BBH lemma.
+          </li>
+        </ul>
+      </Panel>
+
+      <Panel className="mb-3">
         <h2 className="font-display text-2xl font-bold text-ink">Study toolbox</h2>
         <dl className="mt-3 space-y-3 text-sm">
           <Tool name="Drill" to="/drill" body="Flip cards. Grade yourself. SRS brings weak words back." />
           <Tool name="Write" to="/write" body="Type or hand-write the Hebrew. Memorize mode hides the lemma first. After a miss you can save that scribble as your handwriting." />
-          <Tool name="Quiz" to="/quiz" body="Multiple choice or type the English gloss." />
-          <Tool name="Match" to="/match" body="Select the pair: Hebrew tile to English tile, then pick the lemma from a pad. Misses come back." />
+          <Tool name="Quiz" to="/quiz" body="Multiple choice or type the English gloss. Rounds mix BBH lemmas with real Tanakh forms and sit near what you can still miss." />
+          <Tool name="Match" to="/match" body="Select the pair: Hebrew tile to English tile, then pick the lemma from a pad. Misses come back. Boards mix Tanakh forms." />
           <Tool name="Lex" to="/browse" body="Browse the week’s lemmas with verses." />
           <Tool name="Alef" to="/alphabet" body="Letters, vowel charts, Write, and My hand — train each letter five times so later writing is graded against your hand." />
         </dl>

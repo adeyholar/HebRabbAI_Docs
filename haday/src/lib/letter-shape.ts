@@ -577,7 +577,7 @@ export function enrollLetterInk(
 export function verifyLetterInk(
   strokes: InkStroke[],
   expected: string,
-  opts?: { trace?: boolean; height?: number; samples?: InkStroke[][] },
+  opts?: { trace?: boolean; height?: number; samples?: InkStroke[][]; bar?: number },
 ): { match: HandMatch; read: string; score: number; note?: string } {
   const want = baseLetter(expected);
   const f = analyze(strokes, opts?.height ?? 0);
@@ -614,8 +614,8 @@ export function verifyLetterInk(
       const sc = scoreInkToPaths(strokes, sample);
       if (sc.score > best) best = sc.score;
     }
-    if (best >= 0.64) {
-      return { match: best >= 0.8 ? "exact" : "close", read: want, score: best };
+    if (best >= (opts?.bar ?? 0.64)) {
+      return { match: best >= Math.max(0.8, (opts?.bar ?? 0.64) + 0.12) ? "exact" : "close", read: want, score: best };
     }
   }
 

@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { VerseCard } from "@/components/verse-card";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
-import { glossMatches, liveGloss, itemsForWeek, quizChoices, type VocabItem } from "@/lib/vocab";
-import { useStudy, pickStudyRound } from "@/lib/store";
+import { glossMatches, liveGloss, quizChoices, type VocabItem } from "@/lib/vocab";
+import { useStudy } from "@/lib/store";
+import { pickEloDeck } from "@/lib/elo";
+import { weekPlayPool } from "@/lib/tanakh-pool";
 import { cn } from "@/lib/cn";
 import { Panel } from "@/components/panel";
 import { GradeBanner } from "@/components/grade-banner";
@@ -19,7 +21,7 @@ function QuizPage() {
   const week = useStudy((s) => s.week);
   const focus = useStudy((s) => s.focus);
   const rate = useStudy((s) => s.rate);
-  const pool = useMemo(() => itemsForWeek(week), [week]);
+  const pool = useMemo(() => weekPlayPool(week), [week]);
   const [mode, setMode] = useState<Mode>("choice");
   const [seed, setSeed] = useState(0);
   const [deck, setDeck] = useState<VocabItem[]>([]);
@@ -34,7 +36,7 @@ function QuizPage() {
 
   useEffect(() => {
     const snapshot = useStudy.getState().cards;
-    setDeck(pickStudyRound(pool, snapshot, focus, 12));
+    setDeck(pickEloDeck(pool, snapshot, 12));
     setI(0);
     setPicked(null);
     setMissedChoice(null);

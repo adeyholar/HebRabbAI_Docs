@@ -1,9 +1,10 @@
 import { findHitRange } from "@/lib/hebrew";
 import { verseFor } from "@/lib/verses";
+import { tanakhVerseFor } from "@/lib/tanakh-pool";
 import type { VocabItem } from "@/lib/vocab";
 
 export function VerseCard({ item, showEnglish = true }: { item: VocabItem; showEnglish?: boolean }) {
-  const verse = item?.id ? verseFor(item.id) : undefined;
+  const verse = item?.id ? verseFor(item.id) ?? tanakhVerseFor(item.id) : undefined;
   if (!verse?.he) return null;
   const range = findHitRange(verse.he, verse.hit ?? "");
 

@@ -11,7 +11,7 @@ import { playGrade } from "@/lib/sfx";
 import {
   CHAPTER_META,
   GAME_STAGES,
-  chapterPool,
+  chapterPlayPool,
   chapterRecord,
   continueTarget,
   runOrdinal,
@@ -56,9 +56,10 @@ export function GameStagePlay({ chapter, stage }: Props) {
   const rate = useStudy((s) => s.rate);
   const game = useStudy((s) => s.game);
   const streak = useStudy((s) => s.streak);
-  const pool = useMemo(() => chapterPool(chapter), [chapter]);
+  const [deal, setDeal] = useState(0);
+  const pool = useMemo(() => chapterPlayPool(chapter, stage), [chapter, stage, deal]);
   const [queue, setQueue] = useState<VocabItem[]>(() => shuffleCopy(pool));
-  const [total] = useState(pool.length);
+  const [total, setTotal] = useState(pool.length);
   const [picked, setPicked] = useState<string | null>(null);
   const [missedChoice, setMissedChoice] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
@@ -71,6 +72,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
 
   useEffect(() => {
     setQueue(shuffleCopy(pool));
+    setTotal(pool.length);
     setPicked(null);
     setMissedChoice(null);
     setTyped("");
@@ -133,16 +135,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
   }
 
   function replayStage() {
-    setQueue(shuffleCopy(pool));
-    setPicked(null);
-    setMissedChoice(null);
-    setTyped("");
-    setRevealed(false);
-    setTries(0);
-    setFirstHits(0);
-    setFirstSeen(0);
-    setPhase("play");
-    setStars(1);
+    setDeal((n) => n + 1);
   }
 
   function resetItem() {
@@ -292,6 +285,9 @@ export function GameStagePlay({ chapter, stage }: Props) {
           <>
             <p className="he-word text-5xl">{item.hebrew}</p>
             <p className="mt-2 text-sm text-muted">{item.translit}</p>
+            {item.id.startsWith("tv:") && (
+              <p className="mt-1 text-xs text-muted">Tanakh form · lemma <span className="he-word text-base text-ink">{item.hebrewAlts?.[0]}</span></p>
+            )}
           </>
         ) : (
           <>

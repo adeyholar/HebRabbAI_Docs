@@ -7,7 +7,8 @@ const KEY = "haday-hand-style-v1";
 const EVENT = "haday-hand";
 
 export type HandSample = { strokes: InkStroke[]; t: number };
-export type HandBank = Record<string, HandSample[]>;
+export type HandLetterState = { samples: HandSample[]; proto?: InkStroke[]; bar: number };
+export type HandBank = Record<string, HandSample[] | HandLetterState>;
 
 function roundPt(p: { x: number; y: number }) {
   return { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 };
@@ -58,6 +59,47 @@ export function compactStrokes(strokes: InkStroke[]): InkStroke[] {
     );
 }
 
+function asState(v: HandSample[] | HandLetterState | undefined): HandLetterState {
+  if (!v) return { samples: [], bar: 0.64 };
+  if (Array.isArray(v)) return { samples: v.slice(0, HAND_GOAL), bar: 0.64 };
+  return {
+    samples: Array.isArray(v.samples) ? v.samples.slice(0, HAND_GOAL) : [],
+    proto: v.proto,
+    bar: Number(v.bar) >= 0.64 ? Math.min(0.82, v.bar) : 0.64,
+  };
+}
+
+function blend(a: InkStroke[], b: InkStroke[], t: number): InkStroke[] {
+  if (!a.length) return b;
+  if (a.length !== b.length) return t > 0.5 ? b : a;
+  return a.map((sa, i) => {
+    const sb = resample(b[i] ?? sa, sa.length);
+    return sa.map((p, j) => {
+      const q = sb[j] ?? p;
+      return roundPt({ x: p.x * (1 - t) + q.x * t, y: p.y * (1 - t) + q.y * t });
+    });
+  });
+}
+
+function medoid(samples: HandSample[]): InkStroke[] | undefined {
+  if (!samples.length) return undefined;
+  if (samples.length === 1) return samples[0].strokes;
+  let best = 0;
+  let bestSum = -1;
+  for (let i = 0; i < samples.length; i++) {
+    let sum = 0;
+    for (let j = 0; j < samples.length; j++) {
+      if (i === j) continue;
+      sum += scoreInkToPaths(samples[i].strokes, samples[j].strokes).score;
+    }
+    if (sum > bestSum) {
+      bestSum = sum;
+      best = i;
+    }
+  }
+  return samples[best].strokes;
+}
+
 function letterId(expected: string): string {
   return modelGlyph(expected);
 }
@@ -70,15 +112,20 @@ export function loadHand(): HandBank {
     if (!parsed || typeof parsed !== "object") return {};
     const out: HandBank = {};
     for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
-      if (!Array.isArray(v)) continue;
-      const samples: HandSample[] = [];
-      for (const s of v) {
-        if (!s || typeof s !== "object") continue;
-        const strokes = (s as HandSample).strokes;
-        if (!Array.isArray(strokes) || !strokes.length) continue;
-        samples.push({ strokes, t: Number((s as HandSample).t) || 0 });
+      if (Array.isArray(v)) {
+        const samples: HandSample[] = [];
+        for (const s of v) {
+          if (!s || typeof s !== "object") continue;
+          const strokes = (s as HandSample).strokes;
+          if (!Array.isArray(strokes) || !strokes.length) continue;
+          samples.push({ strokes, t: Number((s as HandSample).t) || 0 });
+        }
+        if (samples.length) out[k] = { samples: samples.slice(0, HAND_GOAL), proto: medoid(samples), bar: 0.64 };
+        continue;
       }
-      if (samples.length) out[k] = samples.slice(0, HAND_GOAL);
+      if (v && typeof v === "object" && Array.isArray((v as HandLetterState).samples)) {
+        out[k] = asState(v as HandLetterState);
+      }
     }
     return out;
   } catch {
@@ -96,23 +143,31 @@ export function saveHand(bank: HandBank) {
 }
 
 export function samplesFor(expected: string): InkStroke[][] {
-  const id = letterId(expected);
-  return (loadHand()[id] ?? []).map((s) => s.strokes);
+  const st = asState(loadHand()[letterId(expected)]);
+  const out: InkStroke[][] = [];
+  if (st.proto?.length) out.push(st.proto);
+  for (const s of st.samples) out.push(s.strokes);
+  return out;
 }
 
 export function sampleCount(expected: string): number {
-  return samplesFor(expected).length;
+  return asState(loadHand()[letterId(expected)]).samples.length;
+}
+
+export function handBar(expected: string): number {
+  return asState(loadHand()[letterId(expected)]).bar;
 }
 
 export function handStats(bank = loadHand()): { letters: number; full: number; samples: number } {
   let letters = 0;
   let full = 0;
   let samples = 0;
-  for (const list of Object.values(bank)) {
-    if (!list.length) continue;
+  for (const v of Object.values(bank)) {
+    const st = asState(v);
+    if (!st.samples.length) continue;
     letters += 1;
-    samples += list.length;
-    if (list.length >= HAND_GOAL) full += 1;
+    samples += st.samples.length;
+    if (st.samples.length >= HAND_GOAL) full += 1;
   }
   return { letters, full, samples };
 }
@@ -132,14 +187,20 @@ export function clearLetterHand(expected: string) {
 export function mergeHand(remote: HandBank): HandBank {
   const local = loadHand();
   const out: HandBank = { ...remote };
-  for (const [k, list] of Object.entries(local)) {
-    const cur = out[k] ?? [];
-    const combined = [...list];
-    for (const s of cur) {
+  for (const [k, val] of Object.entries(local)) {
+    const a = asState(out[k]);
+    const b = asState(val);
+    const combined = [...b.samples];
+    for (const s of a.samples) {
       if (combined.length >= HAND_GOAL) break;
       combined.push(s);
     }
-    out[k] = combined.slice(0, HAND_GOAL);
+    const samples = combined.slice(0, HAND_GOAL);
+    out[k] = {
+      samples,
+      proto: b.proto ?? a.proto ?? medoid(samples),
+      bar: Math.max(a.bar, b.bar),
+    };
   }
   saveHand(out);
   return out;
@@ -167,13 +228,16 @@ export function saveHandSample(
   const packed = compactStrokes(strokes);
   if (!packed.length) return { ok: false, n: 0, note: "Draw the letter larger, between the two lines." };
   const bank = loadHand();
-  const cur = [...(bank[id] ?? [])];
+  const st = asState(bank[id]);
+  const cur = [...st.samples];
   if (cur.length >= HAND_GOAL) {
     if (!opts?.replace) return { ok: true, n: cur.length };
     cur.shift();
   }
   cur.push({ strokes: packed, t: Date.now() });
-  bank[id] = cur;
+  const proto = st.proto ? blend(st.proto, packed, 0.35) : medoid(cur);
+  const bar = Math.min(0.8, 0.64 + 0.025 * cur.length);
+  bank[id] = { samples: cur, proto, bar };
   saveHand(bank);
   return { ok: true, n: cur.length };
 }
