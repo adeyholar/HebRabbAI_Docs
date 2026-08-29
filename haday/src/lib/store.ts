@@ -14,6 +14,7 @@ import {
 import {
   applyAlefBetResult,
   applyStageResult,
+  applySyllableResult,
   applyUltimateResult,
   defaultGame,
   hydrateGame,
@@ -57,6 +58,10 @@ type StudyState = StudySnapshot & {
   ) => void;
   completeAlefBetLevel: (
     level: number,
+    result: { stars: number; score: number; firstTryRate: number },
+  ) => void;
+  completeSyllableUnit: (
+    unit: number,
     result: { stars: number; score: number; firstTryRate: number },
   ) => void;
   startUltimate: (ids: string[]) => void;
@@ -121,6 +126,16 @@ export const useStudy = create<StudyState>()(
         const now = Date.now();
         const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
         const game = stampRewards(applyAlefBetResult(get().game, level, result), streakInfo.streak, get().keepStreak);
+        set({
+          game,
+          ...streakInfo,
+          sessions: get().lastStudyDay === startOfDay(now) ? get().sessions : get().sessions + 1,
+        });
+      },
+      completeSyllableUnit: (unit, result) => {
+        const now = Date.now();
+        const streakInfo = bumpStreak(get().lastStudyDay, get().streak, now);
+        const game = stampRewards(applySyllableResult(get().game, unit, result), streakInfo.streak, get().keepStreak);
         set({
           game,
           ...streakInfo,

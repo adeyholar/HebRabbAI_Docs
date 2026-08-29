@@ -1,0 +1,207 @@
+import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { GradeBanner } from "@/components/grade-banner";
+import { Panel } from "@/components/panel";
+import { playGrade } from "@/lib/sfx";
+import { cn } from "@/lib/cn";
+import {
+  highlightParts,
+  shuffleQuiz,
+  syllableUnit,
+  starsFromSyllableScore,
+  type SyllableQuiz,
+} from "@/lib/syllables";
+import { useStudy } from "@/lib/store";
+
+function VerseHit({ he, hit }: { he: string; hit: string }) {
+  const parts = highlightParts(he, hit);
+  return (
+    <p className="he-word mt-3 text-2xl leading-relaxed" dir="rtl">
+      {parts.hit ? (
+        <>
+          {parts.before}
+          <mark className="rounded-sm bg-primary/30 px-0.5 text-ink">{parts.hit}</mark>
+          {parts.after}
+        </>
+      ) : (
+        he
+      )}
+    </p>
+  );
+}
+
+export function SyllablePlay({ unitId }: { unitId: number }) {
+  const unit = syllableUnit(unitId);
+  const complete = useStudy((s) => s.completeSyllableUnit);
+  const [step, setStep] = useState<"learn" | "quiz">("learn");
+  const [items, setItems] = useState<SyllableQuiz[]>([]);
+  const [i, setI] = useState(0);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [right, setRight] = useState(0);
+  const [done, setDone] = useState(false);
+
+  const q = items[i];
+  const pct = useMemo(() => (items.length ? Math.round((right / items.length) * 100) : 0), [right, items.length]);
+
+  function startQuiz() {
+    if (!unit) return;
+    setItems(shuffleQuiz(unit));
+    setI(0);
+    setPicked(null);
+    setRight(0);
+    setDone(false);
+    setStep("quiz");
+  }
+
+  function pick(choice: string) {
+    if (!q || picked) return;
+    const ok = choice === q.answer;
+    setPicked(choice);
+    if (ok) setRight((n) => n + 1);
+    playGrade(ok);
+  }
+
+  function next() {
+    if (!picked || !q) return;
+    if (i + 1 >= items.length) {
+      const finalPct = Math.round((right / items.length) * 100);
+      complete(unitId, {
+        stars: starsFromSyllableScore(finalPct),
+        score: finalPct,
+        firstTryRate: right / items.length,
+      });
+      setDone(true);
+      return;
+    }
+    setI((n) => n + 1);
+    setPicked(null);
+  }
+
+  if (!unit) {
+    return (
+      <Panel>
+        <p className="text-muted">That unit is missing.</p>
+        <Link to="/game/syllables" className="mt-3 inline-block font-semibold text-primary">
+          Back to syllables
+        </Link>
+      </Panel>
+    );
+  }
+
+  if (step === "learn") {
+    return (
+      <>
+        <Panel>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            Unit {unit.id} · Learn
+          </p>
+          <h1 className="mt-1 font-display text-3xl font-bold text-ink">{unit.title}</h1>
+          <p className="mt-3 max-w-prose text-ink">{unit.rule}</p>
+        </Panel>
+        <Panel className="mt-3">
+          <h2 className="font-display text-xl font-bold text-ink">Samples</h2>
+          <ul className="mt-3 space-y-3">
+            {unit.samples.map((s) => (
+              <li key={s.word} className="rounded-[var(--radius-md)] bg-surface px-3 py-3">
+                <p className="he-word text-3xl" dir="rtl">
+                  {s.word}
+                </p>
+                <p className="he-word mt-1 text-xl text-primary" dir="rtl">
+                  {s.split}
+                </p>
+                <p className="mt-1 text-sm text-muted">{s.note}</p>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+        <Panel className="mt-3">
+          <h2 className="font-display text-xl font-bold text-ink">In the Tanakh</h2>
+          <p className="mt-1 text-sm font-semibold text-muted">{unit.verse.ref}</p>
+          <VerseHit he={unit.verse.he} hit={unit.verse.hit} />
+          <p className="mt-2 text-sm text-muted">{unit.verse.en}</p>
+        </Panel>
+        <Button className="mt-4 w-full" onClick={startQuiz}>
+          Quiz this rule
+        </Button>
+      </>
+    );
+  }
+
+  if (done) {
+    const passed = pct >= 70;
+    return (
+      <Panel className="text-center">
+        <p className="font-display text-4xl font-bold text-ink">{pct}%</p>
+        <p className="mt-2 text-sm text-muted">
+          {right} / {items.length} · {passed ? "Unit cleared." : "Need 70% to unlock the next unit."}
+        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          {passed && unitId < 8 ? (
+            <Link to="/game/syllables/$unit" params={{ unit: String(unitId + 1) }} className="block">
+              <Button className="w-full">Next unit</Button>
+            </Link>
+          ) : null}
+          <Button variant="outline" onClick={startQuiz}>
+            Try the quiz again
+          </Button>
+          <Link to="/game/syllables" className="text-sm font-semibold text-primary">
+            Syllable map
+          </Link>
+        </div>
+      </Panel>
+    );
+  }
+
+  if (!q) return null;
+  const ok = picked === q.answer;
+
+  return (
+    <>
+      <Panel>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+          Unit {unit.id} · Quiz · {i + 1} / {items.length}
+        </p>
+        <h1 className="mt-1 font-display text-2xl font-bold text-ink">{q.q}</h1>
+        {q.he ? (
+          <p className="he-word mt-3 text-4xl" dir="rtl">
+            {q.he}
+          </p>
+        ) : null}
+      </Panel>
+      <ul className="mt-3 space-y-2">
+        {q.choices.map((c) => {
+          const chosen = picked === c;
+          const rightChoice = c === q.answer;
+          return (
+            <li key={c}>
+              <button
+                type="button"
+                disabled={Boolean(picked)}
+                onClick={() => pick(c)}
+                className={cn(
+                  "min-h-12 w-full rounded-[var(--radius-md)] px-3 py-2 text-left text-sm font-medium shadow-[var(--shadow-border)]",
+                  !picked && "bg-card text-ink",
+                  picked && rightChoice && "bg-good text-white",
+                  picked && chosen && !rightChoice && "bg-bad text-white",
+                  picked && !chosen && !rightChoice && "bg-card text-muted",
+                )}
+              >
+                <span className="he-word">{c}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {picked && (
+        <div className="mt-3">
+          <GradeBanner ok={ok} />
+          <p className="mt-2 text-sm text-muted">{q.why}</p>
+          <Button className="mt-3 w-full" onClick={next}>
+            {i + 1 >= items.length ? "See score" : "Next"}
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}

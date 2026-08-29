@@ -29,6 +29,8 @@ import { Route as GameChapterIndexRouteImport } from './routes/game/$chapter/ind
 import { Route as GameChapterStageRouteImport } from './routes/game/$chapter/$stage'
 import { Route as GameAlefbetIndexRouteImport } from './routes/game/alefbet/index'
 import { Route as GameAlefbetLevelRouteImport } from './routes/game/alefbet/$level'
+import { Route as GameSyllablesIndexRouteImport } from './routes/game/syllables/index'
+import { Route as GameSyllablesUnitRouteImport } from './routes/game/syllables/$unit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -130,6 +132,16 @@ const GameAlefbetLevelRoute = GameAlefbetLevelRouteImport.update({
   path: '/game/alefbet/$level',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GameSyllablesIndexRoute = GameSyllablesIndexRouteImport.update({
+  id: '/game/syllables/',
+  path: '/game/syllables/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameSyllablesUnitRoute = GameSyllablesUnitRouteImport.update({
+  id: '/game/syllables/$unit',
+  path: '/game/syllables/$unit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -150,8 +162,10 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
+  '/game/syllables/$unit': typeof GameSyllablesUnitRoute
   '/game/$chapter/': typeof GameChapterIndexRoute
   '/game/alefbet/': typeof GameAlefbetIndexRoute
+  '/game/syllables/': typeof GameSyllablesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -172,8 +186,10 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
+  '/game/syllables/$unit': typeof GameSyllablesUnitRoute
   '/game/$chapter': typeof GameChapterIndexRoute
   '/game/alefbet': typeof GameAlefbetIndexRoute
+  '/game/syllables': typeof GameSyllablesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -195,8 +211,10 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
+  '/game/syllables/$unit': typeof GameSyllablesUnitRoute
   '/game/$chapter/': typeof GameChapterIndexRoute
   '/game/alefbet/': typeof GameAlefbetIndexRoute
+  '/game/syllables/': typeof GameSyllablesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -219,8 +237,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
+    | '/game/syllables/$unit'
     | '/game/$chapter/'
     | '/game/alefbet/'
+    | '/game/syllables/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -241,8 +261,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
+    | '/game/syllables/$unit'
     | '/game/$chapter'
     | '/game/alefbet'
+    | '/game/syllables'
   id:
     | '__root__'
     | '/'
@@ -263,8 +285,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
+    | '/game/syllables/$unit'
     | '/game/$chapter/'
     | '/game/alefbet/'
+    | '/game/syllables/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -286,8 +310,10 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   GameChapterStageRoute: typeof GameChapterStageRoute
   GameAlefbetLevelRoute: typeof GameAlefbetLevelRoute
+  GameSyllablesUnitRoute: typeof GameSyllablesUnitRoute
   GameChapterIndexRoute: typeof GameChapterIndexRoute
   GameAlefbetIndexRoute: typeof GameAlefbetIndexRoute
+  GameSyllablesIndexRoute: typeof GameSyllablesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -432,6 +458,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameAlefbetLevelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/game/syllables/': {
+      id: '/game/syllables/'
+      path: '/game/syllables'
+      fullPath: '/game/syllables/'
+      preLoaderRoute: typeof GameSyllablesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game/syllables/$unit': {
+      id: '/game/syllables/$unit'
+      path: '/game/syllables/$unit'
+      fullPath: '/game/syllables/$unit'
+      preLoaderRoute: typeof GameSyllablesUnitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -454,8 +494,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   GameChapterStageRoute: GameChapterStageRoute,
   GameAlefbetLevelRoute: GameAlefbetLevelRoute,
+  GameSyllablesUnitRoute: GameSyllablesUnitRoute,
   GameChapterIndexRoute: GameChapterIndexRoute,
   GameAlefbetIndexRoute: GameAlefbetIndexRoute,
+  GameSyllablesIndexRoute: GameSyllablesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

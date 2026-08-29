@@ -27,7 +27,7 @@ function GuidePage() {
             </Link>
             <span className="text-ink"> — </span>
             one path through chapters 1–19. Stages unlock in order. Use Continue. The Game menu also opens Aleph-bet
-            mastery (the line, the place, then neighbors on a shuffled letter pad) and Ultimate Challenge.
+            mastery, Syllables (learn a rule with a Tanakh line, then quiz), and Ultimate Challenge.
           </li>
           <li>
             <Link to="/" hash="study-mode" className="inline-flex items-center gap-1.5 font-semibold text-primary">

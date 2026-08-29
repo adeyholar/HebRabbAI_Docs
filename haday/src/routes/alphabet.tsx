@@ -33,7 +33,8 @@ function AlphabetPage() {
       <Panel>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Alef-bet</h1>
         <p className="mt-1 text-sm text-muted">
-          Consonants right to left, a closed-book exam from memory, and practice that follows what you miss.
+          Consonants right to left, a closed-book exam from memory, and practice that follows what you miss. Syllable
+          cuts (open/closed, shewa, dagesh) live under Game → Syllables.
         </p>
         <div className="mt-4 flex gap-2">
           {(["letters", "vowels", "write", "drill", "exam"] as const).map((t) => (

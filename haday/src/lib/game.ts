@@ -1,6 +1,7 @@
 import { VOCAB, alphabetVocab, type VocabItem } from "@/lib/vocab";
 
 export const GAME_CHAPTER_MAX = 19;
+export const SYLLABLE_UNIT_MAX = 8;
 
 export const GAME_STAGES = [
   { id: "recognize", name: "Recognize", short: "Recognize", prompt: "Hebrew → English" },
@@ -47,12 +48,19 @@ export type GameSnapshot = {
   keepStreak: number;
   lastKeepDay: number;
   alefBet: AlefBetProgress;
+  syllables: SyllableProgress;
 };
 
 export type AlefBetProgress = {
   unlockedLevel: number;
   currentLevel: number;
   levels: Record<string, StageRecord>;
+};
+
+export type SyllableProgress = {
+  unlockedUnit: number;
+  currentUnit: number;
+  units: Record<string, StageRecord>;
 };
 
 export const CHAPTER_META: Record<number, { title: string; blurb: string }> = {
@@ -110,11 +118,16 @@ export function defaultGame(): GameSnapshot {
     keepStreak: 0,
     lastKeepDay: 0,
     alefBet: emptyAlefBet(),
+    syllables: emptySyllables(),
   };
 }
 
 export function emptyAlefBet(): AlefBetProgress {
   return { unlockedLevel: 1, currentLevel: 1, levels: {} };
+}
+
+export function emptySyllables(): SyllableProgress {
+  return { unlockedUnit: 1, currentUnit: 1, units: {} };
 }
 
 function emptyAlefLevel(): StageRecord {
@@ -151,6 +164,7 @@ export function hydrateGame(raw: unknown): GameSnapshot {
     keepStreak: Math.max(0, Number(r.keepStreak) || 0),
     lastKeepDay: Number(r.lastKeepDay) || 0,
     alefBet: hydrateAlefBet(r.alefBet),
+    syllables: hydrateSyllables(r.syllables),
   };
 }
 
@@ -174,6 +188,28 @@ function hydrateAlefBet(raw: unknown): AlefBetProgress {
     }
   }
   return { unlockedLevel: unlocked, currentLevel: current, levels };
+}
+
+function hydrateSyllables(raw: unknown): SyllableProgress {
+  const base = emptySyllables();
+  if (!raw || typeof raw !== "object") return base;
+  const r = raw as Partial<SyllableProgress>;
+  const unlocked = Math.min(SYLLABLE_UNIT_MAX, Math.max(1, Number(r.unlockedUnit) || 1));
+  const current = Math.min(SYLLABLE_UNIT_MAX, Math.max(1, Number(r.currentUnit) || 1));
+  const units: Record<string, StageRecord> = {};
+  if (r.units && typeof r.units === "object") {
+    for (const [key, val] of Object.entries(r.units)) {
+      if (!val || typeof val !== "object") continue;
+      const rec = val as Partial<StageRecord>;
+      units[key] = {
+        stars: Number(rec.stars) || 0,
+        best: Number(rec.best) || 0,
+        cleared: Boolean(rec.cleared),
+        attempts: Math.max(Number(rec.attempts) || 0, rec.cleared ? 1 : 0),
+      };
+    }
+  }
+  return { unlockedUnit: unlocked, currentUnit: current, units };
 }
 
 function hydrateUltimateRun(raw: unknown): UltimateRun | null {
@@ -367,6 +403,44 @@ export function applyAlefBetResult(
   if (n >= ab.unlockedLevel && n < 3) ab.unlockedLevel = n + 1;
   ab.currentLevel = ab.unlockedLevel;
   next.alefBet = ab;
+  next.lastPlayDay = Date.now();
+  if (result.firstTryRate >= 0.4) {
+    next.winStreak = (next.winStreak || 0) + 1;
+    next.bestWinStreak = Math.max(next.bestWinStreak || 0, next.winStreak);
+  } else {
+    next.winStreak = 0;
+  }
+  return next;
+}
+
+export function syllableUnitRecord(game: GameSnapshot, unit: number): StageRecord {
+  return game.syllables?.units?.[String(unit)] ?? emptyAlefLevel();
+}
+
+export function isSyllableUnitUnlocked(game: GameSnapshot, unit: number): boolean {
+  const n = Math.min(SYLLABLE_UNIT_MAX, Math.max(1, Math.round(unit) || 1));
+  return n <= (game.syllables?.unlockedUnit || 1);
+}
+
+export function applySyllableResult(
+  game: GameSnapshot,
+  unit: number,
+  result: { stars: number; score: number; firstTryRate: number },
+): GameSnapshot {
+  const next = cloneGame(hydrateGame(game));
+  const n = Math.min(SYLLABLE_UNIT_MAX, Math.max(1, Math.round(unit) || 1));
+  const sy = next.syllables ?? emptySyllables();
+  const prev = sy.units[String(n)] ?? emptyAlefLevel();
+  const passed = result.score >= 70;
+  sy.units[String(n)] = {
+    stars: Math.max(prev.stars, result.stars),
+    best: Math.max(prev.best, result.score),
+    cleared: prev.cleared || passed,
+    attempts: (prev.attempts || 0) + 1,
+  };
+  if (passed && n >= sy.unlockedUnit && n < SYLLABLE_UNIT_MAX) sy.unlockedUnit = n + 1;
+  sy.currentUnit = sy.unlockedUnit;
+  next.syllables = sy;
   next.lastPlayDay = Date.now();
   if (result.firstTryRate >= 0.4) {
     next.winStreak = (next.winStreak || 0) + 1;
