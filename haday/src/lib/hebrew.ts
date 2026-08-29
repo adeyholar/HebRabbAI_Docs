@@ -24,6 +24,11 @@ export function lettersOnly(s: string): string {
   return stripNiqqud(s).replace(/[^\u05D0-\u05EA]/g, "");
 }
 
+/** True for alef-bet lemmas (one consonant, maybe a shin/sin dot). */
+export function isSingleLetterLemma(s: string): boolean {
+  return lettersOnly(s).length === 1;
+}
+
 /** וּ (shureq) writes the same û as qibbuts ֻ — the vav is a vowel letter, not a root consonant. */
 export function foldShureq(s: string): string {
   return s.replaceAll("וּ", "ֻ");

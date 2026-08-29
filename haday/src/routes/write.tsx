@@ -7,8 +7,9 @@ import { VerseCard } from "@/components/verse-card";
 import { WeekSelect } from "@/components/week-select";
 import { FocusToggle } from "@/components/focus-toggle";
 import { Panel } from "@/components/panel";
-import { dageshCoach, matchHandwriting, type HandMatch } from "@/lib/hebrew";
-import { readHandwriting } from "@/lib/read-handwriting";
+import { dageshCoach, isSingleLetterLemma, matchHandwriting, type HandMatch } from "@/lib/hebrew";
+import { checkGlyphInk } from "@/lib/check-glyph";
+import { writingHint } from "@/lib/letter-models";
 import { queueForFocus, useStudy } from "@/lib/store";
 import { itemsForWeek, POS_LABEL, shuffle, type VocabItem } from "@/lib/vocab";
 import { takeWriteCheck, writeChecksLeft, WRITE_DAILY_LIMIT } from "@/lib/write-cap";
@@ -145,8 +146,32 @@ function WritePage() {
 
   async function checkPad() {
     if (!item || empty || busy) return;
+    pad.current?.commit();
+    const strokes = pad.current?.getStrokes() ?? [];
     const image = pad.current?.toImage();
-    if (!image) return;
+    if (!strokes.length && !image) return;
+
+    if (isSingleLetterLemma(item.hebrew)) {
+      setBusy(true);
+      try {
+        const next = await checkGlyphInk(image || "data:image/png;base64,", item.hebrew, "letter", strokes, {
+          height: pad.current?.getHeight() ?? 0,
+        });
+        if (next.counted === false || next.match === "empty") {
+          setResult({
+            match: "empty",
+            read: "",
+            note: next.note || "Draw the letter larger, between the two lines. This will not count as a miss.",
+          });
+          return;
+        }
+        applyCheck(next.match, next.read || item.hebrew);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
     if (!takeWriteCheck()) {
       applyCheck("wrong", "", "Daily check limit reached. Come back tomorrow, or type the word instead.");
       setLeft(0);
@@ -155,15 +180,15 @@ function WritePage() {
     setLeft(writeChecksLeft());
     setBusy(true);
     try {
-      const res = await readHandwriting({ data: { image, expected: item.hebrew } });
+      const { readHandwriting } = await import("@/lib/read-handwriting");
+      const res = await readHandwriting({ data: { image: image || "", expected: item.hebrew } });
       if (!res.ok) {
-        const offline = /not connected|unavailable/i.test(res.error);
-        if (offline) {
-          setResult({ match: "empty", read: "", note: res.error });
-          playGrade(false);
-          return;
-        }
-        applyCheck("wrong", "", res.error);
+        setInputMethod("type");
+        setResult({
+          match: "empty",
+          read: "",
+          note: "This site checks letters on the pad. For a full word, type the Hebrew — that will be graded.",
+        });
         return;
       }
       const compared = matchHandwriting(item.hebrew, res.hebrew);
@@ -173,7 +198,12 @@ function WritePage() {
       else if (match === "empty" && res.verdict === "exact") match = "close";
       applyCheck(match, res.hebrew);
     } catch {
-      applyCheck("wrong", "", "Could not reach the reader. Try again.");
+      setInputMethod("type");
+      setResult({
+        match: "empty",
+        read: "",
+        note: "Could not read that word from ink. Type the Hebrew instead — it will be graded.",
+      });
     } finally {
       setBusy(false);
     }
@@ -219,8 +249,10 @@ function WritePage() {
   }
 
   const recalling = memorize && recallLeft > 0 && !result;
-  const locked = result ? result.match === "exact" || result.match === "close" || tries >= 2 : false;
-  const canRetry = Boolean(result) && !locked && tries < 2;
+  const locked =
+    !!result && result.match !== "empty" && (result.match === "exact" || result.match === "close" || tries >= 2);
+  const canRetry = !!result && result.match !== "empty" && !locked && tries < 2;
+  const letterPad = item ? isSingleLetterLemma(item.hebrew) : false;
 
   return (
     <>
@@ -323,10 +355,10 @@ function WritePage() {
           ) : (
             <>
               <div className="relative mt-4">
-                <InkPad ref={pad} disabled={busy || locked} onChange={setEmpty} />
+                <InkPad ref={pad} disabled={busy || locked} guides={letterPad} onChange={setEmpty} />
                 {empty && !result && (
                   <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted">
-                    Write the Hebrew here
+                    {letterPad ? "Write the letter between the lines" : "Write the Hebrew here"}
                   </p>
                 )}
               </div>
@@ -346,15 +378,25 @@ function WritePage() {
                   Clear
                 </Button>
                 <Button className="flex-[2]" onClick={() => void checkPad()} disabled={busy || empty || locked}>
-                  {busy ? "Reading…" : "Check writing"}
+                  {busy ? "Checking…" : "Check writing"}
                 </Button>
               </div>
+              {letterPad && (
+                <p className="mt-2 text-center text-xs text-muted">
+                  {writingHint(item.hebrew)} Body between the two lines. Finals drop below the bottom line.
+                </p>
+              )}
             </>
           )}
         </>
       )}
 
-      {result && (
+      {result && result.match === "empty" && (
+        <p className="mt-3 rounded-[var(--radius-md)] bg-card px-4 py-3 text-sm text-muted shadow-[var(--shadow-border)]">
+          {result.note}
+        </p>
+      )}
+      {result && result.match !== "empty" && (
         <ResultPanel item={item} result={result} canRetry={canRetry} hideAnswer={canRetry} onNext={nextCard} onRetry={retryOnce} />
       )}
     </>
@@ -380,8 +422,7 @@ function ResultPanel({
   const label =
     result.match === "exact" ? "Correct"
     : result.match === "close" ? "Close — count it"
-    : /not connected|unavailable/i.test(result.note ?? "") ? "Reader offline"
-    : result.match === "empty" ? "Nothing readable"
+    : result.match === "empty" ? "Draw again"
     : "Not correct";
   const coach = hideAnswer ? null : dageshCoach(item.hebrew);
 
