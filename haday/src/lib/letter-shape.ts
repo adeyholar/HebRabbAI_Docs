@@ -185,18 +185,29 @@ function analyze(strokes: InkStroke[], height = 0): Feat | null {
   let gapFill = 0;
   let blMin = Infinity;
   let blMax = -Infinity;
+  const leftColY: number[] = [];
   for (const p of pts) {
     const xn = (p.x - minX) / w;
     const yn = (p.y - minY) / h;
     if (yn < 0.52 && xn > 0.28 && xn < 0.72) topMid += 1;
-    if (xn < 0.28 && yn > 0.12 && yn < 0.32) gapFill += 1;
+    if (xn < 0.32 && yn > 0.04 && yn < 0.18) gapFill += 1;
+    if (xn < 0.34) leftColY.push(yn);
     if (yn > 0.75 && xn < 0.55) {
       blMin = Math.min(blMin, p.x);
       blMax = Math.max(blMax, p.x);
     }
   }
   const hasMidArm = topMid >= 3;
-  const leftJoinsRoof = gapFill >= 3;
+  leftColY.sort((a, b) => a - b);
+  let leftGap = 0;
+  for (let i = 1; i < leftColY.length; i++) {
+    const a = leftColY[i - 1];
+    const b = leftColY[i];
+    if (a < 0.45 && b < 0.55) leftGap = Math.max(leftGap, b - a);
+  }
+  // Chet’s left stem meets the roof. He leaves a hole under the roof on the left —
+  // even a short handwritten gap (the usual student form) must not read as chet.
+  const leftJoinsRoof = gapFill >= 3 && leftGap < 0.1;
   const hasLeftFoot = Number.isFinite(blMin) && blMax - blMin > w * 0.16;
   let hasCross = false;
   if (clean.length === 2 && strokeStraight(clean[0]) && strokeStraight(clean[1])) {
@@ -549,6 +560,7 @@ export function verifyLetterInk(
   const descTwins =
     want === "ך" || want === "ן" || want === "ף" ? new Set(["ד", "ר", "ו", "ה", "נ", "י", "ח"]) : null;
   const yodTwins = want === "י" ? new Set(["ד", "ר", "ו", "ן", "ך"]) : null;
+  const heTwins = want === "ה" && !f.leftJoinsRoof ? new Set(["ח", "ת", "ד", "ר"]) : null;
 
   if (rival && rival.id !== want && rival.score >= 0.52 && rival.score >= (shape?.score ?? 0) + 0.07) {
     if (
@@ -556,7 +568,8 @@ export function verifyLetterInk(
       ayinTwins?.has(rival.id) ||
       shinTwins?.has(rival.id) ||
       descTwins?.has(rival.id) ||
-      yodTwins?.has(rival.id)
+      yodTwins?.has(rival.id) ||
+      heTwins?.has(rival.id)
     ) {
       /* stretch-fill twins */
     } else if (isNear(want, rival.id) && (shape?.score ?? 0) >= 0.55 && (shape?.extra ?? 0) >= 0.55) {

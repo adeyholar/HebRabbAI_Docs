@@ -525,3 +525,59 @@ test("pe without a nose is not pe", () => {
   const r = grade(kafC(), "פ");
   assert.equal(r.match, "wrong");
 });
+
+function screenshotHe(gap = 12) {
+  const T = TOP + 6;
+  const B = BASE - 4;
+  const L = 300;
+  const R = 372;
+  return [line(L, T, R, T, 18), line(R, T, R, B, 20), line(L + 6, T + gap, L + 6, B, 16)];
+}
+
+function screenshotHe2stroke(gap = 12) {
+  const T = TOP + 6;
+  const B = BASE - 4;
+  const L = 300;
+  const R = 372;
+  return [line(L, T, R, T, 16).concat(line(R, T, R, B, 20).slice(1)), line(L + 8, T + gap, L + 8, B, 16)];
+}
+
+function joinedChet() {
+  const T = TOP + 6;
+  const B = BASE - 4;
+  const L = 300;
+  const R = 372;
+  return [line(L, T, R, T, 18), line(L, T, L, B, 20), line(R, T, R, B, 20)];
+}
+
+test("screenshot-like he with a short gap under the roof counts", () => {
+  for (const gap of [12, 18, 26]) {
+    const r = grade(screenshotHe(gap), "ה");
+    assert.ok(r.match === "exact" || r.match === "close", `gap ${gap} ${JSON.stringify(r)}`);
+    assert.equal(r.read, "ה", `gap ${gap} read ${r.read}`);
+  }
+});
+
+test("two-stroke he (roof+right, then left stem with a gap) counts", () => {
+  const r = grade(screenshotHe2stroke(12), "ה");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ה");
+});
+
+test("joined chet is not he", () => {
+  const r = grade(joinedChet(), "ה");
+  assert.equal(r.match, "wrong");
+  assert.equal(r.read, "ח");
+});
+
+test("joined chet still counts as chet", () => {
+  const r = grade(joinedChet(), "ח");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ח");
+});
+
+test("chart he is not chet", () => {
+  const r = grade(modelInk("ה", 0), "ח");
+  assert.equal(r.match, "wrong");
+  assert.equal(r.read, "ה");
+});
