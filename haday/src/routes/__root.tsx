@@ -4,18 +4,32 @@ import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { AppShell } from "@/components/app-shell";
 import { ScrollBackdrop } from "@/components/scroll-backdrop";
+import { AppErrorComponent } from "@/lib/error-component";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "HaDay";
 
 const fetchSessionUser = createServerFn({ method: "GET" }).handler(async () => {
-  const { getSessionUser } = await import("@/lib/auth/verify.server");
-  const u = await getSessionUser();
-  return u ? { id: u.id, email: u.email } : null;
+  try {
+    const { getSessionUser } = await import("@/lib/auth/verify.server");
+    const u = await getSessionUser();
+    return u ? { id: u.id, email: u.email } : null;
+  } catch (err) {
+    console.error("[session]", err);
+    return null;
+  }
 });
 
 export const Route = createRootRoute({
-  beforeLoad: async () => ({ sessionUser: await fetchSessionUser() }),
+  beforeLoad: async () => {
+    try {
+      return { sessionUser: await fetchSessionUser() };
+    } catch (err) {
+      console.error("[root beforeLoad]", err);
+      return { sessionUser: null };
+    }
+  },
+  errorComponent: AppErrorComponent,
   head: () => ({
     meta: [
       { charSet: "utf-8" },
