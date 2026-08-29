@@ -17,10 +17,12 @@ type Props = {
   ghost?: string;
   trace?: boolean;
   allowSample?: boolean;
+  showModel?: boolean;
+  hint?: string;
   onPass: (ok: boolean) => void;
 };
 
-export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = true, onPass }: Props) {
+export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = true, showModel, hint, onPass }: Props) {
   const pad = useRef<InkPadHandle>(null);
   const [empty, setEmpty] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -29,8 +31,14 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
   const [left, setLeft] = useState(writeChecksLeft);
   const [sample, setSample] = useState(allowSample && trace);
   const sampleGlyph = ghost || expected;
-  const showSample = allowSample && sample;
-  const hint = writingHint(expected);
+  const modelOn = showModel ?? (allowSample && sample);
+  const lineHint =
+    hint ??
+    (mode === "letter"
+      ? modelOn
+        ? "Trace the faint strokes. Body between the lines."
+        : "No model. Body between the two lines. Lamed above the top; finals below the bottom; qof a little below."
+      : writingHint(expected));
 
   const locked = result
     ? result.match === "exact" || result.match === "close" || (tries >= 2 && result.counted !== false && result.match !== "empty")
@@ -76,12 +84,12 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
           disabled={locked || busy}
           guides={mode === "letter"}
           model={mode === "letter" ? sampleGlyph : null}
-          showModel={mode === "letter" && showSample}
+          showModel={mode === "letter" && modelOn}
           onChange={setEmpty}
           className="relative z-10 h-56 shadow-none"
         />
       </div>
-      {allowSample && (
+      {allowSample && showModel === undefined && (
         <div className="mt-2 flex gap-2">
           <button
             type="button"
@@ -96,7 +104,7 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
         </div>
       )}
       <p className="mt-1 text-center text-xs text-muted">
-        {hint} {left} checks left today
+        {lineHint} {left} checks left today
       </p>
       <div className="mt-2 flex gap-2">
         <Button type="button" variant="outline" className="flex-1" onClick={() => pad.current?.undo()} disabled={locked || busy}>

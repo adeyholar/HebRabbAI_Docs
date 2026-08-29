@@ -7,7 +7,25 @@ import { useStudy } from "@/lib/store";
 import { cn } from "@/lib/cn";
 
 type Kind = "letter" | "vowel";
-type Mode = "trace" | "recall";
+type WriteLevel = "copy" | "stave";
+
+const LEVEL_KEY = "davar-alef-write-level";
+
+function loadUnlocked(): boolean {
+  try {
+    return localStorage.getItem(LEVEL_KEY) === "stave";
+  } catch {
+    return false;
+  }
+}
+
+function saveUnlocked() {
+  try {
+    localStorage.setItem(LEVEL_KEY, "stave");
+  } catch {
+    /* ignore */
+  }
+}
 
 export function LetterWrite() {
   const queue = useStudy((s) => s.alefQueue);
@@ -19,7 +37,8 @@ export function LetterWrite() {
   const [kind, setKind] = useState<Kind>(() =>
     queued.some((x) => x.kind === "vowel") && !queued.some((x) => x.kind === "letter") ? "vowel" : "letter",
   );
-  const [mode, setMode] = useState<Mode>(queued.length ? "recall" : "trace");
+  const [unlocked, setUnlocked] = useState(loadUnlocked);
+  const [level, setLevel] = useState<WriteLevel>(queued.length ? "stave" : "copy");
   const [letterDeck, setLetterDeck] = useState(() => WRITE_LETTERS);
   const [vowelDeck, setVowelDeck] = useState(() => VOWELS);
   const [i, setI] = useState(0);
@@ -52,7 +71,7 @@ export function LetterWrite() {
     );
     if (qVowels.length && !qLetters.length) setKind("vowel");
     else if (qLetters.length && !qVowels.length) setKind("letter");
-    if (q.length) setMode("recall");
+    if (q.length) setLevel("stave");
     setI(0);
     setRight(0);
     setPadKey((n) => n + 1);
@@ -124,6 +143,10 @@ export function LetterWrite() {
     if (key) rate(key, ok ? "good" : "again");
     if (ok) setRight((n) => n + 1);
     if (i + 1 >= deckLen) {
+      if (level === "copy" && right + (ok ? 1 : 0) >= Math.ceil(deckLen * 0.7)) {
+        saveUnlocked();
+        setUnlocked(true);
+      }
       setI(deckLen);
       return;
     }
@@ -132,15 +155,35 @@ export function LetterWrite() {
   }
 
   if (done) {
+    const passed = right >= Math.ceil(deckLen * 0.7);
     return (
       <div className="mt-5 rounded-[var(--radius-xl)] bg-card p-8 text-center shadow-[var(--shadow-border)]">
         <p className="font-display text-3xl font-bold text-ink">
           {right} / {deckLen}
         </p>
-        <p className="mt-2 text-sm text-muted">{kind === "letter" ? "Letter" : "Vowel"} round complete.</p>
-        <Button className="mt-4" onClick={newRound}>
-          New round
-        </Button>
+        <p className="mt-2 text-sm text-muted">
+          {level === "copy" ? "Copy round complete." : "Lines-only round complete."}
+        </p>
+        {level === "copy" && passed && (
+          <p className="mt-2 text-sm text-ink">Next: write on the stave with no model. Lamed above, finals below.</p>
+        )}
+        <div className="mt-4 flex flex-col gap-2">
+          {level === "copy" && (passed || unlocked) && (
+            <Button
+              onClick={() => {
+                saveUnlocked();
+                setUnlocked(true);
+                setLevel("stave");
+                newRound();
+              }}
+            >
+              Next: write on the lines
+            </Button>
+          )}
+          <Button variant={level === "copy" && passed ? "outline" : "primary"} onClick={newRound}>
+            Same level, new round
+          </Button>
+        </div>
       </div>
     );
   }
@@ -160,39 +203,45 @@ export function LetterWrite() {
       )}
       <div className="mt-2 flex gap-2">
         <KindBtn
-          on={mode === "trace"}
+          on={level === "copy"}
           onClick={() => {
-            setMode("trace");
+            setLevel("copy");
             resetPad();
           }}
-          label="Trace"
+          label="1 · Copy"
         />
         <KindBtn
-          on={mode === "recall"}
+          on={level === "stave"}
           onClick={() => {
-            setMode("recall");
+            if (!unlocked && !queue.length) return;
+            setLevel("stave");
             resetPad();
           }}
-          label="From name"
+          label={unlocked || queue.length ? "2 · Lines" : "2 · Lines (locked)"}
         />
       </div>
+      <p className="mt-2 text-center text-xs text-muted">
+        {level === "copy"
+          ? "Learning: trace the model between the two lines."
+          : "No model. Body between the lines. Lamed rises above the top line. Finals drop below the bottom line."}
+      </p>
 
       <p className="mt-3 text-sm tabular-nums text-muted">
         {i + 1} / {deckLen} · {right} correct
       </p>
 
       <div className="mt-3 rounded-[var(--radius-xl)] bg-card px-5 py-6 text-center shadow-[var(--shadow-border)]">
-        {mode === "recall" ? (
+        {level === "stave" ? (
           <>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Write this {kind === "vowel" ? "vowel on ב" : "letter"}
+              Write this {kind === "vowel" ? "vowel on ב" : "letter"} on the stave
             </p>
             <p className="mt-1 font-display text-3xl font-bold text-ink">{name}</p>
             <p className="mt-1 text-sm text-muted">{sound}</p>
           </>
         ) : (
           <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Trace {name}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Copy {name}</p>
             <p className="he-word mt-2 text-6xl">{glyph}</p>
             <p className="mt-1 text-sm text-muted">{sound}</p>
           </>
@@ -200,11 +249,20 @@ export function LetterWrite() {
       </div>
 
       <GlyphInk
-        key={`${kind}-${i}-${padKey}`}
+        key={`${kind}-${level}-${i}-${padKey}`}
         expected={glyph}
         mode={kind}
-        trace={mode === "trace"}
+        trace={level === "copy"}
         ghost={glyph}
+        allowSample={false}
+        showModel={level === "copy" && kind === "letter"}
+        hint={
+          kind === "letter"
+            ? level === "copy"
+              ? "Trace the faint strokes. Body sits between the two lines."
+              : "No model. Body between the lines. Lamed above the top line. Finals below the bottom line. Qof a little below."
+            : undefined
+        }
         onPass={(ok) => next(ok)}
       />
 
