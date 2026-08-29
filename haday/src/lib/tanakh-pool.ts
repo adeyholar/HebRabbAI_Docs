@@ -12,6 +12,26 @@ function tokens(he: string): string[] {
     .filter((t) => lettersOnly(t).length >= 2);
 }
 
+const PREFIXES = new Set(["ו", "ה", "ב", "ל", "מ", "כ", "ש"]);
+
+function isInflected(surf: string, root: string): boolean {
+  if (surf === root) return true;
+  if (!surf.includes(root)) return false;
+  const extra = surf.length - root.length;
+  if (extra > 4) return false;
+  if (surf.startsWith(root)) return extra <= (root.length < 3 ? 3 : 4);
+  if (surf.endsWith(root)) {
+    const pre = surf.slice(0, extra);
+    if (root.length < 3) {
+      if (pre.length === 1) return PREFIXES.has(pre);
+      if (pre.length === 2) return PREFIXES.has(pre[0]!) && PREFIXES.has(pre[1]!);
+      return false;
+    }
+    return extra <= 3;
+  }
+  return root.length >= 4 && extra <= 3;
+}
+
 function bestLemma(surface: string): VocabItem | undefined {
   const surf = lettersOnly(surface);
   if (surf.length < 2) return undefined;
@@ -25,13 +45,10 @@ function bestLemma(surface: string): VocabItem | undefined {
       if (!exact || v.freq > exact.freq) exact = v;
       continue;
     }
-    if (!surf.includes(root)) continue;
+    if (!isInflected(surf, root)) continue;
     const extra = surf.length - root.length;
-    if (extra > 4) continue;
-    if (root.length < 3 && extra > 2) continue;
-    const atEdge = surf.startsWith(root) || surf.endsWith(root);
-    if (!atEdge && root.length < 4) continue;
-    const score = root.length / surf.length + (v.freq > 200 ? 0.05 : 0) + (atEdge ? 0.08 : 0);
+    const atStart = surf.startsWith(root);
+    const score = root.length / surf.length + (v.freq > 200 ? 0.05 : 0) + (atStart ? 0.1 : 0) - extra * 0.02;
     if (score > bestScore) {
       bestScore = score;
       best = v;

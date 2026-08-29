@@ -86,7 +86,10 @@ test("tanakh forms are real surface words, not the citation lemma", () => {
   }
   const ch3 = tanakhFormsForChapter(3, 24);
   assert.ok(ch3.length >= 4, `ch3 forms ${ch3.length}`);
-  assert.ok(ch3.some((v) => lettersOnly(v.hebrew) !== lettersOnly(v.hebrewAlts?.[0] ?? "")));
+  const ben = forms.filter((v) => lemmaIdOf(v.id) === "ben").map((v) => lettersOnly(v.hebrew));
+  assert.ok(ben.includes("בנך") || ben.includes(lettersOnly("בִּנְךָ")));
+  assert.ok(!ben.includes(lettersOnly("תֶּבֶן")), "straw is not son");
+  assert.ok(!ben.includes(lettersOnly("וַיִּבֶן")), "he built is not son");
 });
 
 test("game play pool adds Tanakh forms; spell-strict stays lemmas", () => {
