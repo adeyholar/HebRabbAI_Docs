@@ -44,12 +44,12 @@ const PRACTICE: NavItem[] = [
 
 function moreItems(admin: boolean): NavItem[] {
   const items: NavItem[] = [
-    { to: "/guide", label: "Guide", hint: "How to use HaDay", icon: CircleHelp },
     { to: "/challenge", label: "Ultimate Challenge", hint: "Whole list, one sitting", icon: Crown },
-    { to: "/rewards", label: "Rewards", hint: "Ranks and badges", icon: Trophy },
     { to: "/leaderboard", label: "Leaderboard", hint: "Class standings", icon: Medal },
+    { to: "/rewards", label: "Rewards", hint: "Ranks and badges", icon: Trophy },
   ];
   if (admin) items.push({ to: "/admin", label: "Class roster", hint: "Visitors and learners", icon: Users });
+  items.push({ to: "/guide", label: "Guide", hint: "How to use HaDay", icon: CircleHelp });
   return items;
 }
 
