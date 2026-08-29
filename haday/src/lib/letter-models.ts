@@ -28,7 +28,7 @@ const MODELS: Record<string, LetterModel> = {
   נ: { glyph: "נ", band: "body", hint: "Short open nun on the line. Not a descender." },
   ן: { glyph: "ן", band: "descender", hint: "Final nun: one long stem below the line. No zayin roof." },
   ס: { glyph: "ס", band: "body", hint: "Closed oval. No slash through it." },
-  ע: { glyph: "ע", band: "body", hint: "Two arms meeting like a Y, as on the chart." },
+  ע: { glyph: "ע", band: "body", hint: "Two arms meeting like a Y, as on the chart. Open at the top — a rounded U is fine." },
   פ: { glyph: "פ", band: "body", hint: "Open pe with a nose inside." },
   ף: { glyph: "ף", band: "descender", hint: "Final fay: pe that drops below the line." },
   צ: { glyph: "צ", band: "body", hint: "Two arms and a base. On the line, not a long tail." },

@@ -214,7 +214,8 @@ function gateLetter(want: string, f: Feat, lined: boolean): { ok: boolean; as: s
   if (want === "י" && (f.tall || dropped || f.path > 140)) return { ok: false, as: "ו" };
   if (want === "ו" && (f.hasTopBar || dropped || f.small)) return { ok: false, as: f.hasTopBar ? "ז" : dropped ? "ן" : "י" };
   if (want === "ז" && (dropped || (!f.hasTopBar && f.topShare < 0.18))) return { ok: false, as: dropped ? "ן" : "ו" };
-  if (want === "ע" && (!f.hasFork || roundLoop(f))) return { ok: false, as: "" };
+  if (want === "ע" && roundLoop(f)) return { ok: false, as: "ס" };
+  if (want === "ע" && stick(f)) return { ok: false, as: "ו" };
   if (want === "צ" && !f.hasFork) return { ok: false, as: "" };
   if (want === "ץ" && (!f.hasFork || (!dropped && !f.tall))) return { ok: false, as: f.hasFork ? "צ" : "" };
   if (want === "א" && (roundLoop(f) || stick(f))) return { ok: false, as: "" };
@@ -275,9 +276,9 @@ const SCORES: Record<string, Scorer> = {
     (f.n >= 1 ? 0.15 : 0) +
     (roundLoop(f) || stick(f) || f.hasFork ? -0.4 : 0.1),
   ע: (f) =>
-    (f.hasFork && !f.tall ? 0.35 : 0) +
-    (f.n >= 2 ? 0.15 : 0) +
-    (f.closed < 0.55 ? 0.1 : 0) +
+    (f.hasFork ? 0.35 : f.closed < 0.48 && !f.hasTopBar && !stick(f) ? 0.22 : 0) +
+    (f.n >= 1 ? 0.15 : 0) +
+    (f.closed < 0.55 ? 0.12 : 0) +
     (stick(f) || roundLoop(f) || f.hasTopBar ? -0.4 : 0.1),
   ב: (f) =>
     (f.closed < 0.55 ? 0.25 : -0.2) +
@@ -368,6 +369,15 @@ function qofMissNote(f: Feat, gate: { ok: boolean; as: string }): string | undef
   return undefined;
 }
 
+function ayinMissNote(f: Feat, rivalId: string): string | undefined {
+  if (roundLoop(f)) return "Ayin is open at the top — two arms like a Y, not a closed oval.";
+  if (stick(f)) return "Two arms meeting like a Y, as on the chart. Not a single stem.";
+  if (rivalId === "צ" || rivalId === "ץ") {
+    return "That looks more like tsade. Ayin is just the Y — no extra right foot, and it stays on the line.";
+  }
+  return undefined;
+}
+
 /** Every alef-bet letter (and finals) is scored. Trace mode verifies the shown letter, not the whole alphabet. */
 export function verifyLetterInk(
   strokes: InkStroke[],
@@ -385,13 +395,15 @@ export function verifyLetterInk(
   const shape = ranked.find((r) => r.id === want) ?? matchStrokeModel(strokes, want);
   const rival = ranked[0];
   const qofNote = want === "ק" ? qofMissNote(f, gate) : undefined;
+  const ayinNote = want === "ע" ? ayinMissNote(f, rival && rival.id !== want ? rival.id : "") : undefined;
+  const note = qofNote ?? ayinNote;
   const tBar = f.hasTopBar && !f.hasBottomBar;
 
   if (want === "ק" && f.footX < 0.42) {
-    return { match: "wrong", read: "", score: shape?.score ?? 0, note: qofNote };
+    return { match: "wrong", read: "", score: shape?.score ?? 0, note };
   }
   if (want === "ק" && lined && !gate.ok && gate.as === "ר") {
-    return { match: "wrong", read: "ר", score: shape?.score ?? 0.12, note: qofNote };
+    return { match: "wrong", read: "ר", score: shape?.score ?? 0.12, note };
   }
   if ((want === "ר" || want === "ד") && lined && !gate.ok && gate.as === "ק") {
     return { match: "wrong", read: "ק", score: shape?.score ?? 0.12 };
@@ -401,28 +413,38 @@ export function verifyLetterInk(
   }
 
   const hangTwins = want === "ק" && gate.ok ? new Set(["ד", "ר", "ן", "ך", "ו", "ה", "נ", "ף"]) : null;
+  const ayinTwins =
+    want === "ע" && !roundLoop(f) && !stick(f) ? new Set(["ס", "ט", "ם", "מ", "ש", "כ", "נ", "ג"]) : null;
 
   if (rival && rival.id !== want && rival.score >= 0.52 && rival.score >= (shape?.score ?? 0) + 0.07) {
-    if (hangTwins?.has(rival.id)) {
-      /* qof’s hang already passed — resh/dalet/nun look the same after fit */
+    if (hangTwins?.has(rival.id) || ayinTwins?.has(rival.id)) {
+      /* stretch-fill twins — qof hang / open Y vs oval */
     } else if (isNear(want, rival.id) && (shape?.score ?? 0) >= 0.55 && (shape?.extra ?? 0) >= 0.55) {
       return { match: "close", read: want, score: shape?.score ?? rival.score };
     } else {
-      return { match: "wrong", read: rival.id, score: shape?.score ?? 0, note: qofNote };
+      return { match: "wrong", read: rival.id, score: shape?.score ?? 0, note };
+    }
+  }
+
+  if (want === "ע" && shape && shape.score >= 0.55 && !roundLoop(f) && !stick(f) && !f.hasTopBar) {
+    const lead = shape.score + 0.04 >= (rival?.score ?? 0) || !rival || rival.id === want || Boolean(ayinTwins?.has(rival.id));
+    if (lead) {
+      if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
+      return { match: "close", read: want, score: shape.score };
     }
   }
 
   if (shape && shape.score >= 0.7 && shape.cover >= 0.6 && shape.extra >= 0.58) {
     if (lined && !gate.ok && (letterModel(want)?.band === "descender" || letterModel(want)?.band === "hang" || letterModel(want)?.band === "ascender")) {
-      return { match: "wrong", read: gate.as, score: shape.score * 0.4, note: qofNote };
+      return { match: "wrong", read: gate.as, score: shape.score * 0.4, note };
     }
-    if (!gate.ok) return { match: "wrong", read: gate.as, score: shape.score * 0.45, note: qofNote };
+    if (!gate.ok) return { match: "wrong", read: gate.as, score: shape.score * 0.45, note };
     if (shape.score >= 0.82 && shape.cover >= 0.72 && shape.extra >= 0.7) return { match: "exact", read: want, score: shape.score };
     return { match: "close", read: want, score: shape.score };
   }
 
-  if (!gate.ok) return { match: "wrong", read: gate.as === want ? "" : gate.as, score: shape?.score ?? 0.12, note: qofNote };
-  if (shape && shape.score < 0.42) return { match: "wrong", read: rival && rival.id !== want ? rival.id : "", score: shape.score, note: qofNote };
+  if (!gate.ok) return { match: "wrong", read: gate.as === want ? "" : gate.as, score: shape?.score ?? 0.12, note };
+  if (shape && shape.score < 0.42) return { match: "wrong", read: rival && rival.id !== want ? rival.id : "", score: shape.score, note };
 
   let bestId = "";
   let best = -1;
@@ -438,14 +460,14 @@ export function verifyLetterInk(
   if (opts?.trace) {
     if (mine >= 0.5 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
     if (mine >= 0.34) return { match: "close", read: want, score: mine };
-    if (best >= 0.62 && best > mine + 0.2 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine, note: qofNote };
-    return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine, note: qofNote };
+    if (best >= 0.62 && best > mine + 0.2 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine, note };
+    return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine, note };
   }
 
   if (mine >= 0.58 && mine + 0.02 >= best) return { match: "exact", read: want, score: mine };
   if (mine >= 0.48 && (mine + 0.08 >= best || isNear(want, bestId))) return { match: "close", read: want, score: mine };
   if (isNear(want, bestId) && mine >= 0.42 && best - mine < 0.16) return { match: "close", read: want, score: mine };
-  if (best >= 0.5 && best > mine + 0.1 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine, note: qofNote };
+  if (best >= 0.5 && best > mine + 0.1 && !isNear(want, bestId)) return { match: "wrong", read: bestId, score: mine, note };
   if (mine >= 0.46) return { match: "close", read: want, score: mine };
-  return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine, note: qofNote };
+  return { match: "wrong", read: bestId && best > mine ? bestId : "", score: mine, note };
 }

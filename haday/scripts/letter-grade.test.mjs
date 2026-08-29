@@ -18,6 +18,20 @@ function line(x1, y1, x2, y2, n = 24) {
   return s;
 }
 
+function curve(pts, n = 12) {
+  const s = [];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    for (let k = 0; k < n; k++) {
+      const t = k / n;
+      s.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  }
+  s.push(pts[pts.length - 1]);
+  return s;
+}
+
 function grade(strokes, letter) {
   return verifyLetterInk(strokes, letter, { height: H });
 }
@@ -60,6 +74,66 @@ function latinT() {
 
 function kafC() {
   return [line(150, TOP + 8, 250, TOP + 8, 16), line(250, TOP + 8, 250, BASE - 6, 16), line(250, BASE - 6, 150, BASE - 6, 16)];
+}
+
+function chartAyin() {
+  const jx = 310;
+  const jy = BASE - 8;
+  return [line(230, TOP + 8, jx, jy, 22).concat(line(jx, jy, 225, BASE - 2, 8).slice(1)), line(390, TOP + 6, jx, jy, 22)];
+}
+
+function compactYAyin() {
+  const jx = 340;
+  const jy = BASE - 4;
+  return [
+    line(305, TOP + 42, jx, jy, 18),
+    curve([{ x: jx, y: jy }, { x: 350, y: TOP + 36 }, { x: 360, y: TOP + 8 }], 12),
+  ];
+}
+
+function oneStrokeUAyin() {
+  return [
+    curve(
+      [
+        { x: 260, y: TOP + 18 },
+        { x: 270, y: TOP + 50 },
+        { x: 290, y: BASE - 10 },
+        { x: 320, y: BASE - 2 },
+        { x: 350, y: BASE - 12 },
+        { x: 365, y: TOP + 40 },
+        { x: 372, y: TOP + 8 },
+      ],
+      14,
+    ),
+  ];
+}
+
+function screenshotAyin() {
+  const jx = 340;
+  const jy = BASE - 4;
+  return [
+    curve(
+      [
+        { x: 312, y: TOP + 38 },
+        { x: 328, y: BASE - 20 },
+        { x: 338, y: BASE - 2 },
+        { x: 328, y: BASE + 2 },
+        { x: 350, y: BASE - 10 },
+        { x: 358, y: TOP + 28 },
+        { x: 352, y: TOP + 6 },
+      ],
+      16,
+    ),
+  ];
+}
+
+function tsadeY() {
+  return [
+    line(270, TOP + 12, 320, TOP + 50, 16),
+    line(370, TOP + 8, 320, TOP + 50, 16),
+    line(320, TOP + 50, 280, BASE - 4, 12),
+    line(320, TOP + 50, 360, BASE - 4, 12),
+  ];
 }
 
 test("chart qof (open resh + hanging right leg) counts", () => {
@@ -122,4 +196,61 @@ test("hanging resh is read as qof", () => {
   const r = grade(openHangQof(40), "ר");
   assert.equal(r.match, "wrong");
   assert.equal(r.read, "ק");
+});
+
+test("chart ayin (two arms meeting like a Y) counts", () => {
+  const r = grade(chartAyin(), "ע");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ע");
+});
+
+test("compact Y with a taller right arm counts as ayin", () => {
+  const r = grade(compactYAyin(), "ע");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ע");
+});
+
+test("one-stroke rounded U counts as ayin", () => {
+  const r = grade(oneStrokeUAyin(), "ע");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ע");
+});
+
+test("screenshot-like rounded Y on the line counts as ayin", () => {
+  const r = grade(screenshotAyin(), "ע");
+  assert.ok(r.match === "exact" || r.match === "close", JSON.stringify(r));
+  assert.equal(r.read, "ע");
+});
+
+test("closed oval is not ayin", () => {
+  const r = grade(
+    [
+      curve(
+        [
+          { x: 280, y: TOP + 10 },
+          { x: 360, y: TOP + 10 },
+          { x: 370, y: BASE - 10 },
+          { x: 280, y: BASE - 10 },
+          { x: 270, y: TOP + 20 },
+          { x: 280, y: TOP + 10 },
+        ],
+        10,
+      ),
+    ],
+    "ע",
+  );
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "ע");
+});
+
+test("a single stem is not ayin", () => {
+  const r = grade([line(320, TOP + 8, 320, BASE - 4)], "ע");
+  assert.equal(r.match, "wrong");
+  assert.notEqual(r.read, "ע");
+});
+
+test("tsade with a right foot is not ayin", () => {
+  const r = grade(tsadeY(), "ע");
+  assert.equal(r.match, "wrong");
+  assert.ok(r.read === "צ" || r.read === "ץ", JSON.stringify(r));
 });
