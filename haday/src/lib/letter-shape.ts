@@ -1,6 +1,7 @@
 import { type HandMatch } from "@/lib/hebrew";
 import { FINAL_DESCENDERS, PAD_BASE, PAD_TOP } from "@/lib/pad-guides";
 import { letterModel, modelGlyph } from "@/lib/letter-models";
+import { matchStrokeModel } from "@/lib/letter-strokes";
 
 export type InkPoint = { x: number; y: number };
 export type InkStroke = InkPoint[];
@@ -328,7 +329,18 @@ export function verifyLetterInk(
 
   const lined = (opts?.height ?? 0) > 40;
   const gate = gateLetter(want, f, lined);
-  if (!gate.ok) return { match: "wrong", read: gate.as, score: 0.12 };
+  const shape = matchStrokeModel(strokes, want);
+
+  if (shape && shape.score >= 0.58 && shape.cover >= 0.5) {
+    if (lined && !gate.ok && (letterModel(want)?.band === "descender" || letterModel(want)?.band === "hang" || letterModel(want)?.band === "ascender")) {
+      return { match: "wrong", read: gate.as, score: shape.score * 0.4 };
+    }
+    if (shape.score >= 0.74 && shape.cover >= 0.68) return { match: "exact", read: want, score: shape.score };
+    return { match: "close", read: want, score: shape.score };
+  }
+
+  if (!gate.ok) return { match: "wrong", read: gate.as, score: shape?.score ?? 0.12 };
+  if (shape && shape.score < 0.42) return { match: "wrong", read: "", score: shape.score };
 
   let bestId = "";
   let best = -1;

@@ -7,7 +7,7 @@ import { playGrade } from "@/lib/sfx";
 import { writeChecksLeft } from "@/lib/write-cap";
 import { type HandMatch } from "@/lib/hebrew";
 import { cn } from "@/lib/cn";
-import { ghostStyle, writingHint } from "@/lib/letter-models";
+import { writingHint } from "@/lib/letter-models";
 
 type Result = { match: HandMatch; read: string; note?: string; counted?: boolean };
 
@@ -30,7 +30,6 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
   const [sample, setSample] = useState(allowSample && trace);
   const sampleGlyph = ghost || expected;
   const showSample = allowSample && sample;
-  const ghostPos = ghostStyle(expected);
   const hint = writingHint(expected);
 
   const locked = result
@@ -72,20 +71,14 @@ export function GlyphInk({ expected, mode, ghost, trace = false, allowSample = t
   return (
     <div>
       <div className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] bg-card shadow-[var(--shadow-border)]">
-        {showSample && sampleGlyph && (
-          <p
-            className="pointer-events-none absolute inset-x-0 z-0 grid place-items-center select-none he-word leading-none text-ink/35"
-            style={{ top: ghostPos.top, height: ghostPos.height, fontSize: ghostPos.fontSize }}
-          >
-            {sampleGlyph}
-          </p>
-        )}
         <InkPad
           ref={pad}
           disabled={locked || busy}
           guides={mode === "letter"}
+          model={mode === "letter" ? sampleGlyph : null}
+          showModel={mode === "letter" && showSample}
           onChange={setEmpty}
-          className={cn("relative z-10 h-56 shadow-none", showSample && "bg-transparent")}
+          className="relative z-10 h-56 shadow-none"
         />
       </div>
       {allowSample && (

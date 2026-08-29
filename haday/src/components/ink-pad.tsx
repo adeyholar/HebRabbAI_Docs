@@ -1,5 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { PAD_BASE, PAD_TOP } from "@/lib/pad-guides";
+import { staveRegion } from "@/lib/letter-models";
+import { modelToPad } from "@/lib/letter-strokes";
 import { cn } from "@/lib/cn";
 
 type Point = { x: number; y: number };
@@ -19,15 +21,21 @@ type Props = {
   className?: string;
   disabled?: boolean;
   guides?: boolean;
+  model?: string | null;
+  showModel?: boolean;
   onChange?: (empty: boolean) => void;
 };
 
-export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ className, disabled, guides, onChange }, ref) {
+export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ className, disabled, guides, model, showModel, onChange }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const strokesRef = useRef<Stroke[]>([]);
   const currentRef = useRef<Stroke | null>(null);
   const guidesRef = useRef(Boolean(guides));
+  const modelRef = useRef(model ?? "");
+  const showModelRef = useRef(Boolean(showModel));
   guidesRef.current = Boolean(guides);
+  modelRef.current = model ?? "";
+  showModelRef.current = Boolean(showModel);
 
   function sizeCanvas() {
     const canvas = canvasRef.current;
@@ -65,6 +73,23 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
       ctx.stroke();
       ctx.restore();
     }
+    if (showModelRef.current && modelRef.current) {
+      const region = staveRegion(modelRef.current);
+      const paths = modelToPad(modelRef.current, rect.width, rect.height, region);
+      ctx.save();
+      ctx.strokeStyle = "rgba(28, 24, 20, 0.28)";
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for (const path of paths) {
+        if (path.length < 2) continue;
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#1c1814";
@@ -99,7 +124,7 @@ export const InkPad = forwardRef<InkPadHandle, Props>(function InkPad({ classNam
     const onResize = () => sizeCanvas();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [guides]);
+  }, [guides, model, showModel]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
