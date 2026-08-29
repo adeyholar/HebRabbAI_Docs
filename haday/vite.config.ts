@@ -180,6 +180,18 @@ export default defineConfig(({ command, isPreview }) => {
     strictPort: true,
   },
   resolve: { tsconfigPaths: true },
+  environments: {
+    ssr: {
+      build: {
+        rolldownOptions: {
+          output: {
+            // Pair with nitro.inlineDynamicImports — see TanStack/router#8031.
+            codeSplitting: false,
+          },
+        },
+      },
+    },
+  },
   plugins: [
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
@@ -198,6 +210,12 @@ export default defineConfig(({ command, isPreview }) => {
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
+            // Vite 8.2 / Rolldown splits the SSR service into ssr.mjs + ssr2.mjs
+            // and re-exports an undeclared `ssr_exports` — every page then 500s
+            // with {"error":true,"status":500,"unhandled":true} while `vite build`
+            // still exits 0. Single-file SSR avoids that. Remove once Rolldown
+            // ships the fix: https://github.com/TanStack/router/issues/8031
+            inlineDynamicImports: true,
           }),
         ]
       : []),
