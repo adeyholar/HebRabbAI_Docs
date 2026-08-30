@@ -30,6 +30,8 @@ import { Route as GameChapterIndexRouteImport } from './routes/game/$chapter/ind
 import { Route as GameChapterStageRouteImport } from './routes/game/$chapter/$stage'
 import { Route as GameAlefbetIndexRouteImport } from './routes/game/alefbet/index'
 import { Route as GameAlefbetLevelRouteImport } from './routes/game/alefbet/$level'
+import { Route as GameNounsIndexRouteImport } from './routes/game/nouns/index'
+import { Route as GameNounsUnitRouteImport } from './routes/game/nouns/$unit'
 import { Route as GameSyllablesIndexRouteImport } from './routes/game/syllables/index'
 import { Route as GameSyllablesUnitRouteImport } from './routes/game/syllables/$unit'
 
@@ -138,6 +140,16 @@ const GameAlefbetLevelRoute = GameAlefbetLevelRouteImport.update({
   path: '/game/alefbet/$level',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GameNounsIndexRoute = GameNounsIndexRouteImport.update({
+  id: '/game/nouns/',
+  path: '/game/nouns/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameNounsUnitRoute = GameNounsUnitRouteImport.update({
+  id: '/game/nouns/$unit',
+  path: '/game/nouns/$unit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GameSyllablesIndexRoute = GameSyllablesIndexRouteImport.update({
   id: '/game/syllables/',
   path: '/game/syllables/',
@@ -169,9 +181,11 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
+  '/game/nouns/$unit': typeof GameNounsUnitRoute
   '/game/syllables/$unit': typeof GameSyllablesUnitRoute
   '/game/$chapter/': typeof GameChapterIndexRoute
   '/game/alefbet/': typeof GameAlefbetIndexRoute
+  '/game/nouns/': typeof GameNounsIndexRoute
   '/game/syllables/': typeof GameSyllablesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -194,9 +208,11 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
+  '/game/nouns/$unit': typeof GameNounsUnitRoute
   '/game/syllables/$unit': typeof GameSyllablesUnitRoute
   '/game/$chapter': typeof GameChapterIndexRoute
   '/game/alefbet': typeof GameAlefbetIndexRoute
+  '/game/nouns': typeof GameNounsIndexRoute
   '/game/syllables': typeof GameSyllablesIndexRoute
 }
 export interface FileRoutesById {
@@ -220,9 +236,11 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
+  '/game/nouns/$unit': typeof GameNounsUnitRoute
   '/game/syllables/$unit': typeof GameSyllablesUnitRoute
   '/game/$chapter/': typeof GameChapterIndexRoute
   '/game/alefbet/': typeof GameAlefbetIndexRoute
+  '/game/nouns/': typeof GameNounsIndexRoute
   '/game/syllables/': typeof GameSyllablesIndexRoute
 }
 export interface FileRouteTypes {
@@ -247,9 +265,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
+    | '/game/nouns/$unit'
     | '/game/syllables/$unit'
     | '/game/$chapter/'
     | '/game/alefbet/'
+    | '/game/nouns/'
     | '/game/syllables/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -272,9 +292,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
+    | '/game/nouns/$unit'
     | '/game/syllables/$unit'
     | '/game/$chapter'
     | '/game/alefbet'
+    | '/game/nouns'
     | '/game/syllables'
   id:
     | '__root__'
@@ -297,9 +319,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
+    | '/game/nouns/$unit'
     | '/game/syllables/$unit'
     | '/game/$chapter/'
     | '/game/alefbet/'
+    | '/game/nouns/'
     | '/game/syllables/'
   fileRoutesById: FileRoutesById
 }
@@ -323,9 +347,11 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   GameChapterStageRoute: typeof GameChapterStageRoute
   GameAlefbetLevelRoute: typeof GameAlefbetLevelRoute
+  GameNounsUnitRoute: typeof GameNounsUnitRoute
   GameSyllablesUnitRoute: typeof GameSyllablesUnitRoute
   GameChapterIndexRoute: typeof GameChapterIndexRoute
   GameAlefbetIndexRoute: typeof GameAlefbetIndexRoute
+  GameNounsIndexRoute: typeof GameNounsIndexRoute
   GameSyllablesIndexRoute: typeof GameSyllablesIndexRoute
 }
 
@@ -478,6 +504,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameAlefbetLevelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/game/nouns/': {
+      id: '/game/nouns/'
+      path: '/game/nouns'
+      fullPath: '/game/nouns/'
+      preLoaderRoute: typeof GameNounsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game/nouns/$unit': {
+      id: '/game/nouns/$unit'
+      path: '/game/nouns/$unit'
+      fullPath: '/game/nouns/$unit'
+      preLoaderRoute: typeof GameNounsUnitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/game/syllables/': {
       id: '/game/syllables/'
       path: '/game/syllables'
@@ -515,9 +555,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   GameChapterStageRoute: GameChapterStageRoute,
   GameAlefbetLevelRoute: GameAlefbetLevelRoute,
+  GameNounsUnitRoute: GameNounsUnitRoute,
   GameSyllablesUnitRoute: GameSyllablesUnitRoute,
   GameChapterIndexRoute: GameChapterIndexRoute,
   GameAlefbetIndexRoute: GameAlefbetIndexRoute,
+  GameNounsIndexRoute: GameNounsIndexRoute,
   GameSyllablesIndexRoute: GameSyllablesIndexRoute,
 }
 export const routeTree = rootRouteImport

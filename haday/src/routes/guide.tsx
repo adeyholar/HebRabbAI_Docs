@@ -28,7 +28,8 @@ function GuidePage() {
             <span className="text-ink"> — </span>
             one path through chapters 1–19. Stages unlock in order. Use Continue. Recognize, Gloss, and Spell (lenient)
             mix real Tanakh surface forms with the BBH lemmas. The Game menu also opens Aleph-bet mastery, Syllables
-            (learn a rule with a Tanakh line, then quiz), and Ultimate Challenge.
+            (learn a rule with a Tanakh line, then quiz), Nouns (endings, pairing, and a quiz that brings misses back),
+            and Ultimate Challenge.
           </li>
           <li>
             <Link to="/" hash="study-mode" className="inline-flex items-center gap-1.5 font-semibold text-primary">

@@ -3,6 +3,7 @@ import { tanakhFormsForChapter } from "@/lib/tanakh-pool";
 
 export const GAME_CHAPTER_MAX = 19;
 export const SYLLABLE_UNIT_MAX = 8;
+export const NOUN_UNIT_MAX = 6;
 
 export const GAME_STAGES = [
   { id: "recognize", name: "Recognize", short: "Recognize", prompt: "Hebrew → English" },
@@ -50,6 +51,7 @@ export type GameSnapshot = {
   lastKeepDay: number;
   alefBet: AlefBetProgress;
   syllables: SyllableProgress;
+  nouns: SyllableProgress;
 };
 
 export type AlefBetProgress = {
@@ -120,6 +122,7 @@ export function defaultGame(): GameSnapshot {
     lastKeepDay: 0,
     alefBet: emptyAlefBet(),
     syllables: emptySyllables(),
+    nouns: emptyNouns(),
   };
 }
 
@@ -128,6 +131,10 @@ export function emptyAlefBet(): AlefBetProgress {
 }
 
 export function emptySyllables(): SyllableProgress {
+  return { unlockedUnit: 1, currentUnit: 1, units: {} };
+}
+
+export function emptyNouns(): SyllableProgress {
   return { unlockedUnit: 1, currentUnit: 1, units: {} };
 }
 
@@ -166,6 +173,7 @@ export function hydrateGame(raw: unknown): GameSnapshot {
     lastKeepDay: Number(r.lastKeepDay) || 0,
     alefBet: hydrateAlefBet(r.alefBet),
     syllables: hydrateSyllables(r.syllables),
+    nouns: hydrateNouns(r.nouns),
   };
 }
 
@@ -197,6 +205,28 @@ function hydrateSyllables(raw: unknown): SyllableProgress {
   const r = raw as Partial<SyllableProgress>;
   const unlocked = Math.min(SYLLABLE_UNIT_MAX, Math.max(1, Number(r.unlockedUnit) || 1));
   const current = Math.min(SYLLABLE_UNIT_MAX, Math.max(1, Number(r.currentUnit) || 1));
+  const units: Record<string, StageRecord> = {};
+  if (r.units && typeof r.units === "object") {
+    for (const [key, val] of Object.entries(r.units)) {
+      if (!val || typeof val !== "object") continue;
+      const rec = val as Partial<StageRecord>;
+      units[key] = {
+        stars: Number(rec.stars) || 0,
+        best: Number(rec.best) || 0,
+        cleared: Boolean(rec.cleared),
+        attempts: Math.max(Number(rec.attempts) || 0, rec.cleared ? 1 : 0),
+      };
+    }
+  }
+  return { unlockedUnit: unlocked, currentUnit: current, units };
+}
+
+function hydrateNouns(raw: unknown): SyllableProgress {
+  const base = emptyNouns();
+  if (!raw || typeof raw !== "object") return base;
+  const r = raw as Partial<SyllableProgress>;
+  const unlocked = Math.min(NOUN_UNIT_MAX, Math.max(1, Number(r.unlockedUnit) || 1));
+  const current = Math.min(NOUN_UNIT_MAX, Math.max(1, Number(r.currentUnit) || 1));
   const units: Record<string, StageRecord> = {};
   if (r.units && typeof r.units === "object") {
     for (const [key, val] of Object.entries(r.units)) {
@@ -442,6 +472,44 @@ export function applySyllableResult(
   if (passed && n >= sy.unlockedUnit && n < SYLLABLE_UNIT_MAX) sy.unlockedUnit = n + 1;
   sy.currentUnit = sy.unlockedUnit;
   next.syllables = sy;
+  next.lastPlayDay = Date.now();
+  if (result.firstTryRate >= 0.4) {
+    next.winStreak = (next.winStreak || 0) + 1;
+    next.bestWinStreak = Math.max(next.bestWinStreak || 0, next.winStreak);
+  } else {
+    next.winStreak = 0;
+  }
+  return next;
+}
+
+export function nounUnitRecord(game: GameSnapshot, unit: number): StageRecord {
+  return game.nouns?.units?.[String(unit)] ?? emptyAlefLevel();
+}
+
+export function isNounUnitUnlocked(game: GameSnapshot, unit: number): boolean {
+  const n = Math.min(NOUN_UNIT_MAX, Math.max(1, Math.round(unit) || 1));
+  return n <= (game.nouns?.unlockedUnit || 1);
+}
+
+export function applyNounResult(
+  game: GameSnapshot,
+  unit: number,
+  result: { stars: number; score: number; firstTryRate: number },
+): GameSnapshot {
+  const next = cloneGame(hydrateGame(game));
+  const n = Math.min(NOUN_UNIT_MAX, Math.max(1, Math.round(unit) || 1));
+  const nn = next.nouns ?? emptyNouns();
+  const prev = nn.units[String(n)] ?? emptyAlefLevel();
+  const passed = result.score >= 70;
+  nn.units[String(n)] = {
+    stars: Math.max(prev.stars, result.stars),
+    best: Math.max(prev.best, result.score),
+    cleared: prev.cleared || passed,
+    attempts: (prev.attempts || 0) + 1,
+  };
+  if (passed && n >= nn.unlockedUnit && n < NOUN_UNIT_MAX) nn.unlockedUnit = n + 1;
+  nn.currentUnit = nn.unlockedUnit;
+  next.nouns = nn;
   next.lastPlayDay = Date.now();
   if (result.firstTryRate >= 0.4) {
     next.winStreak = (next.winStreak || 0) + 1;

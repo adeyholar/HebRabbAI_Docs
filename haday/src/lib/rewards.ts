@@ -20,6 +20,8 @@ export const BADGES = [
   { id: "alefbet-master", title: "Keeper of the letters", hint: "Clear all three Aleph-bet mastery levels" },
   { id: "syllables-open", title: "Open and closed", hint: "Clear the first syllables unit" },
   { id: "syllables-master", title: "Cutter of words", hint: "Clear all eight syllable units" },
+  { id: "nouns-open", title: "What a noun wears", hint: "Clear the first nouns unit" },
+  { id: "nouns-master", title: "Reader of endings", hint: "Clear all six noun units" },
 ] as const;
 
 export type BadgeId = (typeof BADGES)[number]["id"];
@@ -120,6 +122,10 @@ export function evaluateBadges(game: GameSnapshot, dailyStreak: number, keepStre
   if (sy["1"]?.cleared) out.push("syllables-open");
   const sylAll = [1, 2, 3, 4, 5, 6, 7, 8].every((n) => sy[String(n)]?.cleared);
   if (sylAll) out.push("syllables-master");
+  const nn = game.nouns?.units ?? {};
+  if (nn["1"]?.cleared) out.push("nouns-open");
+  const nounAll = [1, 2, 3, 4, 5, 6].every((n) => nn[String(n)]?.cleared);
+  if (nounAll) out.push("nouns-master");
   return out;
 }
 
