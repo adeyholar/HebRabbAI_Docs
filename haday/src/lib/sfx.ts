@@ -5,6 +5,8 @@ let master: GainNode | null = null;
 let muted = false;
 let applause: AudioBuffer | null = null;
 let applauseLoad: Promise<AudioBuffer | null> | null = null;
+let aww: AudioBuffer | null = null;
+let awwLoad: Promise<AudioBuffer | null> | null = null;
 const listeners = new Set<(value: boolean) => void>();
 
 function readMuted() {
@@ -39,7 +41,9 @@ function setMasterGain(value: number) {
 
 export function unlockSfx() {
   const ac = ensureGraph();
-  if (ac) void loadApplause(ac);
+  if (!ac) return;
+  void loadApplause(ac);
+  void loadAww(ac);
 }
 
 export function isMuted() {
@@ -70,53 +74,77 @@ export function subscribeMute(fn: (value: boolean) => void) {
   };
 }
 
-// Mixkit 521 — audience clapping, hands only (no cheers / voices). Mixkit License.
-function loadApplause(ac: AudioContext): Promise<AudioBuffer | null> {
-  if (applause) return Promise.resolve(applause);
-  if (applauseLoad) return applauseLoad;
-  applauseLoad = fetch("/sfx/crowd-clap.mp3")
+function decodeSfx(ac: AudioContext, url: string): Promise<AudioBuffer | null> {
+  return fetch(url)
     .then((res) => {
       if (!res.ok) throw new Error("sfx");
       return res.arrayBuffer();
     })
     .then((raw) => ac.decodeAudioData(raw.slice(0)))
-    .then((buf) => {
-      applause = buf;
-      return buf;
-    })
-    .catch(() => {
-      applauseLoad = null;
-      return null;
-    });
+    .catch(() => null);
+}
+
+// Mixkit 521 — audience clapping, hands only (no cheers / voices). Mixkit License.
+function loadApplause(ac: AudioContext): Promise<AudioBuffer | null> {
+  if (applause) return Promise.resolve(applause);
+  if (applauseLoad) return applauseLoad;
+  applauseLoad = decodeSfx(ac, "/sfx/crowd-clap.mp3").then((buf) => {
+    if (!buf) applauseLoad = null;
+    else applause = buf;
+    return buf;
+  });
   return applauseLoad;
 }
 
-function playCrowdClap(ac: AudioContext, dest: GainNode) {
-  const play = (buf: AudioBuffer) => {
-    const src = ac.createBufferSource();
-    src.buffer = buf;
-    const g = ac.createGain();
-    const t0 = ac.currentTime;
-    const dur = buf.duration;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(0.95, t0 + 0.018);
-    g.gain.setValueAtTime(0.95, t0 + Math.max(0.08, dur - 0.28));
-    g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
-    src.connect(g);
-    g.connect(dest);
-    src.start(t0);
-    src.stop(t0 + dur + 0.03);
-    src.onended = () => {
-      src.disconnect();
-      g.disconnect();
-    };
+// Freesound 752706 — small crowd “aww”, CC0 (Nox_Sound).
+function loadAww(ac: AudioContext): Promise<AudioBuffer | null> {
+  if (aww) return Promise.resolve(aww);
+  if (awwLoad) return awwLoad;
+  awwLoad = decodeSfx(ac, "/sfx/crowd-aww.mp3").then((buf) => {
+    if (!buf) awwLoad = null;
+    else aww = buf;
+    return buf;
+  });
+  return awwLoad;
+}
+
+function startBuffer(ac: AudioContext, dest: GainNode, buf: AudioBuffer, peak = 0.95) {
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  const g = ac.createGain();
+  const t0 = ac.currentTime;
+  const dur = buf.duration;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(peak, t0 + 0.018);
+  g.gain.setValueAtTime(peak, t0 + Math.max(0.08, dur - 0.28));
+  g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(g);
+  g.connect(dest);
+  src.start(t0);
+  src.stop(t0 + dur + 0.03);
+  src.onended = () => {
+    src.disconnect();
+    g.disconnect();
   };
+}
+
+function playCrowdClap(ac: AudioContext, dest: GainNode) {
   if (applause) {
-    play(applause);
+    startBuffer(ac, dest, applause, 0.95);
     return;
   }
   void loadApplause(ac).then((buf) => {
-    if (buf && !muted) play(buf);
+    if (buf && !muted) startBuffer(ac, dest, buf, 0.95);
+  });
+}
+
+function playCrowdAww(ac: AudioContext, dest: GainNode) {
+  if (aww) {
+    startBuffer(ac, dest, aww, 1);
+    return;
+  }
+  void loadAww(ac).then((buf) => {
+    if (buf && !muted) startBuffer(ac, dest, buf, 1);
   });
 }
 
@@ -124,6 +152,7 @@ export function playGrade(ok: boolean) {
   const ac = ensureGraph();
   if (!ac || !master || muted) return;
   if (ok) playCrowdClap(ac, master);
+  else playCrowdAww(ac, master);
 }
 
 if (typeof window !== "undefined") {
