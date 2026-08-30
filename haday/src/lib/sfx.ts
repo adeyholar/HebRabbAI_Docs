@@ -70,10 +70,11 @@ export function subscribeMute(fn: (value: boolean) => void) {
   };
 }
 
+// Mixkit 521 — audience clapping, hands only (no cheers / voices). Mixkit License.
 function loadApplause(ac: AudioContext): Promise<AudioBuffer | null> {
   if (applause) return Promise.resolve(applause);
   if (applauseLoad) return applauseLoad;
-  applauseLoad = fetch("/sfx/crowd-cheer.mp3")
+  applauseLoad = fetch("/sfx/crowd-clap.mp3")
     .then((res) => {
       if (!res.ok) throw new Error("sfx");
       return res.arrayBuffer();
