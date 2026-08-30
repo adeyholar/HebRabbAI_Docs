@@ -3,7 +3,7 @@ const MUTE_KEY = "haday-sfx-muted";
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = false;
-let noise: AudioBuffer | null = null;
+let applause: AudioBuffer | null = null;
 const listeners = new Set<(value: boolean) => void>();
 
 function readMuted() {
@@ -71,7 +71,8 @@ function tone(
 }
 
 export function unlockSfx() {
-  ensureGraph();
+  const ac = ensureGraph();
+  if (ac) applauseBuffer(ac);
 }
 
 export function isMuted() {
@@ -102,21 +103,6 @@ export function subscribeMute(fn: (value: boolean) => void) {
   };
 }
 
-function noiseBuffer(ac: AudioContext): AudioBuffer {
-  if (noise && noise.sampleRate === ac.sampleRate) return noise;
-  const len = Math.floor(ac.sampleRate * 0.18);
-  const buf = ac.createBuffer(1, len, ac.sampleRate);
-  const data = buf.getChannelData(0);
-  let last = 0;
-  for (let i = 0; i < len; i++) {
-    const white = Math.random() * 2 - 1;
-    last = last * 0.86 + white * 0.14;
-    data[i] = last * 1.8;
-  }
-  noise = buf;
-  return buf;
-}
-
 function disconnectLater(nodes: AudioNode[], when: number) {
   window.setTimeout(() => {
     for (const n of nodes) {
@@ -137,132 +123,131 @@ function panTo(ac: AudioContext, dest: GainNode, pan: number): AudioNode {
   return panner;
 }
 
-function clap(
-  ac: AudioContext,
-  dest: AudioNode,
-  start: number,
-  peak: number,
-  pan: number,
-  bright: number,
-  body = 0.07,
-) {
-  const src = ac.createBufferSource();
-  src.buffer = noiseBuffer(ac);
-  src.playbackRate.value = 0.82 + Math.random() * 0.35;
-  const hp = ac.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 220;
-  const bp = ac.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.value = bright;
-  bp.Q.value = 0.7;
-  const g = ac.createGain();
-  const panner = typeof ac.createStereoPanner === "function" ? ac.createStereoPanner() : null;
-  if (panner) panner.pan.value = pan;
-  const t0 = ac.currentTime + start;
-  const dur = body + Math.random() * 0.04;
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(peak, t0 + 0.003);
-  g.gain.exponentialRampToValueAtTime(peak * 0.35, t0 + dur * 0.35);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  src.connect(hp);
-  hp.connect(bp);
-  bp.connect(g);
-  if (panner) {
-    g.connect(panner);
-    panner.connect(dest);
-  } else {
-    g.connect(dest);
-  }
-  src.start(t0);
-  src.stop(t0 + dur + 0.05);
-  disconnectLater(panner ? [src, hp, bp, g, panner] : [src, hp, bp, g], start + dur + 0.08);
+function crowdTick(state: { lp: number }): number {
+  const white = Math.random() * 2 - 1;
+  state.lp = state.lp * 0.88 + white * 0.12;
+  return (white - state.lp) * 0.62 + state.lp * 0.16;
 }
 
-function thunderThump(ac: AudioContext, dest: AudioNode) {
-  const t0 = ac.currentTime;
-  for (const [freq, peak, dur] of [
-    [62, 0.55, 0.28],
-    [92, 0.38, 0.22],
-    [48, 0.32, 0.4],
-  ] as const) {
-    const osc = ac.createOscillator();
-    const g = ac.createGain();
-    const lp = ac.createBiquadFilter();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(freq, t0);
-    osc.frequency.exponentialRampToValueAtTime(freq * 0.55, t0 + dur);
-    lp.type = "lowpass";
-    lp.frequency.value = 180;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(peak, t0 + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(lp);
-    lp.connect(g);
-    g.connect(dest);
-    osc.start(t0);
-    osc.stop(t0 + dur + 0.04);
-    osc.onended = () => {
-      osc.disconnect();
-      lp.disconnect();
-      g.disconnect();
-    };
+function swellAt(t: number): number {
+  if (t < 0.12) return t / 0.12;
+  if (t < 0.55) return 1;
+  return Math.exp(-(t - 0.55) * 2.05);
+}
+
+function applauseBuffer(ac: AudioContext): AudioBuffer {
+  if (applause && applause.sampleRate === ac.sampleRate) return applause;
+  const sr = ac.sampleRate;
+  const seconds = 1.92;
+  const n = Math.floor(sr * seconds);
+  const buf = ac.createBuffer(2, n, sr);
+  const L = buf.getChannelData(0);
+  const R = buf.getChannelData(1);
+  const sL = { lp: 0 };
+  const sR = { lp: 0 };
+
+  for (let i = 0; i < n; i++) {
+    const t = i / sr;
+    const flutter = 0.88 + 0.12 * Math.sin(t * 19.1) * Math.sin(t * 11.7 + 0.6);
+    const bed = 0.24 * swellAt(t) * flutter;
+    L[i] = crowdTick(sL) * bed;
+    R[i] = crowdTick(sR) * bed;
   }
-  const rumble = ac.createBufferSource();
-  rumble.buffer = noiseBuffer(ac);
-  const rlp = ac.createBiquadFilter();
-  rlp.type = "lowpass";
-  rlp.frequency.value = 140;
-  const rg = ac.createGain();
-  rg.gain.setValueAtTime(0.0001, t0);
-  rg.gain.exponentialRampToValueAtTime(0.45, t0 + 0.02);
-  rg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.45);
-  rumble.connect(rlp);
-  rlp.connect(rg);
-  rg.connect(dest);
-  rumble.start(t0);
-  rumble.stop(t0 + 0.5);
-  disconnectLater([rumble, rlp, rg], 0.55);
+
+  const addClap = (t0: number, dur: number, peak: number, pan: number, bright: number) => {
+    const start = Math.floor(t0 * sr);
+    const samples = Math.max(16, Math.floor(dur * sr));
+    const attackN = Math.max(8, Math.floor(Math.min(0.014, dur * 0.4) * sr));
+    const lg = Math.cos((pan + 1) * 0.25 * Math.PI);
+    const rg = Math.sin((pan + 1) * 0.25 * Math.PI);
+    let lp = 0;
+    const decay = 52 + bright * 18;
+    for (let s = 0; s < samples; s++) {
+      const idx = start + s;
+      if (idx >= n) break;
+      const env =
+        s < attackN
+          ? 0.5 * (1 - Math.cos((Math.PI * s) / attackN))
+          : Math.exp((-(s - attackN) / sr) * decay);
+      const white = Math.random() * 2 - 1;
+      lp = lp * (0.7 + (1 - bright) * 0.12) + white * (0.3 - (1 - bright) * 0.12);
+      const mid = white * (0.32 + bright * 0.38) + lp * (0.68 - bright * 0.22);
+      const v = mid * env * peak;
+      L[idx] += v * lg;
+      R[idx] += v * rg;
+    }
+  };
+
+  const count = 560;
+  for (let k = 0; k < count; k++) {
+    const burst = k < 110;
+    const t0 = burst ? Math.random() * 0.18 : 0.06 + Math.pow(Math.random(), 1.28) * 1.38;
+    const dur = 0.018 + Math.random() * 0.022;
+    const near = Math.random() < 0.16;
+    const peak = (near ? 0.055 : 0.028) * (0.55 + Math.random() * 0.7) * swellAt(t0);
+    const pan = (Math.random() * 2 - 1) * (near ? 0.42 : 0.94);
+    addClap(t0, dur, peak, pan, Math.random());
+  }
+
+  const delay1 = Math.floor(0.038 * sr);
+  const delay2 = Math.floor(0.073 * sr);
+  const delay3 = Math.floor(0.118 * sr);
+  const Lc = new Float32Array(L);
+  const Rc = new Float32Array(R);
+  for (let i = 0; i < n; i++) {
+    if (i >= delay1) {
+      L[i] += Rc[i - delay1] * 0.34;
+      R[i] += Lc[i - delay1] * 0.34;
+    }
+    if (i >= delay2) {
+      L[i] += Rc[i - delay2] * 0.2;
+      R[i] += Lc[i - delay2] * 0.2;
+    }
+    if (i >= delay3) {
+      L[i] += Rc[i - delay3] * 0.12;
+      R[i] += Lc[i - delay3] * 0.12;
+    }
+  }
+
+  let peak = 1e-6;
+  for (let i = 0; i < n; i++) {
+    L[i] = Math.tanh(L[i]);
+    R[i] = Math.tanh(R[i]);
+    const a = Math.abs(L[i]);
+    const b = Math.abs(R[i]);
+    if (a > peak) peak = a;
+    if (b > peak) peak = b;
+  }
+  const scale = 0.9 / peak;
+  for (let i = 0; i < n; i++) {
+    L[i] *= scale;
+    R[i] *= scale;
+  }
+
+  applause = buf;
+  return buf;
 }
 
 function playCrowdClap(ac: AudioContext, dest: GainNode) {
-  const bus = ac.createGain();
-  bus.gain.value = 1.15;
-  const comp = ac.createDynamicsCompressor();
-  comp.threshold.value = -14;
-  comp.knee.value = 18;
-  comp.ratio.value = 5;
-  comp.attack.value = 0.002;
-  comp.release.value = 0.18;
-  bus.connect(comp);
-  comp.connect(dest);
-
-  const delay = ac.createDelay(0.4);
-  delay.delayTime.value = 0.12;
-  const wet = ac.createGain();
-  wet.gain.value = 0.32;
-  const fb = ac.createGain();
-  fb.gain.value = 0.18;
-  bus.connect(delay);
-  delay.connect(wet);
-  wet.connect(dest);
-  delay.connect(fb);
-  fb.connect(delay);
-
-  thunderThump(ac, bus);
-
-  const n = 42;
-  for (let i = 0; i < n; i++) {
-    const early = i < 10;
-    const t = early ? Math.random() * 0.07 : 0.06 + (i - 10) * 0.026 + Math.random() * 0.03;
-    const fall = early ? 1 : Math.max(0.28, 1 - (i - 10) / 38);
-    const peak = (early ? 0.32 : 0.18) * fall * (0.75 + Math.random() * 0.5);
-    const pan = (Math.random() * 2 - 1) * 0.92;
-    const bright = early ? 900 + Math.random() * 900 : 1500 + Math.random() * 1800;
-    clap(ac, bus, t, peak, pan, bright, early ? 0.1 : 0.065);
-  }
-
-  disconnectLater([bus, comp, delay, wet, fb], 1.8);
+  const src = ac.createBufferSource();
+  src.buffer = applauseBuffer(ac);
+  const rate = 0.97 + Math.random() * 0.06;
+  src.playbackRate.value = rate;
+  const g = ac.createGain();
+  const t0 = ac.currentTime;
+  const playDur = src.buffer.duration / rate;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(0.98, t0 + 0.022);
+  g.gain.setValueAtTime(0.98, t0 + playDur * 0.7);
+  g.gain.linearRampToValueAtTime(0.0001, t0 + playDur);
+  src.connect(g);
+  g.connect(dest);
+  src.start(t0);
+  src.stop(t0 + playDur + 0.03);
+  src.onended = () => {
+    src.disconnect();
+    g.disconnect();
+  };
 }
 
 function voiceAww(
