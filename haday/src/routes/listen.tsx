@@ -15,6 +15,7 @@ import {
   saveListenIndex,
   speakCard,
   speechSupported,
+  spellLetterNames,
   stopSpeech,
   unlockSpeech,
   waitForVoices,
@@ -168,8 +169,9 @@ function ListenPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Hands-free</p>
         <h1 className="mt-1 font-display text-4xl font-bold text-ink">Listen</h1>
         <p className="mt-3 text-muted">
-          Hebrew once (modern Israeli), a brief pause, then English. Works in Safari and Chrome on phone and laptop.
-          Warm default — Slow or Faster if you want.
+          For driving: each word is spelled letter by letter, then spoken in Hebrew, then named in English, then the
+          meaning. Heaven is Shin, Mem, Yod, Final mem — then shamayim — then Heaven — then sky. Works in Safari and
+          Chrome on phone and laptop. Warm default — Slow or Faster if you want.
         </p>
         {!supported && (
           <p className="mt-2 text-sm text-danger">
@@ -191,6 +193,11 @@ function ListenPage() {
           {item ? ` · ${GAME_CHAPTER_TITLES[item.chapter] ?? ""}` : ""}
         </p>
         <p className="he-word mt-4 text-5xl sm:text-6xl">{item?.hebrew}</p>
+        {item ? (
+          <p className="mt-3 text-sm font-semibold tracking-wide text-muted">
+            {spellLetterNames(item.hebrew).join(" · ")}
+          </p>
+        ) : null}
         <p className="mt-3 font-display text-2xl font-semibold text-ink">{item?.gloss}</p>
         <p className="mt-1 text-sm text-muted">{item?.translit}</p>
         <p className="mt-6 text-sm tabular-nums text-muted">
