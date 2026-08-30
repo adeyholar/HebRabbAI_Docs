@@ -15,9 +15,9 @@ export function GameMenu() {
 
   return (
     <label className="block">
-      <span className="text-xs font-semibold uppercase tracking-wide text-muted">Game</span>
+      <span className="block font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">Game</span>
       <select
-        className="mt-1 min-h-12 w-full rounded-[var(--radius-md)] bg-card px-3 text-base font-semibold text-ink shadow-[var(--shadow-border)]"
+        className="mt-3 min-h-12 w-full rounded-[var(--radius-md)] bg-card px-3 text-base font-semibold text-ink shadow-[var(--shadow-border)]"
         value={current}
         onChange={(e) => {
           const to = e.target.value;

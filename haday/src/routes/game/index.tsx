@@ -24,8 +24,7 @@ function GameMapPage() {
     <>
       <Panel className="mb-4">
         <GameMenu />
-        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-primary">Game mode</p>
-        <h1 className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">Chapter path</h1>
+        <h1 className="mt-5 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Chapter path</h1>
         <p className="mt-3 max-w-prose text-muted">
           Each BBH chapter is a level. Clear Recognize, Gloss, Spell (lenient), then Spell (strict) to unlock the next. Recognize, Gloss, and Spell (lenient) mix inflected Tanakh words with the chapter lemmas so you meet the text, not only the citation form. Both spell stages need the right consonants and vowels. Lenient still shows the verse; strict does not.
           Chapter 1 starts open.{" "}
