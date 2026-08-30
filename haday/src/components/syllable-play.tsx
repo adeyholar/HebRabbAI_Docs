@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { GradeBanner } from "@/components/grade-banner";
@@ -16,6 +16,25 @@ import {
   type SyllableVerse,
 } from "@/lib/syllables";
 import { useStudy } from "@/lib/store";
+
+function MixHe({ text, className }: { text: string; className?: string }) {
+  const re = /[\u0590-\u05FF]+/g;
+  const nodes: ReactNode[] = [];
+  let last = 0;
+  let i = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    nodes.push(
+      <span key={`he-${i++}`} className="he-word" dir="rtl" lang="he">
+        {m[0]}
+      </span>,
+    );
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return <span className={className}>{nodes}</span>;
+}
 
 function SplitWord({ split, size = "lg" }: { split: string; size?: "lg" | "sm" }) {
   const parts = split.split(" | ").filter(Boolean);
@@ -151,7 +170,9 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
             Unit {unit.id} · Learn
           </p>
           <h1 className="mt-1 font-display text-3xl font-bold text-ink">{unit.title}</h1>
-          <p className="mt-3 max-w-prose text-ink">{unit.rule}</p>
+          <p className="mt-3 max-w-prose text-ink">
+            <MixHe text={unit.rule} />
+          </p>
         </Panel>
         <Panel className="mt-3">
           <h2 className="font-display text-xl font-bold text-ink">Tanakh words</h2>
@@ -164,7 +185,9 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
                 <p className="he-word mt-1 text-lg text-muted" dir="rtl">
                   {s.word}
                 </p>
-                <p className="mt-1 text-sm text-muted">{s.note}</p>
+                <p className="mt-1 text-sm text-muted">
+                  <MixHe text={s.note} />
+                </p>
                 {s.ref ? <p className="mt-1 text-xs font-semibold text-muted">{s.ref}</p> : null}
               </li>
             ))}
@@ -223,7 +246,9 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
           Unit {unit.id} · Quiz · {i + 1} / {items.length}
         </p>
-        <h1 className="mt-1 font-display text-2xl font-bold text-ink">{q.q}</h1>
+        <h1 className="mt-1 font-display text-2xl font-bold text-ink">
+          <MixHe text={q.q} />
+        </h1>
         {q.ref ? <p className="mt-1 text-xs font-semibold text-muted">{q.ref}</p> : null}
         {q.he ? (
           <p className="he-word mt-3 text-4xl" dir="rtl">
@@ -260,7 +285,9 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
       {picked && (
         <div className="mt-3">
           <GradeBanner ok={ok} />
-          <p className="mt-2 text-sm text-muted">{q.why}</p>
+          <p className="mt-2 text-sm text-muted">
+            <MixHe text={q.why} />
+          </p>
           <Button className="mt-3 w-full" onClick={next}>
             {i + 1 >= items.length ? "See score" : "Next"}
           </Button>

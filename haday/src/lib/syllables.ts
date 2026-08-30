@@ -255,7 +255,7 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
     title: "Diphthongs",
     short: "ay / aw",
     rule:
-      "Two tight clusters act as one sound: the ay-group (ַ֫יִ) and the aw-group (ָ֫וֶ). A syllable that holds one of them is closed, because it still ends with a consonant. Some words are a single closed syllable for that reason (בַּ֫יִת, מָ֫וֶת).",
+      "Two tight clusters act as one sound: the ay-group in בַּיִת (house) and the aw-group in מָוֶת (death). A syllable that holds one of them is closed, because it still ends with a consonant. Some words are a single closed syllable for that reason.",
     samples: [
       { word: "שָׁמַיִם", split: "שָׁ | מַיִם", note: "The second slice holds the ay cluster and is closed.", ref: "Gen 1:1" },
       { word: "בַּיִת", split: "בַּיִת", note: "One closed syllable — the ay group is not cut.", ref: "Prov 24:3" },

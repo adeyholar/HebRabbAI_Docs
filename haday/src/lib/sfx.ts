@@ -277,27 +277,27 @@ function voiceAww(
   osc.type = "sawtooth";
   const t0 = ac.currentTime + start;
   osc.frequency.setValueAtTime(freq, t0);
-  osc.frequency.exponentialRampToValueAtTime(Math.max(freq * 0.62, 90), t0 + 0.58);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(freq * 0.58, 90), t0 + 0.82);
   const bp = ac.createBiquadFilter();
   bp.type = "bandpass";
   bp.frequency.setValueAtTime(760, t0);
-  bp.frequency.exponentialRampToValueAtTime(540, t0 + 0.5);
-  bp.Q.value = 3.2;
+  bp.frequency.exponentialRampToValueAtTime(500, t0 + 0.7);
+  bp.Q.value = 2.8;
   const lp = ac.createBiquadFilter();
   lp.type = "lowpass";
-  lp.frequency.value = 1350;
+  lp.frequency.value = 1500;
   const g = ac.createGain();
   const panner = panTo(ac, dest, pan);
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(peak, t0 + 0.07);
-  g.gain.exponentialRampToValueAtTime(peak * 0.55, t0 + 0.32);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.78);
+  g.gain.exponentialRampToValueAtTime(peak, t0 + 0.08);
+  g.gain.exponentialRampToValueAtTime(peak * 0.6, t0 + 0.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.05);
   osc.connect(bp);
   bp.connect(lp);
   lp.connect(g);
   g.connect(panner);
   osc.start(t0);
-  osc.stop(t0 + 0.85);
+  osc.stop(t0 + 1.12);
   osc.onended = () => {
     osc.disconnect();
     bp.disconnect();
@@ -308,16 +308,68 @@ function voiceAww(
 }
 
 function playCrowdAww(ac: AudioContext, dest: GainNode) {
+  const bus = ac.createGain();
+  bus.gain.value = 1.2;
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -14;
+  comp.knee.value = 18;
+  comp.ratio.value = 5;
+  comp.attack.value = 0.008;
+  comp.release.value = 0.22;
+  bus.connect(comp);
+  comp.connect(dest);
+
+  const delay = ac.createDelay(0.5);
+  delay.delayTime.value = 0.14;
+  const wet = ac.createGain();
+  wet.gain.value = 0.3;
+  const fb = ac.createGain();
+  fb.gain.value = 0.16;
+  bus.connect(delay);
+  delay.connect(wet);
+  wet.connect(dest);
+  delay.connect(fb);
+  fb.connect(delay);
+
+  const t0 = ac.currentTime;
+  const body = ac.createOscillator();
+  const bg = ac.createGain();
+  const blp = ac.createBiquadFilter();
+  body.type = "sine";
+  body.frequency.setValueAtTime(196, t0);
+  body.frequency.exponentialRampToValueAtTime(110, t0 + 0.9);
+  blp.type = "lowpass";
+  blp.frequency.value = 320;
+  bg.gain.setValueAtTime(0.0001, t0);
+  bg.gain.exponentialRampToValueAtTime(0.42, t0 + 0.06);
+  bg.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.05);
+  body.connect(blp);
+  blp.connect(bg);
+  bg.connect(bus);
+  body.start(t0);
+  body.stop(t0 + 1.1);
+  body.onended = () => {
+    body.disconnect();
+    blp.disconnect();
+    bg.disconnect();
+  };
+
   const voices: Array<[number, number, number, number]> = [
-    [0.0, 330, -0.48, 0.07],
-    [0.05, 292, -0.14, 0.065],
-    [0.08, 268, 0.22, 0.06],
-    [0.12, 355, 0.52, 0.055],
-    [0.16, 248, 0.05, 0.045],
+    [0.0, 340, -0.62, 0.28],
+    [0.04, 305, -0.28, 0.26],
+    [0.07, 278, 0.08, 0.24],
+    [0.1, 365, 0.38, 0.25],
+    [0.13, 252, 0.64, 0.22],
+    [0.16, 318, -0.08, 0.2],
+    [0.2, 232, 0.22, 0.18],
+    [0.24, 390, -0.44, 0.2],
+    [0.3, 210, 0.5, 0.16],
   ];
   for (const [start, freq, pan, peak] of voices) {
-    voiceAww(ac, dest, start, freq, pan, peak);
+    voiceAww(ac, bus, start, freq, pan, peak);
   }
+
+  disconnectLater([bus, comp, delay, wet, fb], 2.0);
 }
 
 export function playGrade(ok: boolean) {

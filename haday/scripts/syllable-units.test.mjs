@@ -41,3 +41,11 @@ test("wayyar splits through doubled yod; quiescent alef stays in the second slic
   assert.ok(q);
   assert.equal(q.answer, "וַיְ | יַרְא");
 });
+
+test("diphthong rule names whole words, not shredded niqqud", () => {
+  const unit = SYLLABLE_UNITS.find((u) => u.id === 7);
+  assert.ok(unit);
+  assert.match(unit.rule, /בַּיִת/);
+  assert.match(unit.rule, /מָוֶת/);
+  assert.doesNotMatch(unit.rule, /ַ֫יִ/);
+});
