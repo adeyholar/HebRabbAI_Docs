@@ -32,7 +32,7 @@ function isInflected(surf: string, root: string): boolean {
   return root.length >= 4 && extra <= 3;
 }
 
-function bestLemma(surface: string): VocabItem | undefined {
+export function lemmaForSurface(surface: string): VocabItem | undefined {
   const surf = lettersOnly(surface);
   if (surf.length < 2) return undefined;
   let exact: VocabItem | undefined;
@@ -398,6 +398,7 @@ function addForm(
       he: verse.he,
       en: verse.en,
       hit: verse.he.includes(surface) ? surface : verse.hit || surface,
+      hitEn: verse.hitEn,
     };
   }
   out.push({
@@ -416,7 +417,7 @@ function addForm(
 function harvestVerse(out: VocabItem[], seen: Set<string>, verse: VerseEx, lemmaHint?: VocabItem) {
   if (lemmaHint && verse.hit) addForm(out, seen, verse.hit, lemmaHint, verse);
   for (const tok of tokens(verse.he)) {
-    const found = bestLemma(tok);
+    const found = lemmaForSurface(tok);
     if (found) addForm(out, seen, tok, found, verse);
   }
 }
@@ -435,7 +436,7 @@ export function tanakhForms(): VocabItem[] {
   for (const unit of SYLLABLE_UNITS) {
     for (const verse of unit.verses) harvestVerse(out, seen, verse);
     for (const sample of unit.samples) {
-      const found = bestLemma(sample.word);
+      const found = lemmaForSurface(sample.word);
       if (!found) continue;
       const verse: VerseEx | undefined = sample.ref
         ? { ref: sample.ref, he: sample.word, en: sample.note, hit: sample.word }

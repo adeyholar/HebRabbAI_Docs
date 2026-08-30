@@ -1,6 +1,6 @@
 /** Public-domain Masoretic examples. Rules are original teaching notes, not a textbook reprint. */
 
-export type SyllableVerse = { ref: string; he: string; en: string; hit: string };
+export type SyllableVerse = { ref: string; he: string; en: string; hit: string; hitEn?: string };
 
 export type SyllableSample = {
   word: string;
@@ -46,7 +46,7 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
       { word: "טוֹב", split: "טוֹב", note: "One closed syllable — one vowel, ends in a consonant.", ref: "Gen 1:4" },
     ],
     verses: [
-      { ref: "Gen 15:1", he: "אַחַר הַדְּבָרִים הָאֵלֶּה הָיָה דְבַר־יְהוָה אֶל־אַבְרָם", en: "After these things, the word of YHWH came to Abram.", hit: "הַדְּבָרִים" },
+      { ref: "Gen 15:1", he: "אַחַר הַדְּבָרִים הָאֵלֶּה הָיָה דְבַר־יְהוָה אֶל־אַבְרָם", en: "After these things, the word of YHWH came to Abram.", hit: "הַדְּבָרִים", hitEn: "these things" },
       { ref: "Ps 24:8", he: "מִי זֶה מֶלֶךְ הַכָּבוֹד יְהוָה עִזּוּז וְגִבּוֹר", en: "Who is this king of glory? YHWH, strong and mighty.", hit: "מֶלֶךְ" },
       { ref: "Gen 1:26", he: "וַיֹּאמֶר אֱלֹהִים נַעֲשֶׂה אָדָם בְּצַלְמֵנוּ כִּדְמוּתֵנוּ", en: "God said, “Let us make humankind in our image.”", hit: "אָדָם" },
       { ref: "Num 6:26", he: "יִשָּׂא יְהוָה פָּנָיו אֵלֶיךָ וְיָשֵׂם לְךָ שָׁלוֹם", en: "YHWH lift his face toward you and set peace for you.", hit: "שָׁלוֹם" },
@@ -155,7 +155,7 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
       { word: "אָכְלָה", split: "אָכְ | לָה", note: "First ָ with silent shewa in an unaccented closed slice — hatuf (o).", ref: "Gen 1:29" },
     ],
     verses: [
-      { ref: "Prov 1:7", he: "יִרְאַת יְהוָה רֵאשִׁית דָּעַת חָכְמָה וּמוּסָר אֱוִילִים בָּזוּ", en: "The fear of YHWH is the beginning of knowledge; fools despise wisdom and instruction.", hit: "חָכְמָה" },
+      { ref: "Prov 1:7", he: "יִרְאַת יְהוָה רֵאשִׁית דָּעַת חָכְמָה וּמוּסָר אֱוִילִים בָּזוּ", en: "The fear of YHWH is the beginning of knowledge; fools despise wisdom and instruction.", hit: "חָכְמָה", hitEn: "wisdom" },
       { ref: "Exod 19:5", he: "וִהְיִיתֶם לִי סְגֻלָּה מִכָּל־הָעַמִּים", en: "You shall be my treasured possession out of all the peoples.", hit: "מִכָּל" },
       { ref: "Deut 6:5", he: "וְאָהַבְתָּ אֵת יְהוָה אֱלֹהֶיךָ בְּכָל־לְבָבְךָ", en: "You shall love YHWH your God with all your heart.", hit: "בְּכָל" },
       { ref: "Gen 1:5", he: "וַיִּקְרָא אֱלֹהִים לָאוֹר יוֹם וְלַחֹשֶׁךְ קָרָא לָיְלָה", en: "God called the light Day, and the darkness he called Night.", hit: "קָרָא" },
@@ -192,9 +192,9 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
     ],
     verses: [
       { ref: "Gen 1:2", he: "וְרוּחַ אֱלֹהִים מְרַחֶפֶת עַל־פְּנֵי הַמָּיִם", en: "And the spirit of God was hovering over the face of the waters.", hit: "וְרוּחַ" },
-      { ref: "Gen 1:6", he: "וַיֹּאמֶר אֱלֹהִים יְהִי רָקִיעַ בְּתוֹךְ הַמָּיִם", en: "God said, “Let there be an expanse in the midst of the waters.”", hit: "רָקִיעַ" },
-      { ref: "Gen 6:9", he: "אֵלֶּה תּוֹלְדֹת נֹחַ נֹחַ אִישׁ צַדִּיק", en: "These are the generations of Noah. Noah was a righteous man.", hit: "נֹחַ" },
-      { ref: "Isa 19:20", he: "וְשָׁלַח לָהֶם מוֹשִׁיעַ וָרָב וְהִצִּילָם", en: "He will send them a savior and a champion, and he will deliver them.", hit: "מוֹשִׁיעַ" },
+      { ref: "Gen 1:6", he: "וַיֹּאמֶר אֱלֹהִים יְהִי רָקִיעַ בְּתוֹךְ הַמָּיִם", en: "God said, “Let there be an expanse in the midst of the waters.”", hit: "רָקִיעַ", hitEn: "an expanse" },
+      { ref: "Gen 6:9", he: "אֵלֶּה תּוֹלְדֹת נֹחַ נֹחַ אִישׁ צַדִּיק", en: "These are the generations of Noah. Noah was a righteous man.", hit: "נֹחַ", hitEn: "Noah" },
+      { ref: "Isa 19:20", he: "וְשָׁלַח לָהֶם מוֹשִׁיעַ וָרָב וְהִצִּילָם", en: "He will send them a savior and a champion, and he will deliver them.", hit: "מוֹשִׁיעַ", hitEn: "a savior" },
     ],
     quiz: [
       { q: "Furtive pathach is pronounced…", choices: ["Before the final ח or ע", "After the guttural", "Not at all"], answer: "Before the final ח or ע", why: "It is the one pathach you say before its letter." },
@@ -229,7 +229,7 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
     verses: [
       { ref: "Ps 51:5", he: "כִּי־פְשָׁעַי אֲנִי אֵדָע וְחַטָּאתִי נֶגְדִּי תָמִיד", en: "For I know my transgressions, and my sin is ever before me.", hit: "וְחַטָּאתִי" },
       { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "בָּרָא" },
-      { ref: "Gen 1:4", he: "וַיַּרְא אֱלֹהִים אֶת־הָאוֹר כִּי־טוֹב", en: "God saw the light, that it was good.", hit: "וַיַּרְא" },
+      { ref: "Gen 1:4", he: "וַיַּרְא אֱלֹהִים אֶת־הָאוֹר כִּי־טוֹב", en: "God saw the light, that it was good.", hit: "וַיַּרְא", hitEn: "saw" },
       { ref: "Gen 2:10", he: "וְנָהָר יֹצֵא מֵעֵדֶן לְהַשְׁקוֹת אֶת־הַגָּן וּמִשָּׁם יִפָּרֵד וְהָיָה לְאַרְבָּעָה רָאשִׁים", en: "A river went out from Eden to water the garden… and became four heads.", hit: "רָאשִׁים" },
     ],
     quiz: [
@@ -265,8 +265,8 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
     verses: [
       { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
       { ref: "Prov 24:3", he: "בַּחָכְמָה יִבָּנֶה בָּיִת וּבִתְבוּנָה יִתְכּוֹנָן", en: "By wisdom a house is built, and by understanding it is established.", hit: "בָּיִת" },
-      { ref: "Ps 23:4", he: "גַּם כִּי־אֵלֵךְ בְּגֵיא צַלְמָוֶת לֹא־אִירָא רָע", en: "Even though I walk through the valley of deep darkness, I will not fear evil.", hit: "צַלְמָוֶת" },
-      { ref: "Gen 9:21", he: "וַיֵּשְׁתְּ מִן־הַיַּיִן וַיִּשְׁכָּר", en: "He drank of the wine and became drunk.", hit: "הַיַּיִן" },
+      { ref: "Ps 23:4", he: "גַּם כִּי־אֵלֵךְ בְּגֵיא צַלְמָוֶת לֹא־אִירָא רָע", en: "Even though I walk through the valley of deep darkness, I will not fear evil.", hit: "צַלְמָוֶת", hitEn: "deep darkness" },
+      { ref: "Gen 9:21", he: "וַיֵּשְׁתְּ מִן־הַיַּיִן וַיִּשְׁכָּר", en: "He drank of the wine and became drunk.", hit: "הַיַּיִן", hitEn: "the wine" },
     ],
     quiz: [
       { q: "A syllable with the ay cluster is…", choices: ["Closed — it ends with a consonant", "Open — yod is a vowel letter here", "Not a syllable"], answer: "Closed — it ends with a consonant", why: "The cluster still finishes on a consonant." },

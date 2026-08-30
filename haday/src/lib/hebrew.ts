@@ -375,6 +375,253 @@ export function findHitRange(hebrew: string, hit: string): { start: number; end:
   return { start, end: last + 1 };
 }
 
+export type EnglishHitHints = {
+  hitEn?: string;
+  gloss?: string;
+  alts?: string[];
+};
+
+const STOP_MATCH = new Set([
+  "the",
+  "a",
+  "an",
+  "of",
+  "to",
+  "in",
+  "on",
+  "and",
+  "or",
+  "for",
+  "is",
+  "as",
+  "but",
+  "by",
+  "at",
+  "be",
+  "it",
+  "not",
+  "so",
+]);
+
+const IRREGULAR: Record<string, string[]> = {
+  be: ["is", "am", "are", "was", "were", "been", "being"],
+  become: ["becomes", "became", "becoming"],
+  begin: ["begins", "began", "begun", "beginning"],
+  bear: ["bears", "bore", "borne", "bearing"],
+  break: ["breaks", "broke", "broken", "breaking"],
+  bring: ["brings", "brought", "bringing"],
+  build: ["builds", "built", "building"],
+  buy: ["buys", "bought", "buying"],
+  catch: ["catches", "caught", "catching"],
+  child: ["children"],
+  choose: ["chooses", "chose", "chosen", "choosing"],
+  come: ["comes", "came", "coming"],
+  cut: ["cuts", "cutting"],
+  die: ["dies", "died", "dying", "dead"],
+  do: ["does", "did", "done", "doing"],
+  draw: ["draws", "drew", "drawn", "drawing"],
+  drink: ["drinks", "drank", "drunk", "drinking"],
+  drive: ["drives", "drove", "driven", "driving"],
+  dwell: ["dwells", "dwelt", "dwelling"],
+  eat: ["eats", "ate", "eaten", "eating"],
+  fall: ["falls", "fell", "fallen", "falling"],
+  fight: ["fights", "fought", "fighting"],
+  find: ["finds", "found", "finding"],
+  flee: ["flees", "fled", "fleeing"],
+  foot: ["feet"],
+  forget: ["forgets", "forgot", "forgotten", "forgetting"],
+  forgive: ["forgives", "forgave", "forgiven", "forgiving"],
+  give: ["gives", "gave", "given", "giving"],
+  go: ["goes", "went", "gone", "going"],
+  have: ["has", "had", "having"],
+  hear: ["hears", "heard", "hearing"],
+  hide: ["hides", "hid", "hidden", "hiding"],
+  hold: ["holds", "held", "holding"],
+  keep: ["keeps", "kept", "keeping"],
+  know: ["knows", "knew", "known", "knowing"],
+  lay: ["lays", "laid", "laying"],
+  lead: ["leads", "led", "leading"],
+  leave: ["leaves", "left", "leaving"],
+  lie: ["lies", "lay", "lain", "lying"],
+  life: ["lives", "living"],
+  lose: ["loses", "lost", "losing"],
+  make: ["makes", "made", "making"],
+  man: ["men"],
+  meet: ["meets", "met", "meeting"],
+  person: ["people", "persons"],
+  put: ["puts", "putting"],
+  rise: ["rises", "rose", "risen", "rising"],
+  run: ["runs", "ran", "running"],
+  say: ["says", "said", "saying"],
+  see: ["sees", "saw", "seen", "seeing"],
+  seek: ["seeks", "sought", "seeking"],
+  sell: ["sells", "sold", "selling"],
+  send: ["sends", "sent", "sending"],
+  set: ["sets", "setting"],
+  shine: ["shines", "shone", "shining"],
+  shut: ["shuts", "shutting"],
+  sing: ["sings", "sang", "sung", "singing"],
+  sit: ["sits", "sat", "sitting"],
+  slay: ["slays", "slew", "slain", "slaying"],
+  sleep: ["sleeps", "slept", "sleeping"],
+  speak: ["speaks", "spoke", "spoken", "speaking"],
+  stand: ["stands", "stood", "standing"],
+  strike: ["strikes", "struck", "striking"],
+  swear: ["swears", "swore", "sworn", "swearing"],
+  take: ["takes", "took", "taken", "taking"],
+  teach: ["teaches", "taught", "teaching"],
+  tear: ["tears", "tore", "torn", "tearing"],
+  tell: ["tells", "told", "telling"],
+  that: ["those"],
+  think: ["thinks", "thought", "thinking"],
+  this: ["these"],
+  throw: ["throws", "threw", "thrown", "throwing"],
+  understand: ["understands", "understood", "understanding"],
+  weep: ["weeps", "wept", "weeping"],
+  win: ["wins", "won", "winning"],
+  woman: ["women"],
+  write: ["writes", "wrote", "written", "writing"],
+};
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function inflectionForms(word: string): string[] {
+  const w = word.trim();
+  if (!w) return [];
+  const lower = w.toLowerCase();
+  const forms = new Set<string>([w]);
+  for (const x of IRREGULAR[lower] ?? []) forms.add(x);
+  if (/\s/.test(w)) return [...forms];
+  if (lower.endsWith("y") && lower.length > 2 && !/[aeiou]y$/i.test(lower)) {
+    forms.add(w.slice(0, -1) + "ies");
+    forms.add(w.slice(0, -1) + "ied");
+  } else if (/(?:s|x|z|ch|sh)$/i.test(lower)) {
+    forms.add(w + "es");
+  } else if (!lower.endsWith("s")) {
+    forms.add(w + "s");
+  }
+  if (lower.endsWith("e")) {
+    forms.add(w + "d");
+    forms.add(w.slice(0, -1) + "ing");
+    forms.add(w + "r");
+    forms.add(w + "st");
+  } else {
+    forms.add(w + "ed");
+    forms.add(w + "ing");
+    if (!/(?:er|est)$/i.test(lower) && lower.length > 2) {
+      forms.add(w + "er");
+      forms.add(w + "est");
+    }
+  }
+  return [...forms];
+}
+
+function formsOf(phrase: string): string[] {
+  const t = phrase.trim();
+  if (!t) return [];
+  if (!/\s/.test(t)) return inflectionForms(t);
+  const parts = t.split(/\s+/);
+  const first = parts[0]!;
+  const rest = parts.slice(1).join(" ");
+  const out = new Set<string>([t]);
+  if (!STOP_MATCH.has(first.toLowerCase())) {
+    for (const f of inflectionForms(first)) out.add(`${f} ${rest}`);
+  }
+  return [...out];
+}
+
+function splitGloss(gloss: string): string[] {
+  const out: string[] = [];
+  for (const part of gloss.split(/[,;]/)) {
+    const t = part.trim();
+    if (!t) continue;
+    out.push(t);
+    const to = t.match(/^to\s+(.+)/i);
+    if (to?.[1]) out.push(to[1].trim());
+    const be = t.match(/^(?:to\s+)?be\s+(.+)/i);
+    if (be?.[1]) out.push(be[1].trim());
+  }
+  return out;
+}
+
+function findPhrase(hay: string, needle: string): { start: number; end: number } | null {
+  const n = needle.trim();
+  if (n.length < 1) return null;
+  const pattern = escapeRe(n).replace(/['’]/g, "['’]");
+  const re = new RegExp(`(?<![A-Za-z])${pattern}(?![A-Za-z])`, "i");
+  const m = re.exec(hay);
+  if (!m) return null;
+  return { start: m.index, end: m.index + m[0].length };
+}
+
+function collectNeedles(hints: EnglishHitHints): { prefer: string[]; rest: string[] } {
+  const prefer: string[] = [];
+  if (hints.hitEn) prefer.push(...formsOf(hints.hitEn));
+  const raw: string[] = [];
+  if (hints.gloss) raw.push(...splitGloss(hints.gloss));
+  for (const a of hints.alts ?? []) {
+    const t = a.trim();
+    if (t) raw.push(t);
+  }
+  const rest: string[] = [];
+  const seen = new Set<string>();
+  for (const r of raw) {
+    for (const f of formsOf(r)) {
+      const key = f.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rest.push(f);
+    }
+  }
+  return { prefer, rest };
+}
+
+function bestRange(en: string, needles: string[]): { start: number; end: number } | null {
+  const hits: { start: number; end: number; len: number; stop: boolean }[] = [];
+  const seen = new Set<string>();
+  for (const n of needles) {
+    const key = n.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const hit = findPhrase(en, n);
+    if (!hit) continue;
+    const slice = en.slice(hit.start, hit.end).trim().toLowerCase();
+    hits.push({
+      start: hit.start,
+      end: hit.end,
+      len: hit.end - hit.start,
+      stop: STOP_MATCH.has(slice),
+    });
+  }
+  if (!hits.length) return null;
+  const usable = hits.some((h) => !h.stop) ? hits.filter((h) => !h.stop) : hits;
+  usable.sort((a, b) => b.len - a.len || a.start - b.start);
+  const top = usable[0];
+  return top ? { start: top.start, end: top.end } : null;
+}
+
+const LEFT_DET = /((?:your|his|her|my|our|their|thy|the|a|an|this|these|those)\s+)$/i;
+
+function expandLeft(en: string, range: { start: number; end: number }): { start: number; end: number } {
+  const matched = en.slice(range.start, range.end);
+  if (/^(?:your|his|her|my|our|their|thy|the|a|an|this|these|those)\b/i.test(matched)) return range;
+  const before = en.slice(0, range.start);
+  const m = before.match(LEFT_DET);
+  if (!m?.[1]) return range;
+  return { start: range.start - m[1].length, end: range.end };
+}
+
+/** First English span that corresponds to a Hebrew hit (gloss, alts, or hitEn). */
+export function findEnglishHitRange(en: string, hints: EnglishHitHints): { start: number; end: number } | null {
+  if (!en) return null;
+  const { prefer, rest } = collectNeedles(hints);
+  const range = bestRange(en, prefer) ?? bestRange(en, rest);
+  if (!range) return null;
+  return expandLeft(en, range);
+}
+
 const CONS = /[\u05D0-\u05EA]/;
 const DAGESH = "\u05BC";
 const FULL_VOWEL = /[\u05B1-\u05BB]/;

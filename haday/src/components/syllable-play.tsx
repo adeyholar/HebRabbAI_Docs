@@ -5,30 +5,51 @@ import { GradeBanner } from "@/components/grade-banner";
 import { Panel } from "@/components/panel";
 import { playGrade } from "@/lib/sfx";
 import { cn } from "@/lib/cn";
+import { findEnglishHitRange, findHitRange } from "@/lib/hebrew";
+import { lemmaForSurface } from "@/lib/tanakh-pool";
 import {
-  highlightParts,
   shuffleQuiz,
   syllableUnit,
   starsFromSyllableScore,
   SYLLABLE_QUIZ_LEN,
   type SyllableQuiz,
+  type SyllableVerse,
 } from "@/lib/syllables";
 import { useStudy } from "@/lib/store";
 
-function VerseHit({ he, hit }: { he: string; hit: string }) {
-  const parts = highlightParts(he, hit);
+function VerseHit({ verse }: { verse: SyllableVerse }) {
+  const heRange = findHitRange(verse.he, verse.hit);
+  const lemma = lemmaForSurface(verse.hit);
+  const enRange = findEnglishHitRange(verse.en, {
+    hitEn: verse.hitEn,
+    gloss: lemma?.gloss,
+    alts: lemma?.alts,
+  });
   return (
-    <p className="he-word mt-3 text-2xl leading-relaxed" dir="rtl">
-      {parts.hit ? (
-        <>
-          {parts.before}
-          <mark className="rounded-sm bg-primary/30 px-0.5 text-ink">{parts.hit}</mark>
-          {parts.after}
-        </>
-      ) : (
-        he
-      )}
-    </p>
+    <>
+      <p className="he-word mt-3 text-2xl leading-relaxed" dir="rtl" lang="he">
+        {heRange ? (
+          <>
+            {verse.he.slice(0, heRange.start)}
+            <mark className="he-hit">{verse.he.slice(heRange.start, heRange.end)}</mark>
+            {verse.he.slice(heRange.end)}
+          </>
+        ) : (
+          verse.he
+        )}
+      </p>
+      <p className="mt-2 text-sm text-muted" lang="en" dir="ltr">
+        {enRange ? (
+          <>
+            {verse.en.slice(0, enRange.start)}
+            <mark className="he-hit">{verse.en.slice(enRange.start, enRange.end)}</mark>
+            {verse.en.slice(enRange.end)}
+          </>
+        ) : (
+          verse.en
+        )}
+      </p>
+    </>
   );
 }
 
@@ -124,8 +145,7 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
             {unit.verses.map((v) => (
               <li key={`${v.ref}-${v.hit}`} className="rounded-[var(--radius-md)] bg-surface px-3 py-3">
                 <p className="text-sm font-semibold text-muted">{v.ref}</p>
-                <VerseHit he={v.he} hit={v.hit} />
-                <p className="mt-2 text-sm text-muted">{v.en}</p>
+                <VerseHit verse={v} />
               </li>
             ))}
           </ul>
