@@ -53,3 +53,22 @@ test("rules keep whole Hebrew words, not shredded niqqud clusters", () => {
     assert.doesNotMatch(u.rule, /[ְֱֲֳִֵֶַָֹֻ]{2,}/);
   }
 });
+
+test("dual ending requires the ay diphthong", () => {
+  const u2 = NOUN_UNITS.find((u) => u.id === 2);
+  assert.ok(u2);
+  assert.match(u2.rule, /diphthong/i);
+  assert.match(u2.rule, /בַּיִת/);
+  assert.match(u2.rule, /required/i);
+  const req = u2.quiz.find((q) => /diphthong/i.test(q.q) || /diphthong/i.test(q.answer));
+  assert.ok(req, "unit 2 quiz names the diphthong");
+  const split = u2.quiz.find((q) => q.q.includes("סוּסַיִם"));
+  assert.ok(split);
+  assert.equal(split.answer, "סוּ | סַיִם");
+  const u3 = NOUN_UNITS.find((u) => u.id === 3);
+  assert.ok(u3);
+  assert.match(u3.rule, /diphthong/i);
+  const u1 = NOUN_UNITS.find((u) => u.id === 1);
+  assert.ok(u1);
+  assert.match(u1.rule, /diphthong/i);
+});

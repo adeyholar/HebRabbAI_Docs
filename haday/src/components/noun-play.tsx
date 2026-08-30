@@ -40,6 +40,31 @@ function MixHe({ text, className }: { text: string; className?: string }) {
   return <span className={className}>{nodes}</span>;
 }
 
+function SplitWord({ split }: { split: string }) {
+  const parts = split.split(" | ").filter(Boolean);
+  if (parts.length < 2) {
+    return (
+      <span className="he-word text-lg" dir="rtl" lang="he">
+        {split}
+      </span>
+    );
+  }
+  return (
+    <span className="he-word inline-flex items-center justify-start gap-2 text-lg" dir="rtl" lang="he">
+      {parts.flatMap((part, i) => [
+        i > 0 ? (
+          <span
+            key={`bar-${i}`}
+            className="inline-block h-[1.05em] w-0.5 shrink-0 self-center rounded-full bg-current"
+            aria-hidden
+          />
+        ) : null,
+        <span key={`p-${i}`}>{part}</span>,
+      ])}
+    </span>
+  );
+}
+
 function VerseHit({ verse }: { verse: NounVerse }) {
   const heRange = findHitRange(verse.he, verse.hit);
   const lemma = lemmaForSurface(verse.hit);
@@ -401,7 +426,7 @@ export function NounPlay({ unitId }: { unitId: number }) {
                   picked && !chosen && !rightChoice && "bg-card text-muted",
                 )}
               >
-                <MixHe text={c} />
+                {c.includes(" | ") ? <SplitWord split={c} /> : <MixHe text={c} />}
               </button>
             </li>
           );

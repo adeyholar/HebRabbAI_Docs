@@ -255,19 +255,21 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
     title: "Diphthongs",
     short: "ay / aw",
     rule:
-      "Two tight clusters act as one sound: the ay-group in בַּיִת (house) and the aw-group in מָוֶת (death). A syllable that holds one of them is closed, because it still ends with a consonant. Some words are a single closed syllable for that reason.",
+      "Two tight clusters act as one sound: the ay-group in בַּיִת (house) and the aw-group in מָוֶת (death). A syllable that holds one of them is closed, because it still ends with a consonant. Some words are a single closed syllable for that reason. The dual ending is that same ay-group plus ם — required. So עֵינַיִם and יָדַיִם keep the cluster: do not cut it.",
     samples: [
       { word: "שָׁמַיִם", split: "שָׁ | מַיִם", note: "The second slice holds the ay cluster and is closed.", ref: "Gen 1:1" },
       { word: "בַּיִת", split: "בַּיִת", note: "One closed syllable — the ay group is not cut.", ref: "Prov 24:3" },
       { word: "מָוֶת", split: "מָוֶת", note: "One closed syllable — the aw group stays together.", ref: "Ps 23:4" },
       { word: "יַיִן", split: "יַיִן", note: "One closed syllable with the ay cluster.", ref: "Gen 9:21" },
       { word: "לַיְלָה", split: "לַיְ | לָה", note: "Ay cluster in the first slice (closed), then לָה.", ref: "Gen 1:5" },
+      { word: "יָדַיִם", split: "יָ | דַיִם", note: "Dual: the second slice is the ay diphthong plus ם. Required. Do not cut it.", ref: "Prov 6:17" },
     ],
     verses: [
       { ref: "Gen 1:1", he: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ", en: "In the beginning God created the heavens and the earth.", hit: "הַשָּׁמַיִם" },
       { ref: "Prov 24:3", he: "בַּחָכְמָה יִבָּנֶה בָּיִת וּבִתְבוּנָה יִתְכּוֹנָן", en: "By wisdom a house is built, and by understanding it is established.", hit: "בָּיִת" },
       { ref: "Ps 23:4", he: "גַּם כִּי־אֵלֵךְ בְּגֵיא צַלְמָוֶת לֹא־אִירָא רָע", en: "Even though I walk through the valley of deep darkness, I will not fear evil.", hit: "צַלְמָוֶת", hitEn: "deep darkness" },
       { ref: "Gen 9:21", he: "וַיֵּשְׁתְּ מִן־הַיַּיִן וַיִּשְׁכָּר", en: "He drank of the wine and became drunk.", hit: "הַיַּיִן", hitEn: "the wine" },
+      { ref: "Prov 6:17", he: "עֵינַיִם רָמוֹת לְשׁוֹן שָׁקֶר וְיָדַיִם שֹׁפְכוֹת דָּם־נָקִי", en: "Haughty eyes, a lying tongue, and hands that shed innocent blood.", hit: "יָדַיִם", hitEn: "hands" },
     ],
     quiz: [
       { q: "A syllable with the ay cluster is…", choices: ["Closed — it ends with a consonant", "Open — yod is a vowel letter here", "Not a syllable"], answer: "Closed — it ends with a consonant", why: "The cluster still finishes on a consonant." },
@@ -284,6 +286,9 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
       { q: "If you wrongly split בַּיִת as בַּ | יִת you have…", he: "בַּיִת", ref: "Prov 24:3", choices: ["Cut a diphthong — too many slices", "The only correct split", "Dropped a furtive pathach"], answer: "Cut a diphthong — too many slices", why: "Keep ay in one closed syllable." },
       { q: "A diphthong syllable is closed because…", choices: ["It still ends with a consonant", "Every Hebrew syllable is closed", "Yod and vav are always vowels"], answer: "It still ends with a consonant", why: "The cluster’s last sound is consonantal." },
       { q: "In Gen 1:1 הַשָּׁמַיִם, how many slices after you respect forte and ay?", he: "הַשָּׁמַיִם", ref: "Gen 1:1", choices: ["Three: הַשְׁ | שָׁ | מַיִם", "Two: הַ | שָּׁמַיִם", "Four: הַ | שָׁ | מַ | יִם"], answer: "Three: הַשְׁ | שָׁ | מַיִם", why: "Forte doubles ש; ay stays uncut." },
+      { q: "A dual noun is dual only when the ending holds…", he: "יָדַיִם", ref: "Prov 6:17", choices: ["The ay diphthong plus ם", "Any yod-mem", "A hireq before yod"], answer: "The ay diphthong plus ם", why: "Same cluster as בַּיִת. That diphthong is required. ִים without it is many, not a pair." },
+      { q: "How does יָדַיִם split?", he: "יָדַיִם", ref: "Prov 6:17", choices: ["יָ | דַיִם", "יָדַ | יִם", "יָ | דַ | יִם"], answer: "יָ | דַיִם", why: "Keep the ay diphthong in one closed slice." },
+      { q: "How does סוּסַיִם split?", he: "סוּסַיִם", choices: ["סוּ | סַיִם", "סוּסַ | יִם", "סוּסַיִם (one)"], answer: "סוּ | סַיִם", why: "Dual ending is the ay-group plus ם. Do not cut it." },
     ],
   },
   {

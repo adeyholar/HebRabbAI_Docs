@@ -48,4 +48,11 @@ test("diphthong rule names whole words, not shredded niqqud", () => {
   assert.match(unit.rule, /בַּיִת/);
   assert.match(unit.rule, /מָוֶת/);
   assert.doesNotMatch(unit.rule, /ַ֫יִ/);
+  assert.match(unit.rule, /dual/i);
+  const hands = unit.samples.find((s) => s.word === "יָדַיִם");
+  assert.ok(hands);
+  assert.equal(hands.split, "יָ | דַיִם");
+  const q = unit.quiz.find((item) => item.q === "How does יָדַיִם split?");
+  assert.ok(q);
+  assert.equal(q.answer, "יָ | דַיִם");
 });
