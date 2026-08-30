@@ -4,6 +4,7 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = false;
 let applause: AudioBuffer | null = null;
+let applauseLoad: Promise<AudioBuffer | null> | null = null;
 const listeners = new Set<(value: boolean) => void>();
 
 function readMuted() {
@@ -72,7 +73,7 @@ function tone(
 
 export function unlockSfx() {
   const ac = ensureGraph();
-  if (ac) applauseBuffer(ac);
+  if (ac) void loadApplause(ac);
 }
 
 export function isMuted() {
@@ -123,121 +124,53 @@ function panTo(ac: AudioContext, dest: GainNode, pan: number): AudioNode {
   return panner;
 }
 
-function addHandClap(
-  L: Float32Array,
-  R: Float32Array,
-  sr: number,
-  t0: number,
-  peak: number,
-  pan: number,
-  tone: number,
-) {
-  const n = L.length;
-  const lg = Math.cos((pan + 1) * 0.25 * Math.PI);
-  const rg = Math.sin((pan + 1) * 0.25 * Math.PI);
-  const bursts: Array<[number, number]> = [
-    [0, 1],
-    [0.008 + Math.random() * 0.005, 0.78],
-    [0.018 + Math.random() * 0.007, 0.48],
-    [0.032 + Math.random() * 0.008, 0.26],
-  ];
-  const lpA = 0.72 - tone * 0.16;
-  const attackN = Math.max(5, Math.floor(sr * 0.0028));
-  for (const [off, amp] of bursts) {
-    const start = Math.floor((t0 + off) * sr);
-    const samples = Math.floor(sr * (0.011 + Math.random() * 0.008));
-    let lp = 0;
-    for (let s = 0; s < samples; s++) {
-      const idx = start + s;
-      if (idx < 0 || idx >= n) continue;
-      const env =
-        s < attackN ? s / attackN : Math.exp((-(s - attackN) / sr) * (95 + tone * 30));
-      const white = Math.random() * 2 - 1;
-      lp += (white - lp) * (1 - lpA);
-      const slap = (white - lp) * (0.82 + tone * 0.25);
-      const v = slap * env * peak * amp;
-      L[idx] += v * lg;
-      R[idx] += v * rg;
-    }
-  }
-}
-
-function applauseBuffer(ac: AudioContext): AudioBuffer {
-  if (applause && applause.sampleRate === ac.sampleRate) return applause;
-  const sr = ac.sampleRate;
-  const seconds = 1.7;
-  const n = Math.floor(sr * seconds);
-  const buf = ac.createBuffer(2, n, sr);
-  const L = buf.getChannelData(0);
-  const R = buf.getChannelData(1);
-
-  const people = 26;
-  for (let p = 0; p < people; p++) {
-    const near = p < 8;
-    const pan = (Math.random() * 2 - 1) * (near ? 0.55 : 0.92);
-    const tone = Math.random();
-    const rate = 0.2 + Math.random() * 0.09;
-    const phase = Math.random() * 0.12;
-    const base = near ? 0.34 : 0.1;
-    const beats = near ? 7 : 5;
-    for (let b = 0; b < beats; b++) {
-      const t0 = phase + b * rate + (Math.random() - 0.5) * 0.018;
-      if (t0 < 0.01 || t0 > 1.45) continue;
-      const fall = Math.exp(-b * 0.32);
-      const peak = base * fall * (0.78 + Math.random() * 0.4);
-      addHandClap(L, R, sr, t0, peak, pan, tone);
-    }
-  }
-
-  const d1 = Math.floor(0.028 * sr);
-  const d2 = Math.floor(0.062 * sr);
-  const Lc = new Float32Array(L);
-  const Rc = new Float32Array(R);
-  for (let i = 0; i < n; i++) {
-    if (i >= d1) {
-      L[i] += Rc[i - d1] * 0.16;
-      R[i] += Lc[i - d1] * 0.16;
-    }
-    if (i >= d2) {
-      L[i] += Rc[i - d2] * 0.08;
-      R[i] += Lc[i - d2] * 0.08;
-    }
-  }
-
-  let peak = 1e-6;
-  for (let i = 0; i < n; i++) {
-    peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
-  }
-  const scale = 0.9 / peak;
-  for (let i = 0; i < n; i++) {
-    L[i] *= scale;
-    R[i] *= scale;
-  }
-
-  applause = buf;
-  return buf;
+function loadApplause(ac: AudioContext): Promise<AudioBuffer | null> {
+  if (applause) return Promise.resolve(applause);
+  if (applauseLoad) return applauseLoad;
+  applauseLoad = fetch("/sfx/crowd-cheer.mp3")
+    .then((res) => {
+      if (!res.ok) throw new Error("sfx");
+      return res.arrayBuffer();
+    })
+    .then((raw) => ac.decodeAudioData(raw.slice(0)))
+    .then((buf) => {
+      applause = buf;
+      return buf;
+    })
+    .catch(() => {
+      applauseLoad = null;
+      return null;
+    });
+  return applauseLoad;
 }
 
 function playCrowdClap(ac: AudioContext, dest: GainNode) {
-  const src = ac.createBufferSource();
-  src.buffer = applauseBuffer(ac);
-  const rate = 0.97 + Math.random() * 0.05;
-  src.playbackRate.value = rate;
-  const g = ac.createGain();
-  const t0 = ac.currentTime;
-  const playDur = src.buffer.duration / rate;
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(1, t0 + 0.01);
-  g.gain.setValueAtTime(1, t0 + playDur * 0.72);
-  g.gain.linearRampToValueAtTime(0.0001, t0 + playDur);
-  src.connect(g);
-  g.connect(dest);
-  src.start(t0);
-  src.stop(t0 + playDur + 0.03);
-  src.onended = () => {
-    src.disconnect();
-    g.disconnect();
+  const play = (buf: AudioBuffer) => {
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const g = ac.createGain();
+    const t0 = ac.currentTime;
+    const dur = buf.duration;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.95, t0 + 0.018);
+    g.gain.setValueAtTime(0.95, t0 + Math.max(0.08, dur - 0.28));
+    g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(g);
+    g.connect(dest);
+    src.start(t0);
+    src.stop(t0 + dur + 0.03);
+    src.onended = () => {
+      src.disconnect();
+      g.disconnect();
+    };
   };
+  if (applause) {
+    play(applause);
+    return;
+  }
+  void loadApplause(ac).then((buf) => {
+    if (buf && !muted) play(buf);
+  });
 }
 
 function voiceAww(
