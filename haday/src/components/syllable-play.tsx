@@ -17,6 +17,38 @@ import {
 } from "@/lib/syllables";
 import { useStudy } from "@/lib/store";
 
+function SplitWord({ split, size = "lg" }: { split: string; size?: "lg" | "sm" }) {
+  const parts = split.split(" | ").filter(Boolean);
+  const large = size === "lg";
+  if (parts.length < 2) {
+    return (
+      <span className={cn("he-word", large ? "text-3xl text-primary" : "text-lg")} dir="rtl">
+        {split}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "he-word inline-flex items-center justify-start gap-2",
+        large ? "text-3xl text-primary" : "text-lg",
+      )}
+      dir="rtl"
+    >
+      {parts.flatMap((part, i) => [
+        i > 0 ? (
+          <span
+            key={`bar-${i}`}
+            className="inline-block h-[1.05em] w-0.5 shrink-0 self-center rounded-full bg-current"
+            aria-hidden
+          />
+        ) : null,
+        <span key={`p-${i}`}>{part}</span>,
+      ])}
+    </span>
+  );
+}
+
 function VerseHit({ verse }: { verse: SyllableVerse }) {
   const heRange = findHitRange(verse.he, verse.hit);
   const lemma = lemmaForSurface(verse.hit);
@@ -126,11 +158,11 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
           <ul className="mt-3 space-y-3">
             {unit.samples.map((s) => (
               <li key={s.word} className="rounded-[var(--radius-md)] bg-surface px-3 py-3">
-                <p className="he-word text-3xl" dir="rtl">
-                  {s.word}
+                <p>
+                  <SplitWord split={s.split} />
                 </p>
-                <p className="he-word mt-1 text-xl text-primary" dir="rtl">
-                  {s.split}
+                <p className="he-word mt-1 text-lg text-muted" dir="rtl">
+                  {s.word}
                 </p>
                 <p className="mt-1 text-sm text-muted">{s.note}</p>
                 {s.ref ? <p className="mt-1 text-xs font-semibold text-muted">{s.ref}</p> : null}
@@ -217,7 +249,9 @@ export function SyllablePlay({ unitId }: { unitId: number }) {
                   picked && !chosen && !rightChoice && "bg-card text-muted",
                 )}
               >
-                <span className="he-word">{c}</span>
+                <span className={c.includes(" | ") ? undefined : "he-word"}>
+                  {c.includes(" | ") ? <SplitWord split={c} size="sm" /> : c}
+                </span>
               </button>
             </li>
           );

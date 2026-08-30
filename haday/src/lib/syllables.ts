@@ -222,7 +222,7 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
     samples: [
       { word: "חַטָּאת", split: "חַטְ | טָאת", note: "The last א is quiescent. Forte in ט still doubles, so the split runs through ט.", ref: "Ps 51:5" },
       { word: "בָּרָא", split: "בָּ | רָא", note: "Final א has no vowel — quiescent. Two open syllables.", ref: "Gen 1:1" },
-      { word: "וַיַּרְא", split: "וַיַּרְ | א", note: "The last א is quiescent; silent shewa under ר closes the slice before it.", ref: "Gen 1:4" },
+      { word: "וַיַּרְא", split: "וַיְ | יַרְא", note: "Dagesh in י is forte (wayyiqtol doubles it), so the split runs through י. Silent shewa under ר closes the second slice; the last א is quiescent and stays there — not a slice of its own.", ref: "Gen 1:4" },
       { word: "רֹאשׁ", split: "רֹאשׁ", note: "One closed syllable. א is a quiet companion to holem, not a second onset.", ref: "Gen 2:10" },
       { word: "מָצָא", split: "מָ | צָא", note: "Final quiescent א. Two open slices.", ref: "Gen 2:20" },
     ],
@@ -241,6 +241,7 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
       { q: "How many counted syllables in רֹאשׁ?", he: "רֹאשׁ", ref: "Gen 2:10", choices: ["One", "Two", "Three"], answer: "One", why: "Holem is the only vowel. א is quiescent." },
       { q: "Which letter can go quiet like this?", choices: ["א without a vowel", "Any guttural", "Only ה"], answer: "א without a vowel", why: "Quiescence is the א that has lost its vowel." },
       { q: "In וַיַּרְא, the last א is…", he: "וַיַּרְא", ref: "Gen 1:4", choices: ["Quiescent", "A new syllable of its own", "Furtive pathach"], answer: "Quiescent", why: "No vowel on that א." },
+      { q: "How does וַיַּרְא split?", he: "וַיַּרְא", ref: "Gen 1:4", choices: ["וַיְ | יַרְא", "וַיַּרְ | א", "וַיַּרְא (one)"], answer: "וַיְ | יַרְא", why: "Forte in י (the prefix doubles it) — split through י, like אַתְ | תָּה. Quiet א stays in the second slice." },
       { q: "How does מָצָא split?", he: "מָצָא", choices: ["מָ | צָא", "מָצ | אָ", "מָצָא (one)"], answer: "מָ | צָא", why: "Two open slices; final א is quiet." },
       { q: "If א has a vowel under it, it is…", choices: ["A real consonant/onset for that syllable", "Always quiescent anyway", "Always a vowel letter only"], answer: "A real consonant/onset for that syllable", why: "Alef with a vowel starts (or fills) a slice. Quiet alef has none." },
       { q: "In בְּרֵאשִׁית, the א after tsere is…", he: "בְּרֵאשִׁית", ref: "Gen 1:1", choices: ["Quiescent — no vowel of its own", "The start of a new syllable א | שִׁית", "Furtive"], answer: "Quiescent — no vowel of its own", why: "The vowel is tsere on ר. א is quiet in that slice." },

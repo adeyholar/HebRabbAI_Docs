@@ -30,3 +30,14 @@ test("a play draws 12 shuffled questions, not the whole pool in order", () => {
   assert.equal(b.length, 12);
   for (const q of a) assert.ok(q.choices.includes(q.answer));
 });
+
+test("wayyar splits through doubled yod; quiescent alef stays in the second slice", () => {
+  const unit = SYLLABLE_UNITS.find((u) => u.id === 6);
+  assert.ok(unit);
+  const sample = unit.samples.find((s) => s.word === "וַיַּרְא");
+  assert.equal(sample.split, "וַיְ | יַרְא");
+  assert.notEqual(sample.split, "וַיַּרְ | א");
+  const q = unit.quiz.find((item) => item.q === "How does וַיַּרְא split?");
+  assert.ok(q);
+  assert.equal(q.answer, "וַיְ | יַרְא");
+});
