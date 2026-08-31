@@ -69,12 +69,11 @@ function GuidePage() {
       <Panel className="mb-3">
         <h2 className="font-display text-2xl font-bold text-ink">Listen · hands-free</h2>
         <p className="mt-2 text-sm text-muted">
-          One continuous reading of the BBH list, made for the car. Each lemma is spelled letter by letter, then spoken
-          in Hebrew, then named in English, then the meaning — so you can recognize the first word while you listen.
-          Heaven is Shin, Mem, Yod, Final mem, then shamayim, then Heaven, then sky. From chapter 1 (alef-bet) through
-          19. Modern Israeli pronunciation, lively woman voice when the phone has one. Default pace is Warm. Tap Play
-          once; after that you can sit and listen. Jump to a chapter if you want a shorter stretch. Keep the screen
-          awake so the phone does not stop the voice. On iPad use Safari, volume up, Silent switch off.
+          One continuous reading of the BBH list, made for the car. Each lemma is the Hebrew name, then the English —
+          Avraham, then Abraham. No letter spelling. From chapter 1 (alef-bet) through 19. Modern Israeli pronunciation,
+          lively woman voice when the phone has one. Default pace is Warm. Tap Play once; after that you can sit and
+          listen. Jump to a chapter if you want a shorter stretch. Keep the screen awake so the phone does not stop the
+          voice. On iPad use Safari, volume up, Silent switch off.
         </p>
       </Panel>
 

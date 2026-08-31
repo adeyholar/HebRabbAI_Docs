@@ -90,7 +90,7 @@ function Home() {
         <span>
           <span className="block font-display text-2xl font-bold">Listen · hands-free</span>
           <span className="mt-1 block text-sm text-muted">
-            Spell the letters, hear the Hebrew, then the English name and meaning. Made for the car.
+            Hebrew name, then English. Avraham, Abraham. For the car.
           </span>
         </span>
       </Link>

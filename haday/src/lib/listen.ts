@@ -1,16 +1,6 @@
-import { CONSONANTS, FINAL_FORMS } from "@/lib/alphabet";
 import { alphabetVocab, bbhVocab, GAME_CHAPTER_TITLES, type VocabItem } from "@/lib/vocab";
 
 const POS_KEY = "haday-listen-i";
-const CONS = /[\u05D0-\u05EA]/;
-const SIN_DOT = "\u05C2";
-const SHIN_DOT = "\u05C1";
-
-const LETTER_NAME: Record<string, string> = Object.fromEntries([
-  ...CONSONANTS.filter((c) => c.id !== "shin" && c.id !== "sin").map((c) => [c.letter, c.name]),
-  ...FINAL_FORMS.map((c) => [c.letter, c.name]),
-  ["ש", "Shin"],
-]);
 
 export type ListenItem = VocabItem & { announce?: string };
 
@@ -72,47 +62,12 @@ export function primaryGloss(gloss: string): string {
   return first || full;
 }
 
-export function titleGloss(gloss: string): string {
-  const s = primaryGloss(gloss);
+/** Full English line after the Hebrew name: "Abraham", "Heaven, sky". */
+export function spokenEnglish(gloss: string): string {
+  const s = glossSpoken(gloss);
   if (!s) return s;
   if (s === s.toUpperCase()) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-export function meaningRemainder(gloss: string): string {
-  const full = glossSpoken(gloss);
-  const first = primaryGloss(gloss);
-  if (full.length <= first.length) return "";
-  return full.slice(first.length).replace(/^[\s,;./]+/, "").trim();
-}
-
-export function spellLetterNames(hebrew: string): string[] {
-  const chars = [...hebrew.normalize("NFC")];
-  const names: string[] = [];
-  let i = 0;
-  while (i < chars.length) {
-    const ch = chars[i];
-    if (!CONS.test(ch)) {
-      i += 1;
-      continue;
-    }
-    i += 1;
-    const marks: string[] = [];
-    while (i < chars.length && !CONS.test(chars[i])) {
-      marks.push(chars[i]);
-      i += 1;
-    }
-    if (ch === "ש") {
-      names.push(marks.includes(SIN_DOT) && !marks.includes(SHIN_DOT) ? "Sin" : "Shin");
-    } else {
-      names.push(LETTER_NAME[ch] ?? ch);
-    }
-  }
-  return names;
-}
-
-export function spellSpoken(hebrew: string): string {
-  return spellLetterNames(hebrew).join(". ");
 }
 
 function restFor(rate: number, calmMs: number): number {
@@ -434,46 +389,19 @@ export async function speakCard(item: ListenItem, rate: number, signal: { stop: 
   if (item.announce) {
     await speakLine(item.announce, "en", Math.min(rate, 1), signal);
     if (signal.stop) return;
-    if (!apple) await pauseMs(restFor(rate, 500), signal);
+    if (!apple) await pauseMs(restFor(rate, 420), signal);
   }
   if (signal.stop) return;
 
-  const letters = spellLetterNames(item.hebrew);
-  if (letters.length > 1) {
-    if (apple) {
-      await speakLine(`${letters.join(". ")}.`, "en", Math.min(rate, 0.85), signal);
-    } else {
-      for (const name of letters) {
-        if (signal.stop) return;
-        await speakLine(name, "en", Math.min(rate, 0.78), signal);
-        if (signal.stop) return;
-        await pauseMs(restFor(rate, 140), signal);
-      }
-      if (signal.stop) return;
-      await pauseMs(restFor(rate, 380), signal);
-    }
-  }
-
-  if (signal.stop) return;
   await speakHebrewWord(item, rate, signal);
   if (signal.stop) return;
-  if (!apple) await pauseMs(restFor(rate, 420), signal);
+  await pauseMs(restFor(rate, apple ? 220 : 380), signal);
   if (signal.stop) return;
 
-  const name = titleGloss(item.gloss);
-  if (name) {
-    await speakLine(name, "en", rate, signal);
-    if (signal.stop) return;
-    if (!apple) await pauseMs(restFor(rate, 280), signal);
-  }
+  const en = spokenEnglish(item.gloss);
+  if (en) await speakLine(en, "en", rate, signal);
   if (signal.stop) return;
-  const extra = meaningRemainder(item.gloss);
-  if (extra) {
-    const spokenExtra = extra.charAt(0).toUpperCase() + extra.slice(1);
-    await speakLine(spokenExtra, "en", rate, signal);
-    if (signal.stop) return;
-  }
-  await pauseMs(restFor(rate, apple ? 280 : 900), signal);
+  await pauseMs(restFor(rate, apple ? 280 : 720), signal);
 }
 
 export function playListenChime() {
