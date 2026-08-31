@@ -74,7 +74,7 @@ function GuidePage() {
           Heaven is Shin, Mem, Yod, Final mem, then shamayim, then Heaven, then sky. From chapter 1 (alef-bet) through
           19. Modern Israeli pronunciation, lively woman voice when the phone has one. Default pace is Warm. Tap Play
           once; after that you can sit and listen. Jump to a chapter if you want a shorter stretch. Keep the screen
-          awake so the phone does not stop the voice.
+          awake so the phone does not stop the voice. On iPad use Safari, volume up, Silent switch off.
         </p>
       </Panel>
 

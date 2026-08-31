@@ -252,18 +252,22 @@ function dummySpeak(lang: string, voice?: SpeechSynthesisVoice) {
   const s = synth();
   if (!s) return;
   try {
-    const u = new SpeechSynthesisUtterance(" ");
+    const u = new SpeechSynthesisUtterance("Listen.");
     u.lang = lang;
-    u.volume = 0.01;
+    u.volume = 1;
     u.rate = 1;
-    if (voice) u.voice = voice;
+    u.pitch = 1.1;
+    if (voice) {
+      u.voice = voice;
+      if (voice.lang) u.lang = voice.lang;
+    }
     s.speak(u);
   } catch {
     /* ignore */
   }
 }
 
-/** Must run inside the Play click, before any await. Unlocks Safari, Chrome, and Android WebViews. */
+/** Must run inside the Play click, before any await. Unlocks Safari on iPhone and iPad. */
 export function unlockSpeech() {
   const s = synth();
   const ac = ensureAudioCtx();
@@ -271,8 +275,8 @@ export function unlockSpeech() {
   if (!s) return;
   try {
     if (s.paused) s.resume();
-    s.cancel();
-    dummySpeak("he-IL", pickVoice("he"));
+    // Do not cancel here. iPad Safari drops the whole session if we cancel
+    // and then speak a silent dummy; later lines never become audible.
     dummySpeak("en-US", pickVoice("en"));
   } catch {
     /* ignore */
@@ -299,29 +303,6 @@ export function keepSpeechAlive() {
   }
 }
 
-function waitUntilQuiet(s: SpeechSynthesis, signal: { stop: boolean }, maxMs: number): Promise<void> {
-  return new Promise((resolve) => {
-    const t0 = Date.now();
-    const tick = () => {
-      if (signal.stop || Date.now() - t0 > maxMs) {
-        resolve();
-        return;
-      }
-      try {
-        if (!s.speaking && !s.pending) {
-          resolve();
-          return;
-        }
-      } catch {
-        resolve();
-        return;
-      }
-      window.setTimeout(tick, 60);
-    };
-    tick();
-  });
-}
-
 /** Returns true if the engine actually started speaking. */
 export async function speakLine(
   text: string,
@@ -338,43 +319,65 @@ export async function speakLine(
     /* ignore */
   }
 
-  const u = new SpeechSynthesisUtterance(spoken);
-  u.volume = 1;
-  u.pitch = lang === "he" ? 1.08 : 1.12;
+  const apple = isAppleMobile();
   const spokenRate = Math.min(1.12, Math.max(0.55, lang === "he" ? rate * 0.92 : rate));
-  u.rate = spokenRate;
-  if (lang === "he") {
-    const he = pickVoice("he") || pickVoice("iw");
-    u.lang = he?.lang || "he-IL";
-    if (he) u.voice = he;
-  } else {
-    const en = pickVoice("en");
-    u.lang = en?.lang || "en-US";
-    if (en) u.voice = en;
-  }
+
+  const makeU = () => {
+    const u = new SpeechSynthesisUtterance(spoken);
+    u.volume = 1;
+    u.pitch = lang === "he" ? 1.08 : 1.12;
+    u.rate = spokenRate;
+    if (lang === "he") {
+      const he = pickVoice("he") || pickVoice("iw");
+      u.lang = he?.lang || "he-IL";
+      if (he) u.voice = he;
+    } else {
+      const en = pickVoice("en");
+      u.lang = en?.lang || "en-US";
+      if (en) u.voice = en;
+    }
+    return u;
+  };
 
   const started = await new Promise<boolean>((resolve) => {
     let settled = false;
     let heard = false;
+    let u = makeU();
     const finish = (ok: boolean) => {
       if (settled) return;
       settled = true;
       window.clearTimeout(safety);
-      window.clearTimeout(late);
+      window.clearTimeout(retry);
       window.clearInterval(poll);
       resolve(ok);
     };
-    const safety = window.setTimeout(() => finish(heard), Math.min(22_000, 2_400 + spoken.length * (240 / spokenRate)));
-    const late = window.setTimeout(() => {
-      if (!heard) {
-        try {
-          s.cancel();
-        } catch {
-          /* ignore */
-        }
+    const arm = (utter: SpeechSynthesisUtterance) => {
+      utter.onstart = () => {
+        heard = true;
+      };
+      utter.onend = () => finish(true);
+      utter.onerror = () => finish(heard);
+    };
+    arm(u);
+    const safety = window.setTimeout(
+      () => finish(heard),
+      Math.min(24_000, 3_200 + spoken.length * (280 / spokenRate)),
+    );
+    const retry = window.setTimeout(() => {
+      if (heard || signal.stop || settled) return;
+      try {
+        if (s.paused) s.resume();
+      } catch {
+        /* ignore */
+      }
+      u = makeU();
+      arm(u);
+      try {
+        s.speak(u);
+      } catch {
         finish(false);
       }
-    }, isAppleMobile() ? 1600 : 1200);
+    }, apple ? 700 : 1400);
     const poll = window.setInterval(() => {
       if (signal.stop) {
         finish(heard);
@@ -382,25 +385,16 @@ export async function speakLine(
       }
       try {
         if (s.paused) s.resume();
-        if (s.speaking || s.pending) heard = true;
-        else if (heard) finish(true);
       } catch {
         finish(heard);
       }
-    }, 50);
-    u.onstart = () => {
-      heard = true;
-    };
-    u.onend = () => finish(true);
-    u.onerror = () => finish(heard);
+    }, 80);
     try {
       s.speak(u);
     } catch {
       finish(false);
     }
   });
-  if (signal.stop) return started;
-  await waitUntilQuiet(s, signal, 1_800);
   return started;
 }
 
@@ -436,36 +430,41 @@ async function speakHebrewWord(item: ListenItem, rate: number, signal: { stop: b
 
 export async function speakCard(item: ListenItem, rate: number, signal: { stop: boolean }): Promise<void> {
   if (signal.stop) return;
+  const apple = isAppleMobile();
   if (item.announce) {
     await speakLine(item.announce, "en", Math.min(rate, 1), signal);
     if (signal.stop) return;
-    await pauseMs(restFor(rate, 500), signal);
+    if (!apple) await pauseMs(restFor(rate, 500), signal);
   }
   if (signal.stop) return;
 
   const letters = spellLetterNames(item.hebrew);
   if (letters.length > 1) {
-    for (const name of letters) {
+    if (apple) {
+      await speakLine(`${letters.join(". ")}.`, "en", Math.min(rate, 0.85), signal);
+    } else {
+      for (const name of letters) {
+        if (signal.stop) return;
+        await speakLine(name, "en", Math.min(rate, 0.78), signal);
+        if (signal.stop) return;
+        await pauseMs(restFor(rate, 140), signal);
+      }
       if (signal.stop) return;
-      await speakLine(name, "en", Math.min(rate, 0.78), signal);
-      if (signal.stop) return;
-      await pauseMs(restFor(rate, 140), signal);
+      await pauseMs(restFor(rate, 380), signal);
     }
-    if (signal.stop) return;
-    await pauseMs(restFor(rate, 380), signal);
   }
 
   if (signal.stop) return;
   await speakHebrewWord(item, rate, signal);
   if (signal.stop) return;
-  await pauseMs(restFor(rate, 420), signal);
+  if (!apple) await pauseMs(restFor(rate, 420), signal);
   if (signal.stop) return;
 
   const name = titleGloss(item.gloss);
   if (name) {
     await speakLine(name, "en", rate, signal);
     if (signal.stop) return;
-    await pauseMs(restFor(rate, 280), signal);
+    if (!apple) await pauseMs(restFor(rate, 280), signal);
   }
   if (signal.stop) return;
   const extra = meaningRemainder(item.gloss);
@@ -474,7 +473,7 @@ export async function speakCard(item: ListenItem, rate: number, signal: { stop: 
     await speakLine(spokenExtra, "en", rate, signal);
     if (signal.stop) return;
   }
-  await pauseMs(restFor(rate, 900), signal);
+  await pauseMs(restFor(rate, apple ? 280 : 900), signal);
 }
 
 export function playListenChime() {

@@ -59,7 +59,7 @@ function ListenPage() {
 
   useEffect(() => {
     if (!playing) return;
-    const ms = isAppleMobile() ? 4_000 : 8_000;
+    const ms = isAppleMobile() ? 2_000 : 8_000;
     const id = window.setInterval(keepSpeechAlive, ms);
     const onVis = () => {
       if (document.visibilityState === "visible") keepSpeechAlive();
@@ -110,7 +110,7 @@ function ListenPage() {
     setPlaying(true);
     setStatus("Speaking…");
     if (kick) {
-      playListenChime();
+      if (!isAppleMobile()) playListenChime();
       unlockSpeech();
     } else {
       stopSpeech();
@@ -170,9 +170,15 @@ function ListenPage() {
         <h1 className="mt-1 font-display text-4xl font-bold text-ink">Listen</h1>
         <p className="mt-3 text-muted">
           For driving: each word is spelled letter by letter, then spoken in Hebrew, then named in English, then the
-          meaning. Heaven is Shin, Mem, Yod, Final mem — then shamayim — then Heaven — then sky. Works in Safari and
-          Chrome on phone and laptop. Warm default — Slow or Faster if you want.
+          meaning. Heaven is Shin, Mem, Yod, Final mem — then shamayim — then Heaven — then sky. Warm default — Slow or
+          Faster if you want.
         </p>
+        {isAppleMobile() && (
+          <p className="mt-2 text-sm text-ink">
+            On iPad: open this page in Safari, turn the volume up, and make sure the side Silent switch is not orange.
+            Then tap Play. You should hear “Listen.” first.
+          </p>
+        )}
         {!supported && (
           <p className="mt-2 text-sm text-danger">
             This browser has no speech engine. iPhone: open in Safari. Android: open in Chrome. Then unmute.
