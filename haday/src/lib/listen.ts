@@ -1,7 +1,9 @@
 import { alphabetVocab, bbhVocab, GAME_CHAPTER_TITLES, type VocabItem } from "@/lib/vocab";
 
 const POS_KEY = "haday-listen-i";
+const LOOP_KEY = "haday-listen-loop";
 
+export type ListenLoop = "off" | "chapter" | "all";
 export type ListenItem = VocabItem & { announce?: string };
 
 export function listenPlaylist(): ListenItem[] {
@@ -34,6 +36,62 @@ export function saveListenIndex(i: number) {
 export function firstIndexForChapter(list: ListenItem[], chapter: number): number {
   const i = list.findIndex((x) => x.chapter === chapter);
   return i < 0 ? 0 : i;
+}
+
+export function chapterRange(list: ListenItem[], chapter: number): { start: number; end: number } {
+  let start = -1;
+  let end = -1;
+  for (let i = 0; i < list.length; i++) {
+    if (list[i]?.chapter !== chapter) {
+      if (start >= 0) break;
+      continue;
+    }
+    if (start < 0) start = i;
+    end = i;
+  }
+  if (start < 0) return { start: 0, end: Math.max(0, list.length - 1) };
+  return { start, end };
+}
+
+export function nextListenIndex(list: ListenItem[], i: number, loop: ListenLoop): number | null {
+  const cur = list[i];
+  if (!cur) return loop === "all" && list.length ? 0 : null;
+  if (loop === "chapter") {
+    const { start, end } = chapterRange(list, cur.chapter);
+    return i < end ? i + 1 : start;
+  }
+  if (i + 1 < list.length) return i + 1;
+  if (loop === "all") return 0;
+  return null;
+}
+
+export function prevListenIndex(list: ListenItem[], i: number, loop: ListenLoop): number {
+  const cur = list[i];
+  if (loop === "chapter" && cur) {
+    const { start, end } = chapterRange(list, cur.chapter);
+    return i > start ? i - 1 : end;
+  }
+  if (i > 0) return i - 1;
+  if (loop === "all" && list.length) return list.length - 1;
+  return Math.max(0, i);
+}
+
+export function loadListenLoop(): ListenLoop {
+  try {
+    const v = localStorage.getItem(LOOP_KEY);
+    if (v === "off" || v === "chapter" || v === "all") return v;
+  } catch {
+    /* ignore */
+  }
+  return "chapter";
+}
+
+export function saveListenLoop(loop: ListenLoop) {
+  try {
+    localStorage.setItem(LOOP_KEY, loop);
+  } catch {
+    /* ignore */
+  }
 }
 
 export function speechSupported(): boolean {

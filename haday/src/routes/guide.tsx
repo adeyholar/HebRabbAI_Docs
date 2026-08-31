@@ -72,8 +72,9 @@ function GuidePage() {
           One continuous reading of the BBH list, made for the car. Each lemma is the Hebrew name, then the English —
           Avraham, then Abraham. No letter spelling. From chapter 1 (alef-bet) through 19. Modern Israeli pronunciation,
           lively woman voice when the phone has one. Default pace is Warm. Tap Play once; after that you can sit and
-          listen. Jump to a chapter if you want a shorter stretch. Keep the screen awake so the phone does not stop the
-          voice. On iPad use Safari, volume up, Silent switch off.
+          listen. Jump to a chapter if you want a shorter stretch. Loop this chapter to stay on it, or loop the whole
+          list. Keep the screen awake so the phone does not stop the voice. On iPad use Safari, volume up, Silent switch
+          off.
         </p>
       </Panel>
 

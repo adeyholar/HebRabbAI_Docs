@@ -5,19 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/panel";
 import { GAME_CHAPTER_TITLES } from "@/lib/vocab";
 import {
+  chapterRange,
   firstIndexForChapter,
   hasHebrewVoice,
   isAppleMobile,
   keepSpeechAlive,
   listenPlaylist,
   loadListenIndex,
+  loadListenLoop,
+  nextListenIndex,
   playListenChime,
+  prevListenIndex,
   saveListenIndex,
+  saveListenLoop,
   speakCard,
   speechSupported,
   stopSpeech,
   unlockSpeech,
   waitForVoices,
+  type ListenLoop,
 } from "@/lib/listen";
 
 export const Route = createFileRoute("/listen")({ component: ListenPage });
@@ -26,7 +32,7 @@ function ListenPage() {
   const list = useMemo(() => listenPlaylist(), []);
   const [i, setI] = useState(() => Math.min(loadListenIndex(), Math.max(0, list.length - 1)));
   const [playing, setPlaying] = useState(false);
-  const [loop, setLoop] = useState(true);
+  const [loop, setLoop] = useState<ListenLoop>(() => loadListenLoop());
   const [rate, setRate] = useState(0.8);
   const [heVoice, setHeVoice] = useState(true);
   const [supported] = useState(() => speechSupported());
@@ -37,6 +43,9 @@ function ListenPage() {
   const rateRef = useRef(rate);
   const iRef = useRef(i);
   const item = list[i];
+  const range = item ? chapterRange(list, item.chapter) : { start: 0, end: 0 };
+  const chPos = i - range.start + 1;
+  const chLen = range.end - range.start + 1;
   loopRef.current = loop;
   rateRef.current = rate;
   iRef.current = i;
@@ -48,6 +57,10 @@ function ListenPage() {
   useEffect(() => {
     saveListenIndex(i);
   }, [i]);
+
+  useEffect(() => {
+    saveListenLoop(loop);
+  }, [loop]);
 
   useEffect(() => {
     return () => {
@@ -122,19 +135,14 @@ function ListenPage() {
       let at = start;
       while (!stopRef.current.stop && gen === playGen.current) {
         const card = list[at];
-        if (!card) {
-          if (loopRef.current) {
-            at = 0;
-            setI(0);
-            continue;
-          }
-          break;
-        }
+        if (!card) break;
         setI(at);
         iRef.current = at;
         await speakCard(card, rateRef.current, stopRef.current);
         if (stopRef.current.stop || gen !== playGen.current) break;
-        at += 1;
+        const next = nextListenIndex(list, at, loopRef.current);
+        if (next == null) break;
+        at = next;
       }
       if (gen === playGen.current) {
         setPlaying(false);
@@ -149,7 +157,10 @@ function ListenPage() {
   }
 
   function step(delta: number) {
-    const next = Math.min(list.length - 1, Math.max(0, iRef.current + delta));
+    const next =
+      delta < 0
+        ? prevListenIndex(list, iRef.current, loopRef.current)
+        : (nextListenIndex(list, iRef.current, loopRef.current) ?? iRef.current);
     setI(next);
     iRef.current = next;
     if (playing) startFrom(next, false);
@@ -168,8 +179,7 @@ function ListenPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Hands-free</p>
         <h1 className="mt-1 font-display text-4xl font-bold text-ink">Listen</h1>
         <p className="mt-3 text-muted">
-          Hebrew name, then English. Avraham, then Abraham. Clear voice, no letter spelling. Warm default — Slow or
-          Faster if you want.
+          Hebrew name, then English. Avraham, then Abraham. Loop this chapter to stay on it, or loop the whole list.
         </p>
         {isAppleMobile() && (
           <p className="mt-2 text-sm text-ink">
@@ -200,7 +210,8 @@ function ListenPage() {
         <p className="mt-3 font-display text-2xl font-semibold text-ink">{item?.gloss}</p>
         <p className="mt-1 text-sm text-muted">{item?.translit}</p>
         <p className="mt-6 text-sm tabular-nums text-muted">
-          {i + 1} / {list.length}
+          {chPos} / {chLen}
+          {loop === "chapter" ? " in this chapter" : loop === "all" ? " · looping all" : ""}
         </p>
       </div>
 
@@ -219,15 +230,37 @@ function ListenPage() {
         </Button>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => setLoop((v) => !v)}
-          className="min-h-12 rounded-[var(--radius-md)] bg-card px-3 text-sm font-semibold shadow-[var(--shadow-border)]"
-        >
-          {loop ? "Loop on" : "Loop off"}
-        </button>
-        <label className="flex min-h-12 items-center justify-between gap-2 rounded-[var(--radius-md)] bg-card px-3 text-sm font-semibold shadow-[var(--shadow-border)]">
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {(
+          [
+            ["off", "Off"],
+            ["chapter", "Chapter"],
+            ["all", "All"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => {
+              setLoop(value);
+              loopRef.current = value;
+            }}
+            className={`min-h-12 rounded-[var(--radius-md)] px-2 text-sm font-semibold shadow-[var(--shadow-border)] ${
+              loop === value ? "bg-ink text-parchment" : "bg-card text-ink"
+            }`}
+          >
+            {value === "chapter" ? `Ch. ${item?.chapter ?? ""}` : label}
+          </button>
+        ))}
+      </div>
+      <p className="mt-1.5 text-center text-xs text-muted">
+        {loop === "chapter"
+          ? `Looping chapter ${item?.chapter ?? ""} — stays on this chapter.`
+          : loop === "all"
+            ? "Looping the whole list."
+            : "Stops at the end."}
+      </p>
+      <label className="mt-2 flex min-h-12 items-center justify-between gap-2 rounded-[var(--radius-md)] bg-card px-3 text-sm font-semibold shadow-[var(--shadow-border)]">
           Speed
           <select
             className="bg-transparent text-ink"
@@ -244,7 +277,6 @@ function ListenPage() {
             <option value="1.05">Faster</option>
           </select>
         </label>
-      </div>
 
       <Panel className="mt-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Jump to chapter</p>
