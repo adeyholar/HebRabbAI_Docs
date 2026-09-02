@@ -10,7 +10,7 @@ type GenesisDump = {
 
 const data = raw as GenesisDump;
 
-type ChapterAudio = { src: string; duration: number; verses: number[] };
+type ChapterAudio = { src: string; duration: number; verses: number[]; words?: number[][] };
 const AUDIO = audioRaw as Record<string, ChapterAudio>;
 
 export const AUDIO_CREDIT =
@@ -83,6 +83,18 @@ export function verseAtTime(chapter: number, time: number): number {
     else break;
   }
   return v;
+}
+
+/** 0-based word index inside a verse for a playback time. */
+export function wordAtTime(chapter: number, verse: number, time: number): number {
+  const starts = chapterAudio(chapter)?.words?.[Math.max(0, verse - 1)] ?? [];
+  if (!starts.length) return 0;
+  let w = 0;
+  for (let i = 0; i < starts.length; i++) {
+    if (time + 0.04 >= (starts[i] ?? 0)) w = i;
+    else break;
+  }
+  return w;
 }
 
 export type GradeItem = {

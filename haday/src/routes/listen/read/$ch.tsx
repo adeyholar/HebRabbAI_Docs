@@ -16,6 +16,7 @@ import {
   saveReadingResult,
   verseAtTime,
   verseStartTime,
+  wordAtTime,
   type GradeItem,
   type ReadingVerse,
 } from "@/lib/reading";
@@ -30,6 +31,7 @@ function ReadingPage() {
   const verses = useMemo(() => readingVerses(key), [key]);
   const [mode, setMode] = useState<Mode>("follow");
   const [i, setI] = useState(0);
+  const [wordI, setWordI] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const [quiz, setQuiz] = useState<GradeItem[] | null>(null);
@@ -40,6 +42,7 @@ function ReadingPage() {
   const [done, setDone] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const iRef = useRef(0);
+  const wordRef = useRef(0);
   const versesRef = useRef(verses);
   const rateRef = useRef(rate);
   const verse = verses[i];
@@ -71,9 +74,17 @@ function ReadingPage() {
     if (!el || !cur) return;
     const vn = verseAtTime(cur.chapter, el.currentTime);
     const next = list.findIndex((v) => v.chapter === cur.chapter && v.verse === vn);
+    const item = next >= 0 ? list[next] : cur;
     if (next >= 0 && next !== iRef.current) {
       iRef.current = next;
       setI(next);
+    }
+    if (item) {
+      const w = wordAtTime(item.chapter, item.verse, el.currentTime);
+      if (w !== wordRef.current) {
+        wordRef.current = w;
+        setWordI(w);
+      }
     }
   }
 
@@ -126,6 +137,8 @@ function ReadingPage() {
   useEffect(() => {
     setI(0);
     iRef.current = 0;
+    setWordI(0);
+    wordRef.current = 0;
     setMode("follow");
     setQuiz(null);
     setDone(false);
@@ -149,10 +162,25 @@ function ReadingPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!playing) return;
+    let id = 0;
+    const tick = () => {
+      onTime();
+      id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+    // onTime reads refs only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing]);
+
   function step(delta: number) {
     const next = Math.max(0, Math.min(verses.length - 1, iRef.current + delta));
     iRef.current = next;
     setI(next);
+    setWordI(0);
+    wordRef.current = 0;
     if (playing) void playFrom(next, true);
     else {
       const item = verses[next];
@@ -246,6 +274,7 @@ function ReadingPage() {
         <FollowCard
           verse={verse}
           i={i}
+          wordI={wordI}
           total={verses.length}
           playing={playing}
           rate={rate}
@@ -301,6 +330,7 @@ function ReadingPage() {
 function FollowCard({
   verse,
   i,
+  wordI,
   total,
   playing,
   rate,
@@ -310,6 +340,7 @@ function FollowCard({
 }: {
   verse: ReadingVerse;
   i: number;
+  wordI: number;
   total: number;
   playing: boolean;
   rate: number;
@@ -321,8 +352,19 @@ function FollowCard({
     <>
       <div className="rounded-[var(--radius-xl)] bg-card px-5 py-8 shadow-[var(--shadow-border)]">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">{verse.ref}</p>
-        <p className="he-word mt-4 text-2xl leading-relaxed sm:text-3xl" lang="he" dir="rtl">
-          {verse.he}
+        <p className="he-word mt-4 text-2xl leading-loose sm:text-3xl" lang="he" dir="rtl">
+          {verse.words.map((w, wi) => (
+            <span
+              key={`${verse.ref}-${wi}`}
+              className={
+                wi === wordI
+                  ? "mx-0.5 rounded-sm bg-primary px-1 text-primary-foreground"
+                  : "mx-0.5 text-ink"
+              }
+            >
+              {w}
+            </span>
+          ))}
         </p>
         <p className="mt-4 text-base leading-relaxed text-ink">{verse.en}</p>
         <p className="mt-6 text-sm tabular-nums text-muted">

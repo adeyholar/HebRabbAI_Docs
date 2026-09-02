@@ -3,7 +3,7 @@ import test from "node:test";
 import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
-const { readingVerses, readingGradeQuiz, parseReadingKey, chapterAudio, verseAtTime } = await jiti.import(
+const { readingVerses, readingGradeQuiz, parseReadingKey, chapterAudio, verseAtTime, wordAtTime } = await jiti.import(
   "/workspace/src/lib/reading.ts",
 );
 
@@ -41,5 +41,12 @@ test("recorded chapter audio has a start time for every verse", () => {
     assert.equal(verseAtTime(ch, meta.verses[0]), 1);
     assert.equal(verseAtTime(ch, meta.verses.at(-1)), n);
     assert.ok(meta.verses[0] > 2, "skip the spoken heading");
+    assert.equal(meta.words?.length, n);
+    const v1 = readingVerses(ch)[0];
+    assert.equal(meta.words?.[0]?.length, v1.words.length);
+    assert.equal(wordAtTime(ch, 1, meta.words[0][0]), 0);
+    if (v1.words.length > 1) {
+      assert.equal(wordAtTime(ch, 1, meta.words[0].at(-1)), v1.words.length - 1);
+    }
   }
 });
