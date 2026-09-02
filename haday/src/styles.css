@@ -77,6 +77,30 @@
   line-height: 1.2;
 }
 
+.he-verse {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: baseline;
+  column-gap: 0.4rem;
+  row-gap: 0.55rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  direction: rtl;
+  unicode-bidi: isolate;
+  overflow-wrap: anywhere;
+}
+.he-verse > span {
+  font-family: var(--font-hebrew);
+  font-weight: 700;
+  max-width: 100%;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-decoration-break: clone;
+}
+
 .he-hit {
   background: color-mix(in oklab, var(--color-primary) 16%, transparent);
   color: var(--color-primary);

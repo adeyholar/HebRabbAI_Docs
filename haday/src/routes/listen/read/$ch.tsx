@@ -7,9 +7,11 @@ import { Panel } from "@/components/panel";
 import { playGrade } from "@/lib/sfx";
 import {
   AUDIO_CREDIT,
+  READ_RATES,
   READING_CREDIT,
   chapterAudio,
   loadReadingProgress,
+  mediaClockTime,
   parseReadingKey,
   readingGradeQuiz,
   readingVerses,
@@ -18,6 +20,7 @@ import {
   verseStartTime,
   wordAtTime,
   type GradeItem,
+  type MediaClock,
   type ReadingVerse,
 } from "@/lib/reading";
 
@@ -41,6 +44,7 @@ function ReadingPage() {
   const [seen, setSeen] = useState(0);
   const [done, setDone] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const clockRef = useRef<MediaClock>({ media: 0, wall: 0, rate: 1 });
   const iRef = useRef(0);
   const wordRef = useRef(0);
   const versesRef = useRef(verses);
@@ -51,17 +55,37 @@ function ReadingPage() {
   versesRef.current = verses;
   rateRef.current = rate;
 
+  function applyRate(el: HTMLAudioElement, n: number) {
+    const rate = n > 0 ? n : 1;
+    el.playbackRate = rate;
+    el.defaultPlaybackRate = rate;
+    el.preservesPitch = true;
+    clockRef.current = { media: el.currentTime, wall: performance.now(), rate };
+  }
+
   function audio(): HTMLAudioElement {
     if (!audioRef.current) {
       const el = new Audio();
       el.preload = "auto";
-      el.addEventListener("timeupdate", onTime);
+      el.preservesPitch = true;
+      el.addEventListener("timeupdate", () => {
+        clockRef.current = { media: el.currentTime, wall: performance.now(), rate: el.playbackRate || rateRef.current };
+        onTime();
+      });
+      el.addEventListener("seeked", () => {
+        clockRef.current = { media: el.currentTime, wall: performance.now(), rate: el.playbackRate || rateRef.current };
+        onTime();
+      });
+      el.addEventListener("playing", () => {
+        applyRate(el, rateRef.current);
+        setPlaying(true);
+      });
       el.addEventListener("ended", onEnded);
       el.addEventListener("pause", () => {
+        clockRef.current = { media: el.currentTime, wall: performance.now(), rate: el.playbackRate || rateRef.current };
         if (el.ended) return;
         if (el.currentTime > 0 && el.currentTime < el.duration - 0.15) setPlaying(false);
       });
-      el.addEventListener("play", () => setPlaying(true));
       audioRef.current = el;
     }
     return audioRef.current;
@@ -72,7 +96,8 @@ function ReadingPage() {
     const list = versesRef.current;
     const cur = list[iRef.current];
     if (!el || !cur) return;
-    const vn = verseAtTime(cur.chapter, el.currentTime);
+    const t = mediaClockTime(el.currentTime, el.paused, clockRef.current, performance.now(), el.duration || 0);
+    const vn = verseAtTime(cur.chapter, t);
     const next = list.findIndex((v) => v.chapter === cur.chapter && v.verse === vn);
     const item = next >= 0 ? list[next] : cur;
     if (next >= 0 && next !== iRef.current) {
@@ -80,7 +105,7 @@ function ReadingPage() {
       setI(next);
     }
     if (item) {
-      const w = wordAtTime(item.chapter, item.verse, el.currentTime);
+      const w = wordAtTime(item.chapter, item.verse, t);
       if (w !== wordRef.current) {
         wordRef.current = w;
         setWordI(w);
@@ -114,12 +139,14 @@ function ReadingPage() {
       el.src = meta.src;
     }
     el.playbackRate = rateRef.current;
+    applyRate(el, rateRef.current);
     const start = verseStartTime(item.chapter, item.verse);
     try {
       if (kick || Math.abs(el.currentTime - start) > 0.35 || el.paused) {
         el.currentTime = start;
       }
       await el.play();
+      applyRate(el, rateRef.current);
       setPlaying(true);
     } catch {
       setPlaying(false);
@@ -148,7 +175,7 @@ function ReadingPage() {
     if (meta) {
       const el = audio();
       el.src = meta.src;
-      el.playbackRate = rateRef.current;
+      applyRate(el, rateRef.current);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
@@ -287,7 +314,7 @@ function ReadingPage() {
             setRate(n);
             rateRef.current = n;
             const el = audioRef.current;
-            if (el) el.playbackRate = n;
+            if (el) applyRate(el, n);
           }}
         />
       ) : null}
@@ -350,23 +377,19 @@ function FollowCard({
 }) {
   return (
     <>
-      <div className="rounded-[var(--radius-xl)] bg-card px-5 py-8 shadow-[var(--shadow-border)]">
+      <div className="min-w-0 overflow-x-hidden rounded-[var(--radius-xl)] bg-card px-4 py-6 shadow-[var(--shadow-border)] sm:px-5 sm:py-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">{verse.ref}</p>
-        <p className="he-word mt-4 text-2xl leading-loose sm:text-3xl" lang="he" dir="rtl">
+        <p className="he-verse mt-4 text-xl sm:text-2xl md:text-3xl" lang="he" dir="rtl">
           {verse.words.map((w, wi) => (
             <span
               key={`${verse.ref}-${wi}`}
-              className={
-                wi === wordI
-                  ? "mx-0.5 rounded-sm bg-primary px-1 text-primary-foreground"
-                  : "mx-0.5 text-ink"
-              }
+              className={wi === wordI ? "rounded-sm bg-primary px-1 text-primary-foreground" : "text-ink"}
             >
               {w}
             </span>
           ))}
         </p>
-        <p className="mt-4 text-base leading-relaxed text-ink">{verse.en}</p>
+        <p className="mt-4 max-w-full text-base leading-relaxed break-words text-ink">{verse.en}</p>
         <p className="mt-6 text-sm tabular-nums text-muted">
           {i + 1} / {total}
         </p>
@@ -388,9 +411,11 @@ function FollowCard({
       <label className="mt-3 flex min-h-12 items-center justify-between gap-2 rounded-[var(--radius-md)] bg-card px-3 text-sm font-semibold shadow-[var(--shadow-border)]">
         Speed
         <select className="bg-transparent text-ink" value={String(rate)} onChange={(e) => onRate(Number(e.target.value))}>
-          <option value="0.85">Slow</option>
-          <option value="1">Recorded</option>
-          <option value="1.15">Faster</option>
+          {READ_RATES.map((r) => (
+            <option key={r.value} value={String(r.value)}>
+              {r.label}
+            </option>
+          ))}
         </select>
       </label>
     </>
@@ -411,12 +436,16 @@ function GradeCard({
   onPick: (choice: string, item: GradeItem) => void;
 }) {
   return (
-    <div className="rounded-[var(--radius-xl)] bg-card px-5 py-8 shadow-[var(--shadow-border)]">
+    <div className="min-w-0 overflow-x-hidden rounded-[var(--radius-xl)] bg-card px-4 py-6 shadow-[var(--shadow-border)] sm:px-5 sm:py-8">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
         {item.verse.ref} · {qi + 1}/{total}
       </p>
-      <p className="he-word mt-4 text-2xl leading-relaxed" lang="he" dir="rtl">
-        {item.verse.he}
+      <p className="he-verse mt-4 text-xl sm:text-2xl" lang="he" dir="rtl">
+        {item.verse.words.map((w, wi) => (
+          <span key={`${item.id}-g-${wi}`} className="text-ink">
+            {w}
+          </span>
+        ))}
       </p>
       <p className="mt-6 text-sm font-semibold text-ink">Which English is this verse?</p>
       <ul className="mt-3 grid gap-2">

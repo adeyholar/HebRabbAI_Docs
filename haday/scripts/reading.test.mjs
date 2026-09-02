@@ -3,9 +3,8 @@ import test from "node:test";
 import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
-const { readingVerses, readingGradeQuiz, parseReadingKey, chapterAudio, verseAtTime, wordAtTime } = await jiti.import(
-  "/workspace/src/lib/reading.ts",
-);
+const { readingVerses, readingGradeQuiz, parseReadingKey, chapterAudio, verseAtTime, wordAtTime, mediaClockTime, READ_RATES } =
+  await jiti.import("/workspace/src/lib/reading.ts");
 
 test("Genesis 1–5 public-domain reading is complete", () => {
   assert.equal(parseReadingKey("all"), "all");
@@ -49,4 +48,14 @@ test("recorded chapter audio has a start time for every verse", () => {
       assert.equal(wordAtTime(ch, 1, meta.words[0].at(-1)), v1.words.length - 1);
     }
   }
+});
+
+test("slow and fast clocks stay on the recording timeline", () => {
+  const start = { media: 12.72, wall: 1_000, rate: 1 };
+  assert.equal(mediaClockTime(12.72, false, start, 1_000, 400), 12.72);
+  assert.equal(mediaClockTime(12.72, false, { ...start, rate: 0.7 }, 1_000 + 10_000, 400), 12.72 + 7);
+  assert.equal(mediaClockTime(12.72, false, { ...start, rate: 1.25 }, 1_000 + 4_000, 400), 12.72 + 5);
+  assert.equal(mediaClockTime(18, true, { media: 18, wall: 1_000, rate: 0.7 }, 5_000, 400), 18);
+  assert.ok(READ_RATES.some((r) => r.label === "Slow" && r.value === 0.7));
+  assert.ok(READ_RATES.some((r) => r.label === "Faster" && r.value === 1.25));
 });

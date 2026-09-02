@@ -16,6 +16,28 @@ const AUDIO = audioRaw as Record<string, ChapterAudio>;
 export const AUDIO_CREDIT =
   "Hebrew reading: Abraham Shmuelof (chapter recordings). English: World English Bible (public domain). Hebrew text: Westminster Leningrad Codex (public domain).";
 
+export const READ_RATES = [
+  { value: 0.7, label: "Slow" },
+  { value: 1, label: "Recorded" },
+  { value: 1.25, label: "Faster" },
+] as const;
+
+export type MediaClock = { media: number; wall: number; rate: number };
+
+/** Media-time for highlighting. Independent of Slow / Recorded / Faster wall clock. */
+export function mediaClockTime(
+  currentTime: number,
+  paused: boolean,
+  clock: MediaClock,
+  now: number,
+  duration = 0,
+): number {
+  if (paused || clock.rate <= 0) return currentTime;
+  const t = clock.media + ((now - clock.wall) / 1000) * clock.rate;
+  const cap = duration > 0 ? duration : Number.POSITIVE_INFINITY;
+  return Math.min(cap, Math.max(0, t));
+}
+
 export type ReadingVerse = {
   chapter: number;
   verse: number;
@@ -79,7 +101,7 @@ export function verseAtTime(chapter: number, time: number): number {
   if (!starts.length) return 1;
   let v = 1;
   for (let i = 0; i < starts.length; i++) {
-    if (time + 0.08 >= (starts[i] ?? 0)) v = i + 1;
+    if (time + 0.02 >= (starts[i] ?? 0)) v = i + 1;
     else break;
   }
   return v;
@@ -91,7 +113,7 @@ export function wordAtTime(chapter: number, verse: number, time: number): number
   if (!starts.length) return 0;
   let w = 0;
   for (let i = 0; i < starts.length; i++) {
-    if (time + 0.04 >= (starts[i] ?? 0)) w = i;
+    if (time + 0.02 >= (starts[i] ?? 0)) w = i;
     else break;
   }
   return w;
