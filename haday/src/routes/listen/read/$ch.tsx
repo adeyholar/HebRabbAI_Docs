@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import { Pause, Play, Rewind, FastForward, SkipBack, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ListenMenu } from "@/components/listen-menu";
 import { Panel } from "@/components/panel";
@@ -10,6 +10,7 @@ import {
   READ_RATES,
   READING_CREDIT,
   chapterAudio,
+  formatPlayTime,
   loadReadingProgress,
   mediaClockTime,
   parseReadingKey,
@@ -37,6 +38,8 @@ function ReadingPage() {
   const [wordI, setWordI] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
+  const [tnow, setTnow] = useState(0);
+  const [tdur, setTdur] = useState(0);
   const [quiz, setQuiz] = useState<GradeItem[] | null>(null);
   const [qi, setQi] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
@@ -45,6 +48,7 @@ function ReadingPage() {
   const [done, setDone] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const clockRef = useRef<MediaClock>({ media: 0, wall: 0, rate: 1 });
+  const seekingRef = useRef(false);
   const iRef = useRef(0);
   const wordRef = useRef(0);
   const versesRef = useRef(verses);
@@ -56,47 +60,35 @@ function ReadingPage() {
   rateRef.current = rate;
 
   function applyRate(el: HTMLAudioElement, n: number) {
-    const rate = n > 0 ? n : 1;
-    el.playbackRate = rate;
-    el.defaultPlaybackRate = rate;
+    const next = n > 0 ? n : 1;
+    el.playbackRate = next;
+    el.defaultPlaybackRate = next;
     el.preservesPitch = true;
-    clockRef.current = { media: el.currentTime, wall: performance.now(), rate };
+    clockRef.current = { media: el.currentTime, wall: performance.now(), rate: next };
   }
 
-  function audio(): HTMLAudioElement {
-    if (!audioRef.current) {
-      const el = new Audio();
-      el.preload = "auto";
-      el.preservesPitch = true;
-      el.addEventListener("timeupdate", () => {
-        clockRef.current = { media: el.currentTime, wall: performance.now(), rate: el.playbackRate || rateRef.current };
-        onTime();
-      });
-      el.addEventListener("seeked", () => {
-        clockRef.current = { media: el.currentTime, wall: performance.now(), rate: el.playbackRate || rateRef.current };
-        onTime();
-      });
-      el.addEventListener("playing", () => {
-        applyRate(el, rateRef.current);
-        setPlaying(true);
-      });
-      el.addEventListener("ended", onEnded);
-      el.addEventListener("pause", () => {
-        clockRef.current = { media: el.currentTime, wall: performance.now(), rate: el.playbackRate || rateRef.current };
-        if (el.ended) return;
-        if (el.currentTime > 0 && el.currentTime < el.duration - 0.15) setPlaying(false);
-      });
-      audioRef.current = el;
-    }
+  function elAudio(): HTMLAudioElement | null {
     return audioRef.current;
   }
 
+  function syncClock(el: HTMLAudioElement) {
+    clockRef.current = {
+      media: el.currentTime,
+      wall: performance.now(),
+      rate: el.playbackRate || rateRef.current,
+    };
+  }
+
   function onTime() {
-    const el = audioRef.current;
+    const el = elAudio();
     const list = versesRef.current;
     const cur = list[iRef.current];
     if (!el || !cur) return;
     const t = mediaClockTime(el.currentTime, el.paused, clockRef.current, performance.now(), el.duration || 0);
+    if (!seekingRef.current) {
+      setTnow(t);
+      if (el.duration) setTdur(el.duration);
+    }
     const vn = verseAtTime(cur.chapter, t);
     const next = list.findIndex((v) => v.chapter === cur.chapter && v.verse === vn);
     const item = next >= 0 ? list[next] : cur;
@@ -133,17 +125,17 @@ function ReadingPage() {
   async function playFrom(index: number, kick: boolean) {
     const item = versesRef.current[index];
     const meta = item ? chapterAudio(item.chapter) : undefined;
-    if (!item || !meta) return;
-    const el = audio();
+    const el = elAudio();
+    if (!item || !meta || !el) return;
     if (!el.src.endsWith(meta.src) && !el.src.includes(meta.src)) {
       el.src = meta.src;
     }
-    el.playbackRate = rateRef.current;
     applyRate(el, rateRef.current);
     const start = verseStartTime(item.chapter, item.verse);
     try {
       if (kick || Math.abs(el.currentTime - start) > 0.35 || el.paused) {
         el.currentTime = start;
+        syncClock(el);
       }
       await el.play();
       applyRate(el, rateRef.current);
@@ -154,12 +146,61 @@ function ReadingPage() {
   }
 
   function halt() {
-    const el = audioRef.current;
-    if (el) {
-      el.pause();
-    }
+    const el = elAudio();
+    if (el) el.pause();
     setPlaying(false);
   }
+
+  function seekTo(t: number) {
+    const el = elAudio();
+    if (!el) return;
+    const dur = el.duration || tdur;
+    el.currentTime = Math.max(0, Math.min(dur || t, t));
+    syncClock(el);
+    setTnow(el.currentTime);
+    onTime();
+  }
+
+  function nudge(sec: number) {
+    const el = elAudio();
+    if (!el) return;
+    seekTo(el.currentTime + sec);
+  }
+
+  useEffect(() => {
+    const el = elAudio();
+    if (!el) return;
+    const onUpdate = () => {
+      syncClock(el);
+      onTime();
+    };
+    const onMeta = () => setTdur(el.duration || 0);
+    const onPlay = () => {
+      applyRate(el, rateRef.current);
+      setPlaying(true);
+    };
+    const onPause = () => {
+      syncClock(el);
+      if (!el.ended) setPlaying(false);
+    };
+    el.addEventListener("timeupdate", onUpdate);
+    el.addEventListener("seeked", onUpdate);
+    el.addEventListener("loadedmetadata", onMeta);
+    el.addEventListener("durationchange", onMeta);
+    el.addEventListener("playing", onPlay);
+    el.addEventListener("pause", onPause);
+    el.addEventListener("ended", onEnded);
+    return () => {
+      el.removeEventListener("timeupdate", onUpdate);
+      el.removeEventListener("seeked", onUpdate);
+      el.removeEventListener("loadedmetadata", onMeta);
+      el.removeEventListener("durationchange", onMeta);
+      el.removeEventListener("playing", onPlay);
+      el.removeEventListener("pause", onPause);
+      el.removeEventListener("ended", onEnded);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   useEffect(() => {
     setI(0);
@@ -172,10 +213,12 @@ function ReadingPage() {
     halt();
     const first = verses[0];
     const meta = first ? chapterAudio(first.chapter) : undefined;
-    if (meta) {
-      const el = audio();
+    const el = elAudio();
+    if (meta && el) {
       el.src = meta.src;
       applyRate(el, rateRef.current);
+      setTnow(0);
+      setTdur(meta.duration);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
@@ -212,10 +255,12 @@ function ReadingPage() {
     else {
       const item = verses[next];
       const meta = item ? chapterAudio(item.chapter) : undefined;
-      const el = audio();
-      if (item && meta) {
+      const el = elAudio();
+      if (item && meta && el) {
         if (!el.src.includes(meta.src)) el.src = meta.src;
         el.currentTime = verseStartTime(item.chapter, item.verse);
+        syncClock(el);
+        onTime();
       }
     }
   }
@@ -299,22 +344,30 @@ function ReadingPage() {
 
       {mode === "follow" && verse ? (
         <FollowCard
+          audioRef={audioRef}
           verse={verse}
           i={i}
           wordI={wordI}
           total={verses.length}
           playing={playing}
           rate={rate}
+          now={tnow}
+          duration={tdur}
           onToggle={() => {
             if (playing) halt();
             else void playFrom(i, true);
           }}
           onStep={step}
+          onNudge={nudge}
+          onSeek={(t) => seekTo(t)}
+          onSeeking={(yes) => {
+            seekingRef.current = yes;
+          }}
           onRate={(n) => {
             setRate(n);
             rateRef.current = n;
-            const el = audioRef.current;
-            if (el) applyRate(el, n);
+            const node = elAudio();
+            if (node) applyRate(node, n);
           }}
         />
       ) : null}
@@ -355,26 +408,39 @@ function ReadingPage() {
 }
 
 function FollowCard({
+  audioRef,
   verse,
   i,
   wordI,
   total,
   playing,
   rate,
+  now,
+  duration,
   onToggle,
   onStep,
+  onNudge,
+  onSeek,
+  onSeeking,
   onRate,
 }: {
+  audioRef: RefObject<HTMLAudioElement | null>;
   verse: ReadingVerse;
   i: number;
   wordI: number;
   total: number;
   playing: boolean;
   rate: number;
+  now: number;
+  duration: number;
   onToggle: () => void;
   onStep: (d: number) => void;
+  onNudge: (sec: number) => void;
+  onSeek: (t: number) => void;
+  onSeeking: (yes: boolean) => void;
   onRate: (n: number) => void;
 }) {
+  const max = duration > 0 ? duration : 0;
   return (
     <>
       <div className="min-w-0 overflow-x-hidden rounded-[var(--radius-xl)] bg-card px-4 py-6 shadow-[var(--shadow-border)] sm:px-5 sm:py-8">
@@ -394,30 +460,73 @@ function FollowCard({
           {i + 1} / {total}
         </p>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <Button type="button" variant="outline" size="lg" className="min-h-16" onClick={() => onStep(-1)}>
-          <SkipBack className="size-6" />
-          <span className="sr-only">Previous</span>
-        </Button>
-        <Button type="button" size="lg" className="min-h-16" onClick={onToggle}>
-          {playing ? <Pause className="size-7" /> : <Play className="size-7" />}
-          <span className="ms-2">{playing ? "Pause" : "Play"}</span>
-        </Button>
-        <Button type="button" variant="outline" size="lg" className="min-h-16" onClick={() => onStep(1)}>
-          <SkipForward className="size-6" />
-          <span className="sr-only">Next</span>
-        </Button>
-      </div>
-      <label className="mt-3 flex min-h-12 items-center justify-between gap-2 rounded-[var(--radius-md)] bg-card px-3 text-sm font-semibold shadow-[var(--shadow-border)]">
-        Speed
-        <select className="bg-transparent text-ink" value={String(rate)} onChange={(e) => onRate(Number(e.target.value))}>
+
+      <div className="mt-4 rounded-[var(--radius-xl)] bg-card px-4 py-4 shadow-[var(--shadow-border)]">
+        <div className="flex items-center justify-between text-sm font-semibold tabular-nums text-muted">
+          <span>{formatPlayTime(now)}</span>
+          <span>{formatPlayTime(max)}</span>
+        </div>
+        <input
+          className="audio-seek mt-1"
+          type="range"
+          min={0}
+          max={max || 1}
+          step={0.1}
+          value={Math.min(now, max || now)}
+          aria-label="Seek recording"
+          onPointerDown={() => onSeeking(true)}
+          onPointerUp={() => onSeeking(false)}
+          onChange={(e) => {
+            const t = Number(e.target.value);
+            onSeeking(true);
+            onSeek(t);
+          }}
+        />
+        <audio
+          ref={audioRef}
+          className="mt-1 w-full"
+          controls
+          preload="auto"
+          controlsList="nodownload noplaybackrate"
+        />
+        <div className="mt-3 grid grid-cols-5 gap-2">
+          <Button type="button" variant="outline" size="lg" className="min-h-14" onClick={() => onNudge(-5)}>
+            <Rewind className="size-5" />
+            <span className="sr-only">Back 5 seconds</span>
+          </Button>
+          <Button type="button" variant="outline" size="lg" className="min-h-14" onClick={() => onStep(-1)}>
+            <SkipBack className="size-5" />
+            <span className="sr-only">Previous verse</span>
+          </Button>
+          <Button type="button" size="lg" className="min-h-14" onClick={onToggle}>
+            {playing ? <Pause className="size-6" /> : <Play className="size-6 ms-0.5" />}
+            <span className="sr-only">{playing ? "Pause" : "Play"}</span>
+          </Button>
+          <Button type="button" variant="outline" size="lg" className="min-h-14" onClick={() => onStep(1)}>
+            <SkipForward className="size-5" />
+            <span className="sr-only">Next verse</span>
+          </Button>
+          <Button type="button" variant="outline" size="lg" className="min-h-14" onClick={() => onNudge(5)}>
+            <FastForward className="size-5" />
+            <span className="sr-only">Forward 5 seconds</span>
+          </Button>
+        </div>
+        <p className="mt-3 text-center text-xs font-semibold uppercase tracking-wide text-muted">Speed</p>
+        <div className="mt-2 grid grid-cols-3 gap-2">
           {READ_RATES.map((r) => (
-            <option key={r.value} value={String(r.value)}>
+            <button
+              key={r.value}
+              type="button"
+              onClick={() => onRate(r.value)}
+              className={`min-h-12 rounded-[var(--radius-md)] px-2 text-sm font-semibold shadow-[var(--shadow-border)] ${
+                rate === r.value ? "bg-ink text-parchment" : "bg-surface text-ink"
+              }`}
+            >
               {r.label}
-            </option>
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
+      </div>
     </>
   );
 }

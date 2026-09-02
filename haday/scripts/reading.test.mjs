@@ -3,8 +3,17 @@ import test from "node:test";
 import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
-const { readingVerses, readingGradeQuiz, parseReadingKey, chapterAudio, verseAtTime, wordAtTime, mediaClockTime, READ_RATES } =
-  await jiti.import("/workspace/src/lib/reading.ts");
+const {
+  readingVerses,
+  readingGradeQuiz,
+  parseReadingKey,
+  chapterAudio,
+  verseAtTime,
+  wordAtTime,
+  mediaClockTime,
+  formatPlayTime,
+  READ_RATES,
+} = await jiti.import("/workspace/src/lib/reading.ts");
 
 test("Genesis 1–5 public-domain reading is complete", () => {
   assert.equal(parseReadingKey("all"), "all");
@@ -58,4 +67,10 @@ test("slow and fast clocks stay on the recording timeline", () => {
   assert.equal(mediaClockTime(18, true, { media: 18, wall: 1_000, rate: 0.7 }, 5_000, 400), 18);
   assert.ok(READ_RATES.some((r) => r.label === "Slow" && r.value === 0.7));
   assert.ok(READ_RATES.some((r) => r.label === "Faster" && r.value === 1.25));
+});
+
+test("playhead time labels", () => {
+  assert.equal(formatPlayTime(0), "0:00");
+  assert.equal(formatPlayTime(72), "1:12");
+  assert.equal(formatPlayTime(364.04), "6:04");
 });

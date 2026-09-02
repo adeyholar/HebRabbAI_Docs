@@ -38,6 +38,14 @@ export function mediaClockTime(
   return Math.min(cap, Math.max(0, t));
 }
 
+export function formatPlayTime(sec: number): string {
+  if (!Number.isFinite(sec) || sec < 0) sec = 0;
+  const s = Math.floor(sec);
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, "0")}`;
+}
+
 export type ReadingVerse = {
   chapter: number;
   verse: number;
