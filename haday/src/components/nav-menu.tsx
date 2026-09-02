@@ -24,7 +24,8 @@ export type NavHref =
   | "/game/alefbet"
   | "/game/syllables"
   | "/game/nouns"
-  | "/ask";
+  | "/ask"
+  | "/ideas";
 
 export type NavItem = {
   to: NavHref;

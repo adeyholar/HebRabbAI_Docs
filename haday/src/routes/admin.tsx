@@ -3,6 +3,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Panel } from "@/components/panel";
 import { getAdminStatus, listRoster, type RosterPerson } from "@/lib/admin";
 import { listVisits, countryLabel, type VisitStats } from "@/lib/visits";
+import {
+  IDEA_AREA_LABEL,
+  IDEA_STATUS_LABEL,
+  IDEA_STATUSES,
+  listIdeaInbox,
+  reviewIdea,
+  type Idea,
+  type IdeaStatus,
+} from "@/lib/ideas";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -21,6 +30,7 @@ function AdminPage() {
   const [admin, setAdmin] = useState<boolean | null>(null);
   const [people, setPeople] = useState<RosterPerson[] | null>(null);
   const [visits, setVisits] = useState<VisitStats | null>(null);
+  const [ideas, setIdeas] = useState<Idea[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,10 +41,11 @@ function AdminPage() {
         if (cancelled) return;
         setAdmin(status.admin);
         if (!status.admin) return;
-        const [rows, traffic] = await Promise.all([listRoster(), listVisits()]);
+        const [rows, traffic, inbox] = await Promise.all([listRoster(), listVisits(), listIdeaInbox()]);
         if (cancelled) return;
         setPeople(rows);
         setVisits(traffic);
+        setIdeas(inbox);
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : "Could not load roster.");
@@ -92,6 +103,8 @@ function AdminPage() {
           Last login is the most recent session; last study is when they saved progress.
         </p>
       </Panel>
+
+      <IdeaInventory ideas={ideas ?? []} onChange={setIdeas} />
 
       {visits && (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -170,6 +183,70 @@ function AdminPage() {
         </table>
       </div>
     </>
+  );
+}
+
+function IdeaInventory({ ideas, onChange }: { ideas: Idea[]; onChange: (next: Idea[]) => void }) {
+  const inbox = ideas.filter((i) => i.status === "new").length;
+  return (
+    <Panel className="mb-4">
+      <h2 className="font-display text-2xl font-bold text-ink">Feature inventory</h2>
+      <p className="mt-1 text-sm text-muted">
+        {inbox} waiting for review. Mark what makes sense as planned, then building, then shipped. Hold the rest.
+        Classmates add ideas from{" "}
+        <Link to="/ideas" className="font-semibold text-primary">
+          Suggest a feature
+        </Link>
+        .
+      </p>
+      {ideas.length === 0 ? (
+        <p className="mt-3 text-sm text-muted">No ideas yet. Share the Suggest a feature page with the group.</p>
+      ) : (
+        <ul className="mt-4 grid gap-3">
+          {ideas.map((idea) => (
+            <li key={idea.id} className="rounded-[var(--radius-md)] bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
+              <p className="font-semibold text-ink">{idea.title}</p>
+              <p className="mt-1 text-xs text-muted">
+                {idea.author} · {IDEA_AREA_LABEL[idea.area]} · {new Date(idea.created).toLocaleDateString()}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-ink">{idea.body}</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-[8rem_1fr_auto] sm:items-center">
+                <select
+                  className="min-h-12 rounded-[var(--radius-md)] bg-card px-3 text-sm font-semibold text-ink shadow-[var(--shadow-border)]"
+                  value={idea.status}
+                  onChange={(e) => {
+                    const status = e.target.value as IdeaStatus;
+                    onChange(ideas.map((x) => (x.id === idea.id ? { ...x, status } : x)));
+                    void reviewIdea({ data: { id: idea.id, status, note: idea.note } });
+                  }}
+                >
+                  {IDEA_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {IDEA_STATUS_LABEL[s]}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="min-h-12 rounded-[var(--radius-md)] bg-card px-3 text-sm text-ink shadow-[var(--shadow-border)]"
+                  placeholder="Review note (optional)"
+                  defaultValue={idea.note}
+                  maxLength={280}
+                  onBlur={(e) => {
+                    const note = e.target.value.trim();
+                    if (note === idea.note) return;
+                    onChange(ideas.map((x) => (x.id === idea.id ? { ...x, note } : x)));
+                    void reviewIdea({ data: { id: idea.id, status: idea.status, note } });
+                  }}
+                />
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  {IDEA_STATUS_LABEL[idea.status]}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }
 

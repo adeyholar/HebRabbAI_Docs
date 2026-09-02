@@ -16,6 +16,7 @@ import {
   MoreHorizontal,
   PenLine,
   Repeat,
+  Lightbulb,
   Trophy,
   Users,
 } from "lucide-react";
@@ -67,6 +68,7 @@ const LISTEN: NavItem[] = [
 function moreItems(admin: boolean): NavItem[] {
   const items: NavItem[] = [
     { to: "/ask", label: "Ask HaDay Hebraic AI", hint: "Clarify the lesson", icon: CircleHelp },
+    { to: "/ideas", label: "Suggest a feature", hint: "Class inventory", icon: Lightbulb },
     { to: "/leaderboard", label: "Leaderboard", hint: "Class standings", icon: Medal },
     { to: "/rewards", label: "Rewards", hint: "Ranks and badges", icon: Trophy },
   ];
@@ -235,7 +237,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               label="More"
               icon={MoreHorizontal}
               items={moreItems(isAdmin)}
-              active={["/guide", "/rewards", "/leaderboard", "/admin", "/ask"].includes(pathname)}
+              active={["/guide", "/rewards", "/leaderboard", "/admin", "/ask", "/ideas"].includes(pathname)}
             />
             <NavTip label="Answer sounds">
               <SfxToggle />

@@ -42,7 +42,8 @@ function GuidePage() {
             lemmas — so new chapters do not bury the old ones. The Study menu groups Drill, Write, Quiz, Match, Lex,
             Alef-bet, Zakhor, and Guide. Listen has its own menu: class vocabulary, then Genesis 1–5 follow-along with the
             recorded Hebrew chapter audio (not a computer voice) and a grade at 90%. Ask HaDay Hebraic AI to clarify the
-            lesson.
+            lesson. Suggest a feature puts class ideas in the inventory for review — what makes sense gets planned and
+            built.
           </li>
         </ul>
       </Panel>

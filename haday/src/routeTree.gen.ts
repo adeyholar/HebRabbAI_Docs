@@ -17,6 +17,7 @@ import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as ChallengeRouteImport } from './routes/challenge'
 import { Route as DrillRouteImport } from './routes/drill'
 import { Route as GuideRouteImport } from './routes/guide'
+import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as KeepRouteImport } from './routes/keep'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as ListenRouteImport } from './routes/listen'
@@ -76,6 +77,11 @@ const DrillRoute = DrillRouteImport.update({
 const GuideRoute = GuideRouteImport.update({
   id: '/guide',
   path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdeasRoute = IdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KeepRoute = KeepRouteImport.update({
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
+  '/ideas': typeof IdeasRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
   '/listen': typeof ListenRouteWithChildren
@@ -218,6 +225,7 @@ export interface FileRoutesByTo {
   '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
+  '/ideas': typeof IdeasRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
@@ -248,6 +256,7 @@ export interface FileRoutesById {
   '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
+  '/ideas': typeof IdeasRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
   '/listen': typeof ListenRouteWithChildren
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/challenge'
     | '/drill'
     | '/guide'
+    | '/ideas'
     | '/keep'
     | '/leaderboard'
     | '/listen'
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | '/challenge'
     | '/drill'
     | '/guide'
+    | '/ideas'
     | '/keep'
     | '/leaderboard'
     | '/login'
@@ -339,6 +350,7 @@ export interface FileRouteTypes {
     | '/challenge'
     | '/drill'
     | '/guide'
+    | '/ideas'
     | '/keep'
     | '/leaderboard'
     | '/listen'
@@ -370,6 +382,7 @@ export interface RootRouteChildren {
   ChallengeRoute: typeof ChallengeRoute
   DrillRoute: typeof DrillRoute
   GuideRoute: typeof GuideRoute
+  IdeasRoute: typeof IdeasRoute
   KeepRoute: typeof KeepRoute
   LeaderboardRoute: typeof LeaderboardRoute
   ListenRoute: typeof ListenRouteWithChildren
@@ -446,6 +459,13 @@ declare module '@tanstack/react-router' {
       path: '/guide'
       fullPath: '/guide'
       preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ideas': {
+      id: '/ideas'
+      path: '/ideas'
+      fullPath: '/ideas'
+      preLoaderRoute: typeof IdeasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/keep': {
@@ -613,6 +633,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChallengeRoute: ChallengeRoute,
   DrillRoute: DrillRoute,
   GuideRoute: GuideRoute,
+  IdeasRoute: IdeasRoute,
   KeepRoute: KeepRoute,
   LeaderboardRoute: LeaderboardRoute,
   ListenRoute: ListenRouteWithChildren,

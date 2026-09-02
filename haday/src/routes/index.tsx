@@ -47,6 +47,10 @@ function Home() {
           <Link to="/guide" className="font-semibold text-primary">
             How to use HaDay
           </Link>
+          {" · "}
+          <Link to="/ideas" className="font-semibold text-primary">
+            Suggest a feature
+          </Link>
         </p>
       </Panel>
 
