@@ -1,4 +1,5 @@
 import { alphabetVocab, bbhVocab, GAME_CHAPTER_TITLES, type VocabItem } from "@/lib/vocab";
+import type { ReadingVerse } from "@/lib/reading";
 
 const POS_KEY = "haday-listen-i";
 const LOOP_KEY = "haday-listen-loop";
@@ -458,6 +459,26 @@ export async function speakCard(item: ListenItem, rate: number, signal: { stop: 
 
   const en = spokenEnglish(item.gloss);
   if (en) await speakLine(en, "en", rate, signal);
+  if (signal.stop) return;
+  await pauseMs(restFor(rate, apple ? 280 : 720), signal);
+}
+
+export async function speakReadingVerse(verse: ReadingVerse, rate: number, signal: { stop: boolean }): Promise<void> {
+  if (signal.stop) return;
+  const apple = isAppleMobile();
+  await speakLine(`Genesis ${verse.chapter}, verse ${verse.verse}.`, "en", Math.min(rate, 1), signal);
+  if (signal.stop) return;
+  const he = ttsHebrew(verse.he);
+  if (hasHebrewVoice()) {
+    const ok = await speakLine(he, "he", rate, signal);
+    if (!ok && !signal.stop) await speakLine(he, "en", rate, signal);
+  } else {
+    await speakLine(he, "en", rate, signal);
+  }
+  if (signal.stop) return;
+  await pauseMs(restFor(rate, apple ? 220 : 380), signal);
+  if (signal.stop) return;
+  await speakLine(verse.en, "en", rate, signal);
   if (signal.stop) return;
   await pauseMs(restFor(rate, apple ? 280 : 720), signal);
 }

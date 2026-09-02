@@ -12,7 +12,6 @@ import {
   Library,
   Link2,
   ListChecks,
-  Map,
   Medal,
   MoreHorizontal,
   PenLine,
@@ -29,7 +28,6 @@ import { RedirectToSignIn, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { BrandLockup } from "@/components/brand-lockup";
 import { SfxToggle } from "@/components/sfx-toggle";
-import { continueTarget } from "@/lib/game";
 import { getAdminStatus } from "@/lib/admin";
 import { scoreboard } from "@/lib/rewards";
 import { HonorBadge, CrownBadge } from "@/components/honor-badge";
@@ -37,16 +35,38 @@ import { VisitorBeacon } from "@/components/visitor-beacon";
 import { NavTip } from "@/components/nav-tip";
 import { NavMenu, type NavItem } from "@/components/nav-menu";
 
-const PRACTICE: NavItem[] = [
+const STUDY: NavItem[] = [
   { to: "/drill", label: "Drill", hint: "Flip cards", icon: Layers },
   { to: "/write", label: "Write", hint: "Type or hand-write", icon: PenLine },
   { to: "/quiz", label: "Quiz", hint: "Choice or type the gloss", icon: ListChecks },
   { to: "/match", label: "Match", hint: "Select pairs, then the lemma", icon: Link2 },
+  { to: "/browse", label: "Lexicon", hint: "Week’s lemmas", icon: BookOpen },
+  { to: "/alphabet", label: "Alef-bet lesson", hint: "See, follow, my hand", icon: Languages },
+  { to: "/keep", label: "Zakhor", hint: "Daily keep", icon: Repeat },
+  { to: "/guide", label: "Guide", hint: "How to use HaDay", icon: CircleHelp },
+];
+
+const GAME: NavItem[] = [
+  { to: "/game", label: "BBH vocabulary", hint: "Chapter path", icon: Compass },
+  { to: "/game/alefbet", label: "Aleph-bet mastery", hint: "Letter games", icon: Languages },
+  { to: "/game/syllables", label: "Syllables", hint: "Open, closed, shewa", icon: Layers },
+  { to: "/game/nouns", label: "Nouns", hint: "Gender and number", icon: BookOpen },
+  { to: "/challenge", label: "Ultimate Challenge", hint: "Whole list, one sitting", icon: Crown },
+];
+
+const LISTEN: NavItem[] = [
+  { to: "/listen", label: "Vocabulary", hint: "Hebrew, then English", icon: Headphones },
+  { to: "/listen/read/$ch", params: { ch: "1" }, label: "Genesis 1", hint: "Follow along", icon: BookOpen },
+  { to: "/listen/read/$ch", params: { ch: "2" }, label: "Genesis 2", hint: "Follow along", icon: BookOpen },
+  { to: "/listen/read/$ch", params: { ch: "3" }, label: "Genesis 3", hint: "Follow along", icon: BookOpen },
+  { to: "/listen/read/$ch", params: { ch: "4" }, label: "Genesis 4", hint: "Follow along", icon: BookOpen },
+  { to: "/listen/read/$ch", params: { ch: "5" }, label: "Genesis 5", hint: "Follow along", icon: BookOpen },
+  { to: "/listen/read/$ch", params: { ch: "all" }, label: "Genesis 1–5", hint: "Whole reading", icon: BookOpen },
 ];
 
 function moreItems(admin: boolean): NavItem[] {
   const items: NavItem[] = [
-    { to: "/challenge", label: "Ultimate Challenge", hint: "Whole list, one sitting", icon: Crown },
+    { to: "/ask", label: "Ask HaDay Hebraic AI", hint: "Clarify the lesson", icon: CircleHelp },
     { to: "/leaderboard", label: "Leaderboard", hint: "Class standings", icon: Medal },
     { to: "/rewards", label: "Rewards", hint: "Ranks and badges", icon: Trophy },
   ];
@@ -59,7 +79,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, isPending } = useCurrentUserState();
   const isLogin = pathname === "/login";
-  const isGame = pathname.startsWith("/game");
   const userId = user?.id ?? null;
   const [progressReady, setProgressReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -67,7 +86,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const streak = useStudy((s) => s.streak);
   const board = scoreboard(game, streak);
   const honor = board.honor;
-  const cont = continueTarget(game);
 
   useEffect(() => {
     if (isLogin || !userId) {
@@ -182,50 +200,42 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4">
           <BrandLockup linked />
           <div className="flex min-w-0 items-center gap-0.5 sm:gap-1">
-            <NavTip label={isGame ? "Study mode" : "Game mode"}>
+            <NavMenu
+              label="Game"
+              icon={Compass}
+              items={GAME}
+              active={pathname.startsWith("/game") || pathname.startsWith("/challenge")}
+            />
+            <NavMenu
+              label="Study"
+              icon={Library}
+              items={STUDY}
+              active={STUDY.some((x) => (x.to === "/" ? false : pathname === x.to || pathname.startsWith(`${x.to}/`))) || pathname === "/"}
+            />
+            <NavMenu
+              label="Listen"
+              icon={Headphones}
+              items={LISTEN}
+              active={pathname.startsWith("/listen")}
+            />
+            <NavTip label="Ask HaDay Hebraic AI">
               <Link
-                to={isGame ? "/" : "/game"}
-                aria-label={isGame ? "Study mode" : "Game mode"}
-                title={isGame ? "Study mode" : "Game mode"}
+                to="/ask"
+                aria-label="Ask HaDay Hebraic AI"
+                title="Ask HaDay Hebraic AI"
                 className={cn(
                   "flex size-11 items-center justify-center rounded-[var(--radius-md)]",
-                  isGame ? "text-muted" : "text-primary",
+                  pathname === "/ask" ? "text-primary" : "text-muted",
                 )}
               >
-                {isGame ? <Library className="size-5" /> : <Compass className="size-5" strokeWidth={2.2} />}
-              </Link>
-            </NavTip>
-            <NavTip label="Listen · hands-free">
-              <Link
-                to="/listen"
-                aria-label="Listen hands-free"
-                title="Listen · hands-free"
-                className={cn(
-                  "flex size-11 items-center justify-center rounded-[var(--radius-md)]",
-                  pathname === "/listen" ? "text-primary" : "text-muted",
-                )}
-              >
-                <Headphones className="size-5" strokeWidth={pathname === "/listen" ? 2.2 : 1.8} />
-              </Link>
-            </NavTip>
-            <NavTip label="Zakhor · Daily keep">
-              <Link
-                to="/keep"
-                aria-label="Daily keep"
-                title="Zakhor · Daily keep"
-                className={cn(
-                  "flex size-11 items-center justify-center rounded-[var(--radius-md)]",
-                  pathname === "/keep" ? "text-primary" : "text-muted",
-                )}
-              >
-                <Repeat className="size-5" strokeWidth={pathname === "/keep" ? 2.2 : 1.8} />
+                <CircleHelp className="size-5" strokeWidth={pathname === "/ask" ? 2.2 : 1.8} />
               </Link>
             </NavTip>
             <NavMenu
               label="More"
               icon={MoreHorizontal}
               items={moreItems(isAdmin)}
-              active={["/guide", "/challenge", "/rewards", "/leaderboard", "/admin"].includes(pathname)}
+              active={["/guide", "/rewards", "/leaderboard", "/admin", "/ask"].includes(pathname)}
             />
             <NavTip label="Answer sounds">
               <SfxToggle />
@@ -241,116 +251,58 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-6 sm:pb-24">{children}</main>
 
-      {isGame ? (
-        <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
-          <ul className="mx-auto grid max-w-3xl grid-cols-3">
-            <li>
-              <NavTip label="Home" side="top" full>
-                <Link
-                  to="/"
-                  title="Home"
-                  className={cn(
-                    "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                    pathname === "/" ? "text-primary" : "text-muted",
-                  )}
-                >
-                  <House className="size-5" strokeWidth={pathname === "/" ? 2.2 : 1.8} />
-                  Home
-                </Link>
-              </NavTip>
-            </li>
-            <li>
-              <NavTip label="Chapter map" side="top" full>
-                <Link
-                  to="/game"
-                  title="Chapter map"
-                  className={cn(
-                    "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                    pathname === "/game" || pathname === "/game/" ? "text-primary" : "text-muted",
-                  )}
-                >
-                  <Map className="size-5" strokeWidth={pathname === "/game" || pathname === "/game/" ? 2.2 : 1.8} />
-                  Map
-                </Link>
-              </NavTip>
-            </li>
-            <li>
-              <NavTip label="Continue your path" side="top" full>
-                <Link
-                  to="/game/$chapter/$stage"
-                  params={{ chapter: String(cont.chapter), stage: cont.stage }}
-                  title="Continue your path"
-                  className="flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-xs font-medium text-primary"
-                >
-                  <Compass className="size-5" strokeWidth={2.2} />
-                  Continue
-                </Link>
-              </NavTip>
-            </li>
-          </ul>
-        </nav>
-      ) : (
-        <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
-          <ul className="mx-auto grid max-w-3xl grid-cols-4">
-            <li>
-              <NavTip label="Home" side="top" full>
-                <Link
-                  to="/"
-                  title="Home"
-                  className={cn(
-                    "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                    pathname === "/" ? "text-primary" : "text-muted",
-                  )}
-                >
-                  <House className="size-5" strokeWidth={pathname === "/" ? 2.2 : 1.8} />
-                  Home
-                </Link>
-              </NavTip>
-            </li>
-            <li>
-              <NavMenu
-                label="Practice"
-                icon={Layers}
-                items={PRACTICE}
-                active={["/drill", "/write", "/quiz", "/match"].some((p) => pathname.startsWith(p))}
-                drop="up"
-                tipSide="top"
-                layout="bar"
-              />
-            </li>
-            <li>
-              <NavTip label="Lexicon" side="top" full>
-                <Link
-                  to="/browse"
-                  title="Lexicon"
-                  className={cn(
-                    "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                    pathname.startsWith("/browse") ? "text-primary" : "text-muted",
-                  )}
-                >
-                  <BookOpen className="size-5" strokeWidth={pathname.startsWith("/browse") ? 2.2 : 1.8} />
-                  Lex
-                </Link>
-              </NavTip>
-            </li>
-            <li>
-              <NavTip label="Alef-bet" side="top" full>
-                <Link
-                  to="/alphabet"
-                  title="Alef-bet"
-                  className={cn(
-                    "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                    pathname.startsWith("/alphabet") ? "text-primary" : "text-muted",
-                  )}
-                >
-                  <Languages className="size-5" strokeWidth={pathname.startsWith("/alphabet") ? 2.2 : 1.8} />
-                  Alef
-                </Link>
-              </NavTip>
-            </li>
-          </ul>
-        </nav>
-      )}
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
+        <ul className="mx-auto grid max-w-3xl grid-cols-4">
+          <li>
+            <NavTip label="Home" side="top" full>
+              <Link
+                to="/"
+                title="Home"
+                className={cn(
+                  "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-xs font-medium",
+                  pathname === "/" ? "text-primary" : "text-muted",
+                )}
+              >
+                <House className="size-5" strokeWidth={pathname === "/" ? 2.2 : 1.8} />
+                Home
+              </Link>
+            </NavTip>
+          </li>
+          <li>
+            <NavMenu
+              label="Game"
+              icon={Compass}
+              items={GAME}
+              active={pathname.startsWith("/game") || pathname.startsWith("/challenge")}
+              drop="up"
+              tipSide="top"
+              layout="bar"
+            />
+          </li>
+          <li>
+            <NavMenu
+              label="Study"
+              icon={Library}
+              items={STUDY}
+              active={STUDY.some((x) => x.to !== "/" && (pathname === x.to || pathname.startsWith(`${x.to}/`)))}
+              drop="up"
+              tipSide="top"
+              layout="bar"
+            />
+          </li>
+          <li>
+            <NavMenu
+              label="Listen"
+              icon={Headphones}
+              items={LISTEN}
+              active={pathname.startsWith("/listen")}
+              drop="up"
+              tipSide="top"
+              layout="bar"
+            />
+          </li>
+        </ul>
+      </nav>
     </div>
   );
 }

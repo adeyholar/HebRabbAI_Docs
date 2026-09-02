@@ -8,6 +8,7 @@ import { applyDrillGrade, buildRound, currentItem, isRoundFinished, type DrillRo
 import { VerseCard } from "@/components/verse-card";
 import { FocusToggle } from "@/components/focus-toggle";
 import { Panel } from "@/components/panel";
+import { StudyMenu } from "@/components/study-menu";
 import type { Rating } from "@/lib/srs";
 
 export const Route = createFileRoute("/drill")({ component: DrillPage });
@@ -145,7 +146,10 @@ function DrillPage() {
   return (
     <>
       <Panel className="mb-4">
-        <WeekSelect />
+        <StudyMenu />
+        <div className="mt-4">
+          <WeekSelect />
+        </div>
         <FocusToggle />
         <div className="mt-4 flex items-center justify-between text-sm">
           <span className="tabular-nums font-medium text-ink">

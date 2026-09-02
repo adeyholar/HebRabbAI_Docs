@@ -13,16 +13,22 @@ export type NavHref =
   | "/browse"
   | "/alphabet"
   | "/listen"
+  | "/listen/read/$ch"
   | "/keep"
   | "/guide"
   | "/challenge"
   | "/rewards"
   | "/leaderboard"
   | "/admin"
-  | "/game";
+  | "/game"
+  | "/game/alefbet"
+  | "/game/syllables"
+  | "/game/nouns"
+  | "/ask";
 
 export type NavItem = {
   to: NavHref;
+  params?: { ch: string };
   label: string;
   hint?: string;
   icon: ComponentType<{ className?: string; strokeWidth?: number }>;
@@ -111,11 +117,13 @@ export function NavMenu({
           <ul role="menu" className="min-w-48 rounded-[var(--radius-md)] bg-card py-1 shadow-[var(--shadow-border)]">
             {items.map((item) => {
               const ItemIcon = item.icon;
+              const key = item.params ? `${item.to}:${item.params.ch}` : item.to;
               return (
-                <li key={item.to} role="none">
+                <li key={key} role="none">
                   <Link
                     role="menuitem"
                     to={item.to}
+                    params={item.params}
                     onClick={() => setOpen(false)}
                     className="flex min-h-12 items-center gap-2 px-3 text-sm font-medium text-ink hover:bg-surface"
                   >

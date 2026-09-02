@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AlphabetRouteImport } from './routes/alphabet'
+import { Route as AskRouteImport } from './routes/ask'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as ChallengeRouteImport } from './routes/challenge'
 import { Route as DrillRouteImport } from './routes/drill'
@@ -25,6 +26,7 @@ import { Route as QuizRouteImport } from './routes/quiz'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as WriteRouteImport } from './routes/write'
 import { Route as GameIndexRouteImport } from './routes/game/index'
+import { Route as ListenIndexRouteImport } from './routes/listen/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as GameChapterIndexRouteImport } from './routes/game/$chapter/index'
 import { Route as GameChapterStageRouteImport } from './routes/game/$chapter/$stage'
@@ -34,6 +36,7 @@ import { Route as GameNounsIndexRouteImport } from './routes/game/nouns/index'
 import { Route as GameNounsUnitRouteImport } from './routes/game/nouns/$unit'
 import { Route as GameSyllablesIndexRouteImport } from './routes/game/syllables/index'
 import { Route as GameSyllablesUnitRouteImport } from './routes/game/syllables/$unit'
+import { Route as ListenReadChRouteImport } from './routes/listen/read/$ch'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -48,6 +51,11 @@ const AdminRoute = AdminRouteImport.update({
 const AlphabetRoute = AlphabetRouteImport.update({
   id: '/alphabet',
   path: '/alphabet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AskRoute = AskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrowseRoute = BrowseRouteImport.update({
@@ -115,6 +123,11 @@ const GameIndexRoute = GameIndexRouteImport.update({
   path: '/game/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListenIndexRoute = ListenIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ListenRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -160,29 +173,37 @@ const GameSyllablesUnitRoute = GameSyllablesUnitRouteImport.update({
   path: '/game/syllables/$unit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListenReadChRoute = ListenReadChRouteImport.update({
+  id: '/read/$ch',
+  path: '/read/$ch',
+  getParentRoute: () => ListenRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
+  '/ask': typeof AskRoute
   '/browse': typeof BrowseRoute
   '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
-  '/listen': typeof ListenRoute
+  '/listen': typeof ListenRouteWithChildren
   '/login': typeof LoginRoute
   '/match': typeof MatchRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
   '/game/': typeof GameIndexRoute
+  '/listen/': typeof ListenIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
   '/game/nouns/$unit': typeof GameNounsUnitRoute
   '/game/syllables/$unit': typeof GameSyllablesUnitRoute
+  '/listen/read/$ch': typeof ListenReadChRoute
   '/game/$chapter/': typeof GameChapterIndexRoute
   '/game/alefbet/': typeof GameAlefbetIndexRoute
   '/game/nouns/': typeof GameNounsIndexRoute
@@ -192,24 +213,26 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
+  '/ask': typeof AskRoute
   '/browse': typeof BrowseRoute
   '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
-  '/listen': typeof ListenRoute
   '/login': typeof LoginRoute
   '/match': typeof MatchRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
   '/game': typeof GameIndexRoute
+  '/listen': typeof ListenIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
   '/game/nouns/$unit': typeof GameNounsUnitRoute
   '/game/syllables/$unit': typeof GameSyllablesUnitRoute
+  '/listen/read/$ch': typeof ListenReadChRoute
   '/game/$chapter': typeof GameChapterIndexRoute
   '/game/alefbet': typeof GameAlefbetIndexRoute
   '/game/nouns': typeof GameNounsIndexRoute
@@ -220,24 +243,27 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/alphabet': typeof AlphabetRoute
+  '/ask': typeof AskRoute
   '/browse': typeof BrowseRoute
   '/challenge': typeof ChallengeRoute
   '/drill': typeof DrillRoute
   '/guide': typeof GuideRoute
   '/keep': typeof KeepRoute
   '/leaderboard': typeof LeaderboardRoute
-  '/listen': typeof ListenRoute
+  '/listen': typeof ListenRouteWithChildren
   '/login': typeof LoginRoute
   '/match': typeof MatchRoute
   '/quiz': typeof QuizRoute
   '/rewards': typeof RewardsRoute
   '/write': typeof WriteRoute
   '/game/': typeof GameIndexRoute
+  '/listen/': typeof ListenIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/game/$chapter/$stage': typeof GameChapterStageRoute
   '/game/alefbet/$level': typeof GameAlefbetLevelRoute
   '/game/nouns/$unit': typeof GameNounsUnitRoute
   '/game/syllables/$unit': typeof GameSyllablesUnitRoute
+  '/listen/read/$ch': typeof ListenReadChRoute
   '/game/$chapter/': typeof GameChapterIndexRoute
   '/game/alefbet/': typeof GameAlefbetIndexRoute
   '/game/nouns/': typeof GameNounsIndexRoute
@@ -249,6 +275,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alphabet'
+    | '/ask'
     | '/browse'
     | '/challenge'
     | '/drill'
@@ -262,11 +289,13 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/write'
     | '/game/'
+    | '/listen/'
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
     | '/game/nouns/$unit'
     | '/game/syllables/$unit'
+    | '/listen/read/$ch'
     | '/game/$chapter/'
     | '/game/alefbet/'
     | '/game/nouns/'
@@ -276,24 +305,26 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alphabet'
+    | '/ask'
     | '/browse'
     | '/challenge'
     | '/drill'
     | '/guide'
     | '/keep'
     | '/leaderboard'
-    | '/listen'
     | '/login'
     | '/match'
     | '/quiz'
     | '/rewards'
     | '/write'
     | '/game'
+    | '/listen'
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
     | '/game/nouns/$unit'
     | '/game/syllables/$unit'
+    | '/listen/read/$ch'
     | '/game/$chapter'
     | '/game/alefbet'
     | '/game/nouns'
@@ -303,6 +334,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alphabet'
+    | '/ask'
     | '/browse'
     | '/challenge'
     | '/drill'
@@ -316,11 +348,13 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/write'
     | '/game/'
+    | '/listen/'
     | '/api/auth/$'
     | '/game/$chapter/$stage'
     | '/game/alefbet/$level'
     | '/game/nouns/$unit'
     | '/game/syllables/$unit'
+    | '/listen/read/$ch'
     | '/game/$chapter/'
     | '/game/alefbet/'
     | '/game/nouns/'
@@ -331,13 +365,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AlphabetRoute: typeof AlphabetRoute
+  AskRoute: typeof AskRoute
   BrowseRoute: typeof BrowseRoute
   ChallengeRoute: typeof ChallengeRoute
   DrillRoute: typeof DrillRoute
   GuideRoute: typeof GuideRoute
   KeepRoute: typeof KeepRoute
   LeaderboardRoute: typeof LeaderboardRoute
-  ListenRoute: typeof ListenRoute
+  ListenRoute: typeof ListenRouteWithChildren
   LoginRoute: typeof LoginRoute
   MatchRoute: typeof MatchRoute
   QuizRoute: typeof QuizRoute
@@ -376,6 +411,13 @@ declare module '@tanstack/react-router' {
       path: '/alphabet'
       fullPath: '/alphabet'
       preLoaderRoute: typeof AlphabetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ask': {
+      id: '/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AskRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/browse': {
@@ -469,6 +511,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listen/': {
+      id: '/listen/'
+      path: '/'
+      fullPath: '/listen/'
+      preLoaderRoute: typeof ListenIndexRouteImport
+      parentRoute: typeof ListenRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -532,20 +581,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameSyllablesUnitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listen/read/$ch': {
+      id: '/listen/read/$ch'
+      path: '/read/$ch'
+      fullPath: '/listen/read/$ch'
+      preLoaderRoute: typeof ListenReadChRouteImport
+      parentRoute: typeof ListenRoute
+    }
   }
 }
+
+interface ListenRouteChildren {
+  ListenIndexRoute: typeof ListenIndexRoute
+  ListenReadChRoute: typeof ListenReadChRoute
+}
+
+const ListenRouteChildren: ListenRouteChildren = {
+  ListenIndexRoute: ListenIndexRoute,
+  ListenReadChRoute: ListenReadChRoute,
+}
+
+const ListenRouteWithChildren =
+  ListenRoute._addFileChildren(ListenRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AlphabetRoute: AlphabetRoute,
+  AskRoute: AskRoute,
   BrowseRoute: BrowseRoute,
   ChallengeRoute: ChallengeRoute,
   DrillRoute: DrillRoute,
   GuideRoute: GuideRoute,
   KeepRoute: KeepRoute,
   LeaderboardRoute: LeaderboardRoute,
-  ListenRoute: ListenRoute,
+  ListenRoute: ListenRouteWithChildren,
   LoginRoute: LoginRoute,
   MatchRoute: MatchRoute,
   QuizRoute: QuizRoute,

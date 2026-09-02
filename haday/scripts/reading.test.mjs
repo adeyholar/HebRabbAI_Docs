@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createJiti } from "jiti";
+
+const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
+const { readingVerses, readingGradeQuiz, parseReadingKey } = await jiti.import("/workspace/src/lib/reading.ts");
+
+test("Genesis 1–5 public-domain reading is complete", () => {
+  assert.equal(parseReadingKey("all"), "all");
+  assert.equal(parseReadingKey("3"), 3);
+  const all = readingVerses("all");
+  assert.equal(all.length, 31 + 25 + 24 + 26 + 32);
+  const one = readingVerses(1);
+  assert.equal(one[0]?.he.includes("בְּרֵאשִׁ"), true);
+  assert.equal(one[0]?.en.toLowerCase().includes("beginning"), true);
+  assert.equal(one.at(-1)?.verse, 31);
+  const g3 = readingVerses(3).find((v) => v.verse === 15);
+  assert.ok(g3?.he.includes("אָשִׁ"));
+  assert.ok(!g3?.en.toLowerCase().includes("fire"));
+});
+
+test("grade quiz uses verses from that chapter", () => {
+  const quiz = readingGradeQuiz(1, 10);
+  assert.equal(quiz.length, 10);
+  for (const q of quiz) {
+    assert.equal(q.verse.chapter, 1);
+    assert.ok(q.choices.includes(q.answer));
+    assert.equal(q.choices.length, 4);
+  }
+});

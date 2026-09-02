@@ -26,10 +26,8 @@ function GuidePage() {
               Game mode
             </Link>
             <span className="text-ink"> — </span>
-            one path through chapters 1–19. Stages unlock in order. Use Continue. Recognize, Gloss, and Spell (lenient)
-            mix real Tanakh surface forms with the BBH lemmas. The Game menu also opens Aleph-bet mastery, Syllables
-            (learn a rule with a Tanakh line, then quiz), Nouns (endings, pairing, and a quiz that brings misses back),
-            and Ultimate Challenge.
+            one path through chapters 1–19. Stages unlock in order. Use Continue. Game shows the citation lemma from the
+            class book. The Game menu groups BBH vocabulary, Aleph-bet mastery, Syllables, Nouns, and Ultimate Challenge.
           </li>
           <li>
             <Link to="/" hash="study-mode" className="inline-flex items-center gap-1.5 font-semibold text-primary">
@@ -41,8 +39,9 @@ function GuidePage() {
             Closed-book Exam is from memory; misses lead the next Write and Quiz rounds.
             Ultimate Challenge is optional: the whole Ch. 2–19 list in one sitting, graded at the end.
             Zakhor (Daily keep) is the short daily mix of words you have already met — due, weak, and older mastered
-            lemmas — so new chapters do not bury the old ones. Listen is hands-free: Hebrew then English, chapters 1–19
-            in order, for the car or a walk.
+            lemmas — so new chapters do not bury the old ones. The Study menu groups Drill, Write, Quiz, Match, Lex,
+            Alef-bet, Zakhor, and Guide. Listen has its own menu: class vocabulary, then Genesis 1–5 follow-along (WLC
+            Hebrew + World English Bible) with a grade at 90%. Ask HaDay Hebraic AI to clarify the lesson.
           </li>
         </ul>
       </Panel>

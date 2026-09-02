@@ -10,6 +10,7 @@ import { pickEloDeck } from "@/lib/elo";
 import { weekPlayPool } from "@/lib/tanakh-pool";
 import { cn } from "@/lib/cn";
 import { Panel } from "@/components/panel";
+import { StudyMenu } from "@/components/study-menu";
 import { GradeBanner } from "@/components/grade-banner";
 import { playGrade } from "@/lib/sfx";
 
@@ -116,7 +117,10 @@ function QuizPage() {
   return (
     <>
       <Panel className="mb-4">
-        <WeekSelect />
+        <StudyMenu />
+        <div className="mt-4">
+          <WeekSelect />
+        </div>
         <FocusToggle />
         <div className="mt-4 flex gap-2">
           <Button size="sm" variant={mode === "choice" ? "primary" : "outline"} onClick={() => { setMode("choice"); resetRound(); }}>
