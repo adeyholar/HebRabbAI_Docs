@@ -24,6 +24,9 @@ export const READ_RATES = [
 
 export type MediaClock = { media: number; wall: number; rate: number };
 
+/** Highlight sits this far ahead of the playhead so the mark is on the word as it is spoken. */
+export const HIGHLIGHT_LEAD = 0.14;
+
 /** Media-time for highlighting. Independent of Slow / Recorded / Faster wall clock. */
 export function mediaClockTime(
   currentTime: number,
@@ -33,7 +36,9 @@ export function mediaClockTime(
   duration = 0,
 ): number {
   if (paused || clock.rate <= 0) return currentTime;
-  const t = clock.media + ((now - clock.wall) / 1000) * clock.rate;
+  const interpolated = clock.media + ((now - clock.wall) / 1000) * clock.rate;
+  // Never sit behind the element or the wall clock — iOS currentTime often lags.
+  const t = Math.max(currentTime, interpolated);
   const cap = duration > 0 ? duration : Number.POSITIVE_INFINITY;
   return Math.min(cap, Math.max(0, t));
 }
@@ -109,7 +114,7 @@ export function verseAtTime(chapter: number, time: number): number {
   if (!starts.length) return 1;
   let v = 1;
   for (let i = 0; i < starts.length; i++) {
-    if (time + 0.02 >= (starts[i] ?? 0)) v = i + 1;
+    if (time + HIGHLIGHT_LEAD >= (starts[i] ?? 0)) v = i + 1;
     else break;
   }
   return v;
@@ -121,7 +126,7 @@ export function wordAtTime(chapter: number, verse: number, time: number): number
   if (!starts.length) return 0;
   let w = 0;
   for (let i = 0; i < starts.length; i++) {
-    if (time + 0.02 >= (starts[i] ?? 0)) w = i;
+    if (time + HIGHLIGHT_LEAD >= (starts[i] ?? 0)) w = i;
     else break;
   }
   return w;

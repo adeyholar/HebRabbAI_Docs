@@ -12,6 +12,7 @@ const {
   wordAtTime,
   mediaClockTime,
   formatPlayTime,
+  HIGHLIGHT_LEAD,
   READ_RATES,
 } = await jiti.import("/workspace/src/lib/reading.ts");
 
@@ -73,4 +74,13 @@ test("playhead time labels", () => {
   assert.equal(formatPlayTime(0), "0:00");
   assert.equal(formatPlayTime(72), "1:12");
   assert.equal(formatPlayTime(364.04), "6:04");
+});
+
+test("highlight leads the playhead so the mark is not late", () => {
+  assert.ok(HIGHLIGHT_LEAD >= 0.12);
+  const meta = chapterAudio(1);
+  const w1 = meta.words[0][1];
+  assert.equal(wordAtTime(1, 1, w1 - HIGHLIGHT_LEAD), 1);
+  const start = { media: 12.72, wall: 1_000, rate: 1 };
+  assert.ok(Math.abs(mediaClockTime(12.72, false, start, 1_000 + 400, 400) - 13.12) < 1e-6);
 });

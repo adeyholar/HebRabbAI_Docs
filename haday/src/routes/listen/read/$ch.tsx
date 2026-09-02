@@ -171,6 +171,11 @@ function ReadingPage() {
     const el = elAudio();
     if (!el) return;
     const onUpdate = () => {
+      const guess = mediaClockTime(el.currentTime, el.paused, clockRef.current, performance.now(), el.duration || 0);
+      if (el.paused || Math.abs(el.currentTime - guess) > 0.6) syncClock(el);
+      onTime();
+    };
+    const onSeeked = () => {
       syncClock(el);
       onTime();
     };
@@ -184,7 +189,7 @@ function ReadingPage() {
       if (!el.ended) setPlaying(false);
     };
     el.addEventListener("timeupdate", onUpdate);
-    el.addEventListener("seeked", onUpdate);
+    el.addEventListener("seeked", onSeeked);
     el.addEventListener("loadedmetadata", onMeta);
     el.addEventListener("durationchange", onMeta);
     el.addEventListener("playing", onPlay);
@@ -192,7 +197,7 @@ function ReadingPage() {
     el.addEventListener("ended", onEnded);
     return () => {
       el.removeEventListener("timeupdate", onUpdate);
-      el.removeEventListener("seeked", onUpdate);
+      el.removeEventListener("seeked", onSeeked);
       el.removeEventListener("loadedmetadata", onMeta);
       el.removeEventListener("durationchange", onMeta);
       el.removeEventListener("playing", onPlay);
