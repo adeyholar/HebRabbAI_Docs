@@ -1,4 +1,5 @@
 import raw from "@/lib/genesis-1-5.json";
+import audioRaw from "@/lib/tanakh-audio.json";
 import { shuffle } from "@/lib/vocab";
 
 type GenesisDump = {
@@ -8,6 +9,12 @@ type GenesisDump = {
 };
 
 const data = raw as GenesisDump;
+
+type ChapterAudio = { src: string; duration: number; verses: number[] };
+const AUDIO = audioRaw as Record<string, ChapterAudio>;
+
+export const AUDIO_CREDIT =
+  "Hebrew reading: Abraham Shmuelof (chapter recordings). English: World English Bible (public domain). Hebrew text: Westminster Leningrad Codex (public domain).";
 
 export type ReadingVerse = {
   chapter: number;
@@ -55,6 +62,28 @@ export const READING_CREDIT = {
   he: data.heSource as string,
   en: data.enSource as string,
 };
+
+export function chapterAudio(chapter: number): ChapterAudio | undefined {
+  return AUDIO[String(chapter)];
+}
+
+export function verseStartTime(chapter: number, verse: number): number {
+  const starts = chapterAudio(chapter)?.verses;
+  if (!starts?.length) return 0;
+  return starts[Math.max(0, Math.min(starts.length, verse) - 1)] ?? 0;
+}
+
+/** Verse number (1-based) for a playback time in that chapter’s MP3. */
+export function verseAtTime(chapter: number, time: number): number {
+  const starts = chapterAudio(chapter)?.verses ?? [];
+  if (!starts.length) return 1;
+  let v = 1;
+  for (let i = 0; i < starts.length; i++) {
+    if (time + 0.08 >= (starts[i] ?? 0)) v = i + 1;
+    else break;
+  }
+  return v;
+}
 
 export type GradeItem = {
   id: string;

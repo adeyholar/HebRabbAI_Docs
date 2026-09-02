@@ -40,8 +40,9 @@ function GuidePage() {
             Ultimate Challenge is optional: the whole Ch. 2–19 list in one sitting, graded at the end.
             Zakhor (Daily keep) is the short daily mix of words you have already met — due, weak, and older mastered
             lemmas — so new chapters do not bury the old ones. The Study menu groups Drill, Write, Quiz, Match, Lex,
-            Alef-bet, Zakhor, and Guide. Listen has its own menu: class vocabulary, then Genesis 1–5 follow-along (WLC
-            Hebrew + World English Bible) with a grade at 90%. Ask HaDay Hebraic AI to clarify the lesson.
+            Alef-bet, Zakhor, and Guide. Listen has its own menu: class vocabulary, then Genesis 1–5 follow-along with the
+            recorded Hebrew chapter audio (not a computer voice) and a grade at 90%. Ask HaDay Hebraic AI to clarify the
+            lesson.
           </li>
         </ul>
       </Panel>

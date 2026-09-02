@@ -6,26 +6,19 @@ import { ListenMenu } from "@/components/listen-menu";
 import { Panel } from "@/components/panel";
 import { playGrade } from "@/lib/sfx";
 import {
+  AUDIO_CREDIT,
   READING_CREDIT,
+  chapterAudio,
   loadReadingProgress,
   parseReadingKey,
   readingGradeQuiz,
   readingVerses,
   saveReadingResult,
+  verseAtTime,
+  verseStartTime,
   type GradeItem,
   type ReadingVerse,
 } from "@/lib/reading";
-import {
-  hasHebrewVoice,
-  isAppleMobile,
-  keepSpeechAlive,
-  playListenChime,
-  speechSupported,
-  speakReadingVerse,
-  stopSpeech,
-  unlockSpeech,
-  waitForVoices,
-} from "@/lib/listen";
 
 export const Route = createFileRoute("/listen/read/$ch")({ component: ReadingPage });
 
@@ -38,22 +31,97 @@ function ReadingPage() {
   const [mode, setMode] = useState<Mode>("follow");
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [rate, setRate] = useState(0.8);
-  const [heVoice, setHeVoice] = useState(true);
+  const [rate, setRate] = useState(1);
   const [quiz, setQuiz] = useState<GradeItem[] | null>(null);
   const [qi, setQi] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [hits, setHits] = useState(0);
   const [seen, setSeen] = useState(0);
   const [done, setDone] = useState(false);
-  const stopRef = useRef({ stop: false });
-  const playGen = useRef(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const iRef = useRef(0);
+  const versesRef = useRef(verses);
   const rateRef = useRef(rate);
   const verse = verses[i];
   const rec = loadReadingProgress()[String(key)];
   iRef.current = i;
+  versesRef.current = verses;
   rateRef.current = rate;
+
+  function audio(): HTMLAudioElement {
+    if (!audioRef.current) {
+      const el = new Audio();
+      el.preload = "auto";
+      el.addEventListener("timeupdate", onTime);
+      el.addEventListener("ended", onEnded);
+      el.addEventListener("pause", () => {
+        if (el.ended) return;
+        if (el.currentTime > 0 && el.currentTime < el.duration - 0.15) setPlaying(false);
+      });
+      el.addEventListener("play", () => setPlaying(true));
+      audioRef.current = el;
+    }
+    return audioRef.current;
+  }
+
+  function onTime() {
+    const el = audioRef.current;
+    const list = versesRef.current;
+    const cur = list[iRef.current];
+    if (!el || !cur) return;
+    const vn = verseAtTime(cur.chapter, el.currentTime);
+    const next = list.findIndex((v) => v.chapter === cur.chapter && v.verse === vn);
+    if (next >= 0 && next !== iRef.current) {
+      iRef.current = next;
+      setI(next);
+    }
+  }
+
+  function onEnded() {
+    const list = versesRef.current;
+    const cur = list[iRef.current];
+    if (!cur) {
+      setPlaying(false);
+      return;
+    }
+    const next = list.findIndex((v, idx) => idx > iRef.current && v.chapter !== cur.chapter);
+    if (next >= 0) {
+      iRef.current = next;
+      setI(next);
+      void playFrom(next, false);
+      return;
+    }
+    setPlaying(false);
+  }
+
+  async function playFrom(index: number, kick: boolean) {
+    const item = versesRef.current[index];
+    const meta = item ? chapterAudio(item.chapter) : undefined;
+    if (!item || !meta) return;
+    const el = audio();
+    if (!el.src.endsWith(meta.src) && !el.src.includes(meta.src)) {
+      el.src = meta.src;
+    }
+    el.playbackRate = rateRef.current;
+    const start = verseStartTime(item.chapter, item.verse);
+    try {
+      if (kick || Math.abs(el.currentTime - start) > 0.35 || el.paused) {
+        el.currentTime = start;
+      }
+      await el.play();
+      setPlaying(true);
+    } catch {
+      setPlaying(false);
+    }
+  }
+
+  function halt() {
+    const el = audioRef.current;
+    if (el) {
+      el.pause();
+    }
+    setPlaying(false);
+  }
 
   useEffect(() => {
     setI(0);
@@ -62,67 +130,39 @@ function ReadingPage() {
     setQuiz(null);
     setDone(false);
     halt();
+    const first = verses[0];
+    const meta = first ? chapterAudio(first.chapter) : undefined;
+    if (meta) {
+      const el = audio();
+      el.src = meta.src;
+      el.playbackRate = rateRef.current;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
   useEffect(() => {
-    void waitForVoices().then(() => setHeVoice(hasHebrewVoice()));
-  }, []);
-
-  useEffect(() => {
     return () => {
-      stopRef.current.stop = true;
-      stopSpeech();
+      const el = audioRef.current;
+      if (!el) return;
+      el.pause();
+      el.src = "";
     };
   }, []);
 
-  useEffect(() => {
-    if (!playing) return;
-    const ms = isAppleMobile() ? 2_000 : 8_000;
-    const id = window.setInterval(keepSpeechAlive, ms);
-    return () => window.clearInterval(id);
-  }, [playing]);
-
-  function halt() {
-    stopRef.current.stop = true;
-    playGen.current += 1;
-    stopSpeech();
-    setPlaying(false);
-  }
-
-  function startFrom(start: number, kick = false) {
-    if (!speechSupported() || !verses.length) return;
-    stopRef.current.stop = false;
-    const gen = ++playGen.current;
-    setPlaying(true);
-    if (kick) {
-      if (!isAppleMobile()) playListenChime();
-      unlockSpeech();
-    } else {
-      stopSpeech();
-    }
-    void navigator.wakeLock?.request("screen").catch(() => {});
-    void (async () => {
-      let at = start;
-      while (!stopRef.current.stop && gen === playGen.current) {
-        const v = verses[at];
-        if (!v) break;
-        setI(at);
-        iRef.current = at;
-        await speakReadingVerse(v, rateRef.current, stopRef.current);
-        if (stopRef.current.stop || gen !== playGen.current) break;
-        if (at + 1 >= verses.length) break;
-        at += 1;
-      }
-      if (gen === playGen.current) setPlaying(false);
-    })();
-  }
-
   function step(delta: number) {
     const next = Math.max(0, Math.min(verses.length - 1, iRef.current + delta));
-    setI(next);
     iRef.current = next;
-    if (playing) startFrom(next, false);
+    setI(next);
+    if (playing) void playFrom(next, true);
+    else {
+      const item = verses[next];
+      const meta = item ? chapterAudio(item.chapter) : undefined;
+      const el = audio();
+      if (item && meta) {
+        if (!el.src.includes(meta.src)) el.src = meta.src;
+        el.currentTime = verseStartTime(item.chapter, item.verse);
+      }
+    }
   }
 
   function startGrade() {
@@ -168,8 +208,8 @@ function ReadingPage() {
         </p>
         <h1 className="mt-1 font-display text-3xl font-bold text-ink">Follow along, then grade</h1>
         <p className="mt-3 text-muted">
-          Public-domain Masoretic Hebrew (WLC) with the World English Bible. Listen and follow the verse, then grade the
-          reading. 90% first-answer clears the chapter.
+          Recorded Hebrew chapter audio — the same Tanakh reading, not a computer voice. English stays on the page. 90%
+          first-answer clears the chapter.
         </p>
         {rec ? (
           <p className="mt-2 text-sm text-muted">
@@ -209,13 +249,16 @@ function ReadingPage() {
           total={verses.length}
           playing={playing}
           rate={rate}
-          heVoice={heVoice}
-          onToggle={() => (playing ? halt() : startFrom(i, true))}
+          onToggle={() => {
+            if (playing) halt();
+            else void playFrom(i, true);
+          }}
           onStep={step}
           onRate={(n) => {
             setRate(n);
             rateRef.current = n;
-            if (playing) startFrom(iRef.current, false);
+            const el = audioRef.current;
+            if (el) el.playbackRate = n;
           }}
         />
       ) : null}
@@ -249,7 +292,7 @@ function ReadingPage() {
       ) : null}
 
       <p className="mt-6 text-xs text-muted">
-        {READING_CREDIT.he} {READING_CREDIT.en}
+        {AUDIO_CREDIT} {READING_CREDIT.he} {READING_CREDIT.en}
       </p>
     </>
   );
@@ -261,7 +304,6 @@ function FollowCard({
   total,
   playing,
   rate,
-  heVoice,
   onToggle,
   onStep,
   onRate,
@@ -271,7 +313,6 @@ function FollowCard({
   total: number;
   playing: boolean;
   rate: number;
-  heVoice: boolean;
   onToggle: () => void;
   onStep: (d: number) => void;
   onRate: (n: number) => void;
@@ -288,12 +329,6 @@ function FollowCard({
           {i + 1} / {total}
         </p>
       </div>
-      {!speechSupported() && (
-        <p className="mt-3 text-sm text-danger">This browser has no speech engine. iPhone: Safari. Android: Chrome.</p>
-      )}
-      {speechSupported() && !heVoice && (
-        <p className="mt-3 text-sm text-muted">No Hebrew voice on this device yet. Install one for true Hebrew audio.</p>
-      )}
       <div className="mt-4 grid grid-cols-3 gap-2">
         <Button type="button" variant="outline" size="lg" className="min-h-16" onClick={() => onStep(-1)}>
           <SkipBack className="size-6" />
@@ -311,9 +346,9 @@ function FollowCard({
       <label className="mt-3 flex min-h-12 items-center justify-between gap-2 rounded-[var(--radius-md)] bg-card px-3 text-sm font-semibold shadow-[var(--shadow-border)]">
         Speed
         <select className="bg-transparent text-ink" value={String(rate)} onChange={(e) => onRate(Number(e.target.value))}>
-          <option value="0.62">Slow</option>
-          <option value="0.8">Warm</option>
-          <option value="1.05">Faster</option>
+          <option value="0.85">Slow</option>
+          <option value="1">Recorded</option>
+          <option value="1.15">Faster</option>
         </select>
       </label>
     </>

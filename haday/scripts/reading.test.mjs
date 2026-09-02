@@ -3,7 +3,9 @@ import test from "node:test";
 import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
-const { readingVerses, readingGradeQuiz, parseReadingKey } = await jiti.import("/workspace/src/lib/reading.ts");
+const { readingVerses, readingGradeQuiz, parseReadingKey, chapterAudio, verseAtTime } = await jiti.import(
+  "/workspace/src/lib/reading.ts",
+);
 
 test("Genesis 1–5 public-domain reading is complete", () => {
   assert.equal(parseReadingKey("all"), "all");
@@ -26,5 +28,18 @@ test("grade quiz uses verses from that chapter", () => {
     assert.equal(q.verse.chapter, 1);
     assert.ok(q.choices.includes(q.answer));
     assert.equal(q.choices.length, 4);
+  }
+});
+
+test("recorded chapter audio has a start time for every verse", () => {
+  for (const ch of [1, 2, 3, 4, 5]) {
+    const n = readingVerses(ch).length;
+    const meta = chapterAudio(ch);
+    assert.ok(meta, `missing audio for Genesis ${ch}`);
+    assert.equal(meta.verses.length, n, `Genesis ${ch} starts ${meta.verses.length} vs ${n} verses`);
+    assert.ok(meta.src.endsWith(`01-Gen_0${ch}.mp3`) || meta.src.endsWith(`01-Gen_${String(ch).padStart(2, "0")}.mp3`));
+    assert.equal(verseAtTime(ch, meta.verses[0]), 1);
+    assert.equal(verseAtTime(ch, meta.verses.at(-1)), n);
+    assert.ok(meta.verses[0] > 2, "skip the spoken heading");
   }
 });
