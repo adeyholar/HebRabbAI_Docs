@@ -196,7 +196,7 @@ export function GameStagePlay({ chapter, stage }: Props) {
     const rec = chapterRecord(game, chapter).stages[stage];
     const run = rec.attempts || 1;
     const pct = Math.round((firstSeen ? firstHits / firstSeen : 1) * 100);
-    const passed = rec.cleared;
+    const passed = pct >= GAME_STAGE_PASS;
     return (
       <Panel className="text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">

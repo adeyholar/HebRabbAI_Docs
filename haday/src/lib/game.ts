@@ -380,26 +380,21 @@ export function applyStageResult(
   const next = cloneGame(hydrateGame(game));
   const rec = ensureChapter(next, chapter);
   const prev = rec.stages[stage];
-  const wasCleared = prev.cleared;
   const passed = result.score >= GAME_STAGE_PASS;
   rec.stages[stage] = {
     stars: passed ? Math.max(prev.stars, result.stars) : prev.stars,
     best: Math.max(prev.best, result.score),
-    cleared: wasCleared || passed,
+    cleared: passed,
     attempts: (prev.attempts || 0) + 1,
   };
 
-  if (wasCleared && result.firstTryRate < 0.4) {
+  if (!passed) {
     demoteAfter(next, chapter, stage);
     next.winStreak = 0;
   } else {
     retally(rec);
-    if (passed && !wasCleared) {
-      next.winStreak = (next.winStreak || 0) + 1;
-      next.bestWinStreak = Math.max(next.bestWinStreak || 0, next.winStreak);
-    } else if (!passed) {
-      next.winStreak = 0;
-    }
+    next.winStreak = (next.winStreak || 0) + 1;
+    next.bestWinStreak = Math.max(next.bestWinStreak || 0, next.winStreak);
     if (rec.cleared && chapter >= next.unlockedChapter && chapter < GAME_CHAPTER_MAX) {
       next.unlockedChapter = chapter + 1;
     }

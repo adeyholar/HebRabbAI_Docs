@@ -117,4 +117,7 @@ test("a Game stage does not clear below 90%", () => {
   const pass = applyStageResult(fail, 1, "recognize", { stars: 3, score: 90, firstTryRate: 0.9 });
   assert.equal(pass.chapters["1"]?.stages.recognize.cleared, true);
   assert.equal(isStageUnlocked(pass, 1, "gloss"), true);
+  const again = applyStageResult(pass, 1, "recognize", { stars: 2, score: 83, firstTryRate: 0.83 });
+  assert.equal(again.chapters["1"]?.stages.recognize.cleared, false);
+  assert.equal(isStageUnlocked(again, 1, "gloss"), false);
 });
