@@ -7,6 +7,32 @@ const FORM_VERSES: Record<string, VerseEx> = {};
 
 const CLITICS = new Set(["ו", "ה", "ב", "ל", "כ"]);
 
+function tokenLetters(s: string): string {
+  return foldFinals(lettersOnly(s));
+}
+
+/** True when a verse token is the surface, or the surface plus extra clitics in front. */
+function tokenCoversSurface(tok: string, surface: string): boolean {
+  const t = tokenLetters(tok);
+  const s = tokenLetters(surface);
+  if (!t || !s) return false;
+  if (t === s) return true;
+  if (t.length <= s.length || !t.endsWith(s)) return false;
+  return [...t.slice(0, t.length - s.length)].every((ch) => CLITICS.has(ch));
+}
+
+/** The verse word that is this surface (or this surface with a ו/ב/ל/כ/ה in front). */
+export function verseTokenFor(he: string, surface: string): string | undefined {
+  for (const chunk of he.split(/[\s,;:.]+/)) {
+    if (!chunk) continue;
+    if (tokenCoversSurface(chunk, surface)) return chunk.replace(/[־–—]$/, "");
+    for (const part of chunk.split(/[־–—]/)) {
+      if (tokenCoversSurface(part, surface)) return part;
+    }
+  }
+  return undefined;
+}
+
 /** Noun/prep endings, longest first, always regular (non-final) letters. */
 const SUFFIXES = [
   "יהם",
@@ -471,14 +497,13 @@ function addForm(
   if (seen.has(key)) return;
   seen.add(key);
   const id = `tv:${lemma.id}:${out.length}`;
-  const heHay = verse?.he ? lettersOnly(verse.he) : "";
-  const inVerse = Boolean(verse?.he && (heHay.includes(letters) || verse.he.includes(surface)));
-  if (inVerse && verse) {
+  const hitTok = verse?.he ? verseTokenFor(verse.he, surface) : undefined;
+  if (hitTok && verse) {
     FORM_VERSES[id] = {
       ref: verse.ref,
       he: verse.he,
       en: verse.en,
-      hit: verse.he.includes(surface) ? surface : verse.hit || surface,
+      hit: hitTok,
       hitEn: verse.hitEn,
     };
   }

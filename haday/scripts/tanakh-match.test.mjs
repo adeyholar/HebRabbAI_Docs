@@ -4,7 +4,7 @@ import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
 const { lettersOnly } = await jiti.import("/workspace/src/lib/hebrew.ts");
-const { lemmaForSurface, isInflected, tanakhForms, lemmaIdOf, tanakhVerseFor } = await jiti.import(
+const { lemmaForSurface, isInflected, tanakhForms, lemmaIdOf, tanakhVerseFor, verseTokenFor } = await jiti.import(
   "/workspace/src/lib/tanakh-pool.ts",
 );
 
@@ -86,10 +86,21 @@ test("attached verse actually contains the Hebrew surface", () => {
   for (const item of tanakhForms()) {
     const verse = tanakhVerseFor(item.id);
     if (!verse?.he) continue;
-    const surf = lettersOnly(item.hebrew);
-    if (!lettersOnly(verse.he).includes(surf) && !verse.he.includes(item.hebrew)) {
+    if (!verseTokenFor(verse.he, item.hebrew)) {
       bad.push(`${item.hebrew} [${lemmaIdOf(item.id)}] ${verse.ref} ${verse.he}`);
     }
   }
   assert.equal(bad.length, 0, bad.slice(0, 15).join("\n"));
+});
+
+test("האש the-fire is not Exod 3:2, which has no article", () => {
+  assert.equal(verseTokenFor("וַיֵּרָא מַלְאַךְ יְהוָה אֵלָיו בְּלַבַּת־אֵשׁ", "הָאֵשׁ"), undefined);
+  assert.ok(verseTokenFor("וְאֶת־קֹלוֹ שָׁמַעְנוּ מִתּוֹךְ הָאֵשׁ", "הָאֵשׁ"));
+  const fires = tanakhForms().filter((v) => lemmaIdOf(v.id) === "esh");
+  for (const f of fires) {
+    const verse = tanakhVerseFor(f.id);
+    if (!verse) continue;
+    assert.notEqual(verse.ref, "Exod 3:2", `${f.hebrew} must not use a verse without the article`);
+    assert.ok(verseTokenFor(verse.he, f.hebrew), `${f.hebrew} in ${verse.ref}`);
+  }
 });
