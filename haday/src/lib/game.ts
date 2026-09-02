@@ -1,5 +1,4 @@
 import { VOCAB, alphabetVocab, type VocabItem } from "@/lib/vocab";
-import { tanakhFormsForChapter } from "@/lib/tanakh-pool";
 
 export const GAME_CHAPTER_MAX = 19;
 export const SYLLABLE_UNIT_MAX = 8;
@@ -552,25 +551,9 @@ export function chapterPool(chapter: number): VocabItem[] {
   return VOCAB.filter((v) => v.chapter === n);
 }
 
-/** Play deck: every lemma, plus a rotating sample of real Tanakh surface forms. */
-export function chapterPlayPool(chapter: number, stage: GameStageId): VocabItem[] {
-  const lemmas = chapterPool(chapter);
-  if (chapter === 1) return lemmas;
-  if (stage === "spell-strict") return lemmas;
-  const extraCap = stage === "spell-lenient" ? 16 : 20;
-  return uniquePlay([...lemmas, ...tanakhFormsForChapter(chapter, extraCap)]);
-}
-
-function uniquePlay(items: VocabItem[]): VocabItem[] {
-  const seen = new Set<string>();
-  const out: VocabItem[] = [];
-  for (const item of items) {
-    if (seen.has(item.id) || seen.has(item.hebrew)) continue;
-    seen.add(item.id);
-    seen.add(item.hebrew);
-    out.push(item);
-  }
-  return out;
+/** Play deck: the BBH citation form only, so class vocab stays what the book printed. */
+export function chapterPlayPool(chapter: number, _stage?: GameStageId): VocabItem[] {
+  return chapterPool(chapter);
 }
 
 export function runOrdinal(n: number): string {

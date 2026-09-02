@@ -598,46 +598,7 @@ export function tanakhFormsForChapter(chapter: number, cap = 24): VocabItem[] {
   return picked;
 }
 
-function uniqueByLetters(items: VocabItem[]): VocabItem[] {
-  const seen = new Set<string>();
-  const out: VocabItem[] = [];
-  for (const item of items) {
-    const k = lettersOnly(item.hebrew);
-    if (!k || seen.has(k)) continue;
-    seen.add(k);
-    out.push(item);
-  }
-  return out;
-}
-
-/** Lemmas plus a rotating sample of Tanakh surface forms for this chapter. */
-export function mixTanakhInto(lemmas: VocabItem[], extraCap = 20): VocabItem[] {
-  if (!lemmas.length) return [];
-  const chs = new Set(lemmas.map((v) => v.chapter).filter((c) => c >= 2));
-  const extra = tanakhForms().filter((v) => chs.has(v.chapter));
-  const sampled = extra.length <= extraCap ? extra : tanakhFormsForChapters([...chs], extraCap);
-  return uniqueByLetters([...lemmas, ...shuffle(sampled)]);
-}
-
-function tanakhFormsForChapters(chapters: number[], cap: number): VocabItem[] {
-  const set = new Set(chapters);
-  const all = shuffle(tanakhForms().filter((v) => set.has(v.chapter)));
-  if (all.length <= cap) return all;
-  const picked: VocabItem[] = [];
-  const used = new Set<string>();
-  for (const item of all) {
-    const lemma = lemmaIdOf(item.id);
-    if (used.has(lemma) && picked.length + (all.length - picked.length) > cap) continue;
-    used.add(lemma);
-    picked.push(item);
-    if (picked.length >= cap) break;
-  }
-  return picked;
-}
-
-/** Quiz / Match pool: BBH lemmas plus Tanakh forms for the week’s chapters. */
+/** Quiz / Match pool: the week’s BBH lemmas, same forms as the class book. */
 export function weekPlayPool(week: number): VocabItem[] {
-  const lemmas = itemsForWeek(week);
-  if (!lemmas.length || lemmas.every((v) => v.chapter === 1)) return lemmas;
-  return mixTanakhInto(lemmas, Math.min(80, Math.max(24, lemmas.length)));
+  return itemsForWeek(week);
 }

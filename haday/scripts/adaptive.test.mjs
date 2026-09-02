@@ -92,18 +92,18 @@ test("tanakh forms are real surface words, not the citation lemma", () => {
   assert.ok(!ben.includes(lettersOnly("וַיִּבֶן")), "he built is not son");
 });
 
-test("game play pool adds Tanakh forms; spell-strict stays lemmas", () => {
+test("game play pool stays on citation lemmas", () => {
   const lemmas = chapterPool(3);
   const play = chapterPlayPool(3, "recognize");
   const strict = chapterPlayPool(3, "spell-strict");
-  assert.ok(play.length > lemmas.length, `play ${play.length} vs lemmas ${lemmas.length}`);
+  assert.equal(play.length, lemmas.length);
   assert.equal(strict.length, lemmas.length);
-  assert.ok(play.some((v) => v.id.startsWith("tv:")));
+  assert.ok(play.every((v) => !v.id.startsWith("tv:")));
 });
 
-test("quiz week pool mixes Tanakh forms into later weeks", () => {
+test("quiz week pool stays on class lemmas", () => {
   const lemmas = itemsForWeek(2);
   const mixed = weekPlayPool(2);
-  assert.ok(mixed.length >= lemmas.length);
-  assert.ok(mixed.some((v) => v.id.startsWith("tv:")), "week 2 should include Tanakh forms");
+  assert.equal(mixed.length, lemmas.length);
+  assert.ok(mixed.every((v) => !v.id.startsWith("tv:")));
 });

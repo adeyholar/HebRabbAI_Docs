@@ -172,9 +172,9 @@ function GuidePage() {
             lemmas.
           </li>
           <li>
-            <strong>Tanakh forms.</strong> Game Recognize, Gloss, and Spell (lenient) mix inflected words from the
-            Tanakh (בִּנְךָ for “son”, וַיֹּאמֶר for “to say”). A new round draws a different sample so you meet more of
-            the text, not only the citation form. Spell (strict), Write, and Drill stay on the BBH lemma.
+            <strong>Class vocab stays the book form.</strong> Game, Quiz, and Match show the citation lemma (יָם, not
+            בַּיָּם). A Tanakh verse can still sit under the card so you see the word in Scripture, but the prompt is
+            the word from the list. Inflected forms belong in Syllables and Nouns, where that is the lesson.
           </li>
         </ul>
       </Panel>
@@ -184,8 +184,8 @@ function GuidePage() {
         <dl className="mt-3 space-y-3 text-sm">
           <Tool name="Drill" to="/drill" body="Flip cards. Grade yourself. SRS brings weak words back." />
           <Tool name="Write" to="/write" body="Type or hand-write the Hebrew. Memorize mode hides the lemma first. After a miss you can save that scribble as your handwriting." />
-          <Tool name="Quiz" to="/quiz" body="Multiple choice or type the English gloss. Rounds mix BBH lemmas with real Tanakh forms and sit near what you can still miss." />
-          <Tool name="Match" to="/match" body="Select the pair: Hebrew tile to English tile, then pick the lemma from a pad. Misses come back. Boards mix Tanakh forms." />
+          <Tool name="Quiz" to="/quiz" body="Multiple choice or type the English gloss. Same BBH lemmas as class, sitting near what you can still miss." />
+          <Tool name="Match" to="/match" body="Select the pair: Hebrew tile to English tile. Misses come back. Boards use the class lemmas." />
           <Tool name="Lex" to="/browse" body="Browse the week’s lemmas with verses." />
           <Tool name="Alef" to="/alphabet" body="The lesson for the letters: See → Follow the moving stroke → My hand → Quiz → Exam. Study Write is the test. Passing copies become your grader." />
         </dl>
