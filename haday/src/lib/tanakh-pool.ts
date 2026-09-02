@@ -1,4 +1,4 @@
-import { lettersOnly } from "@/lib/hebrew";
+import { foldFinals, lettersOnly } from "@/lib/hebrew";
 import { SYLLABLE_UNITS } from "@/lib/syllables";
 import { VERSES, type VerseEx } from "@/lib/verses";
 import { VOCAB, itemsForWeek, shuffle, type VocabItem } from "@/lib/vocab";
@@ -12,46 +12,100 @@ function tokens(he: string): string[] {
     .filter((t) => lettersOnly(t).length >= 2);
 }
 
-const PREFIXES = new Set(["ו", "ה", "ב", "ל", "מ", "כ", "ש"]);
+const CLITICS = new Set(["ו", "ה", "ב", "ל", "מ", "כ", "ש"]);
 
-function isInflected(surf: string, root: string): boolean {
-  if (surf === root) return true;
-  if (!surf.includes(root)) return false;
-  const extra = surf.length - root.length;
-  if (extra > 4) return false;
-  if (surf.startsWith(root)) return extra <= (root.length < 3 ? 3 : 4);
-  if (surf.endsWith(root)) {
-    const pre = surf.slice(0, extra);
-    if (root.length < 3) {
-      if (pre.length === 1) return PREFIXES.has(pre);
-      if (pre.length === 2) return PREFIXES.has(pre[0]!) && PREFIXES.has(pre[1]!);
-      return false;
-    }
-    return extra <= 3;
+/** Noun/prep endings, longest first, always regular (non-final) letters. */
+const SUFFIXES = [
+  "יהם",
+  "יהן",
+  "יכם",
+  "יכן",
+  "ינו",
+  "ות",
+  "ים",
+  "ית",
+  "יך",
+  "יו",
+  "יה",
+  "נו",
+  "כם",
+  "כן",
+  "הם",
+  "הן",
+  "ך",
+  "ו",
+  "י",
+  "ה",
+  "ת",
+  "ן",
+  "ם",
+].map((s) => foldFinals(s));
+
+function afterClitics(s: string): string[] {
+  const out = [s];
+  if (s.length < 3) return out;
+  if (CLITICS.has(s[0]!)) {
+    out.push(s.slice(1));
+    if (s.length >= 4 && s[0] === "ו" && CLITICS.has(s[1]!)) out.push(s.slice(2));
   }
-  return root.length >= 4 && extra <= 3;
+  return out;
+}
+
+/**
+ * Surface is the lemma plus Hebrew clitics / endings — not a longer word that
+ * merely contains the lemma letters (אשית is “I will put”, not fire).
+ */
+export function isInflected(surface: string, lemmaHe: string): boolean {
+  const s = foldFinals(lettersOnly(surface));
+  const r = foldFinals(lettersOnly(lemmaHe));
+  if (s.length < 2 || r.length < 2) return false;
+  if (s === r) return true;
+  if (s.length <= r.length) return false;
+
+  const short = r.length < 3;
+  const shortSuf = ["ך", "ו", "י"].map((x) => foldFinals(x));
+  for (const body of afterClitics(s)) {
+    if (body === r) return true;
+    if (short) {
+      for (const suf of shortSuf) {
+        if (body.length === r.length + 1 && body.endsWith(suf) && body.slice(0, r.length) === r) return true;
+      }
+      continue;
+    }
+    if (r.endsWith("ה")) {
+      const bare = r.slice(0, -1);
+      if (body === `${bare}ת` || body === `${bare}ים` || body === `${bare}ות`) return true;
+    }
+    for (const suf of SUFFIXES) {
+      if (suf === "ית") continue;
+      if (body.length <= r.length || !body.endsWith(suf)) continue;
+      const core = foldFinals(body.slice(0, body.length - suf.length));
+      if (core === r) return true;
+      if (r.endsWith("ה") && core === `${r.slice(0, -1)}ת`) return true;
+    }
+    // feminine abstract -ית on 3+ letter stems (ראשית ← ראש). Not on 2-letter (אשית is a verb).
+    if (body.endsWith("ית") && foldFinals(body.slice(0, -2)) === r) return true;
+  }
+  return false;
 }
 
 export function lemmaForSurface(surface: string): VocabItem | undefined {
-  const surf = lettersOnly(surface);
+  const surf = foldFinals(lettersOnly(surface));
   if (surf.length < 2) return undefined;
   let exact: VocabItem | undefined;
   let best: VocabItem | undefined;
-  let bestScore = 0;
+  let bestLen = 0;
   for (const v of VOCAB) {
-    const root = lettersOnly(v.hebrew);
+    const root = foldFinals(lettersOnly(v.hebrew));
     if (root.length < 2) continue;
     if (surf === root) {
       if (!exact || v.freq > exact.freq) exact = v;
       continue;
     }
     if (!isInflected(surf, root)) continue;
-    const extra = surf.length - root.length;
-    const atStart = surf.startsWith(root);
-    const score = root.length / surf.length + (v.freq > 200 ? 0.05 : 0) + (atStart ? 0.1 : 0) - extra * 0.02;
-    if (score > bestScore) {
-      bestScore = score;
+    if (!best || root.length > bestLen || (root.length === bestLen && v.freq > best.freq)) {
       best = v;
+      bestLen = root.length;
     }
   }
   return exact ?? best;
