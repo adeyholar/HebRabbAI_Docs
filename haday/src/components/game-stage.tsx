@@ -10,6 +10,7 @@ import { NewBadges } from "@/components/rewards-bar";
 import { playGrade } from "@/lib/sfx";
 import {
   CHAPTER_META,
+  GAME_STAGE_PASS,
   GAME_STAGES,
   chapterPlayPool,
   chapterRecord,
@@ -195,12 +196,15 @@ export function GameStagePlay({ chapter, stage }: Props) {
     const rec = chapterRecord(game, chapter).stages[stage];
     const run = rec.attempts || 1;
     const pct = Math.round((firstSeen ? firstHits / firstSeen : 1) * 100);
+    const passed = rec.cleared;
     return (
       <Panel className="text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
           Chapter {chapter} · {meta.name}
         </p>
-        <h1 className="mt-2 font-display text-3xl font-bold text-ink">Stage cleared</h1>
+        <h1 className="mt-2 font-display text-3xl font-bold text-ink">
+          {passed ? "Stage cleared" : `Need ${GAME_STAGE_PASS}% to clear`}
+        </h1>
         <p className="mt-3 text-3xl tracking-widest text-primary" aria-label={`${stars} stars`}>
           {"★".repeat(stars)}
           <span className="text-border">{"★".repeat(3 - stars)}</span>
@@ -219,15 +223,20 @@ export function GameStagePlay({ chapter, stage }: Props) {
             {chapter < 19 ? ` · Chapter ${chapter + 1} unlocked` : " · path complete"}
           </p>
         )}
+        {!passed && (
+          <p className="mt-3 text-sm text-muted">
+            First-answer score must be {GAME_STAGE_PASS}% or better to open the next stage.
+          </p>
+        )}
         <NewBadges ids={game.justEarned ?? []} />
         <div className="mt-6 flex flex-col gap-2">
-          {nextStage && !chapterCleared ? (
+          {passed && nextStage && !chapterCleared ? (
             <Link to="/game/$chapter/$stage" params={{ chapter: String(chapter), stage: nextStage.id }}>
               <Button className="w-full" size="lg">
                 Continue · {nextStage.name}
               </Button>
             </Link>
-          ) : (
+          ) : passed ? (
             <Link
               to="/game/$chapter/$stage"
               params={{ chapter: String(next.chapter), stage: next.stage }}
@@ -236,15 +245,21 @@ export function GameStagePlay({ chapter, stage }: Props) {
                 Continue · Chapter {next.chapter} · {stageMeta(next.stage).name}
               </Button>
             </Link>
+          ) : (
+            <Button className="w-full" size="lg" onClick={replayStage}>
+              Try again
+            </Button>
           )}
           <Link to="/game">
             <Button className="w-full" variant="outline">
               Chapter map
             </Button>
           </Link>
-          <Button className="w-full" variant="outline" onClick={replayStage}>
-            New round
-          </Button>
+          {passed && (
+            <Button className="w-full" variant="outline" onClick={replayStage}>
+              New round
+            </Button>
+          )}
         </div>
       </Panel>
     );

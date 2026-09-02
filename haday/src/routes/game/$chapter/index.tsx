@@ -50,8 +50,8 @@ function ChapterHub() {
         <p className="mt-3 text-muted">{meta?.blurb}</p>
         <p className="mt-2 text-sm text-muted">
           {pool.length} {chapter === 1 ? "letters" : "lemmas"}
-          {chapter > 1 ? " · same citation forms as the class book" : ""} ·{" "}
-          {GAME_STAGES.filter((s) => rec.stages[s.id].cleared).length}/4 stages
+          {chapter > 1 ? " · same citation forms as the class book" : ""} · 90% first-answer to clear a
+          stage · {GAME_STAGES.filter((s) => rec.stages[s.id].cleared).length}/4 stages
         </p>
         <div className="mt-4">
           <GameContinue />

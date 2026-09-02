@@ -3,6 +3,8 @@ import { VOCAB, alphabetVocab, type VocabItem } from "@/lib/vocab";
 export const GAME_CHAPTER_MAX = 19;
 export const SYLLABLE_UNIT_MAX = 8;
 export const NOUN_UNIT_MAX = 6;
+/** First-try percent required to clear a Game stage and open the next one. */
+export const GAME_STAGE_PASS = 90;
 
 export const GAME_STAGES = [
   { id: "recognize", name: "Recognize", short: "Recognize", prompt: "Hebrew → English" },
@@ -377,12 +379,14 @@ export function applyStageResult(
 ): GameSnapshot {
   const next = cloneGame(hydrateGame(game));
   const rec = ensureChapter(next, chapter);
-  const wasCleared = rec.stages[stage].cleared;
+  const prev = rec.stages[stage];
+  const wasCleared = prev.cleared;
+  const passed = result.score >= GAME_STAGE_PASS;
   rec.stages[stage] = {
-    stars: Math.max(rec.stages[stage].stars, result.stars),
-    best: Math.max(rec.stages[stage].best, result.score),
-    cleared: true,
-    attempts: (rec.stages[stage].attempts || 0) + 1,
+    stars: passed ? Math.max(prev.stars, result.stars) : prev.stars,
+    best: Math.max(prev.best, result.score),
+    cleared: wasCleared || passed,
+    attempts: (prev.attempts || 0) + 1,
   };
 
   if (wasCleared && result.firstTryRate < 0.4) {
@@ -390,9 +394,11 @@ export function applyStageResult(
     next.winStreak = 0;
   } else {
     retally(rec);
-    if (!wasCleared) {
+    if (passed && !wasCleared) {
       next.winStreak = (next.winStreak || 0) + 1;
       next.bestWinStreak = Math.max(next.bestWinStreak || 0, next.winStreak);
+    } else if (!passed) {
+      next.winStreak = 0;
     }
     if (rec.cleared && chapter >= next.unlockedChapter && chapter < GAME_CHAPTER_MAX) {
       next.unlockedChapter = chapter + 1;

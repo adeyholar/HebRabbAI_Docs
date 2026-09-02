@@ -24,7 +24,8 @@ const { observeBkt, pKnow, pickByBkt } = await jiti.import("/workspace/src/lib/b
 const { tanakhForms, tanakhFormsForChapter, weekPlayPool, lemmaIdOf } = await jiti.import(
   "/workspace/src/lib/tanakh-pool.ts",
 );
-const { chapterPlayPool, chapterPool } = await jiti.import("/workspace/src/lib/game.ts");
+const { chapterPlayPool, chapterPool, applyStageResult, defaultGame, isStageUnlocked, GAME_STAGE_PASS } =
+  await jiti.import("/workspace/src/lib/game.ts");
 const { lettersOnly } = await jiti.import("/workspace/src/lib/hebrew.ts");
 const { itemsForWeek } = await jiti.import("/workspace/src/lib/vocab.ts");
 const { nudgeDue, hydrateCard } = await jiti.import("/workspace/src/lib/srs.ts");
@@ -106,4 +107,14 @@ test("quiz week pool stays on class lemmas", () => {
   const mixed = weekPlayPool(2);
   assert.equal(mixed.length, lemmas.length);
   assert.ok(mixed.every((v) => !v.id.startsWith("tv:")));
+});
+
+test("a Game stage does not clear below 90%", () => {
+  assert.equal(GAME_STAGE_PASS, 90);
+  const fail = applyStageResult(defaultGame(), 1, "recognize", { stars: 2, score: 89, firstTryRate: 0.89 });
+  assert.equal(fail.chapters["1"]?.stages.recognize.cleared, false);
+  assert.equal(isStageUnlocked(fail, 1, "gloss"), false);
+  const pass = applyStageResult(fail, 1, "recognize", { stars: 3, score: 90, firstTryRate: 0.9 });
+  assert.equal(pass.chapters["1"]?.stages.recognize.cleared, true);
+  assert.equal(isStageUnlocked(pass, 1, "gloss"), true);
 });
