@@ -1,3 +1,4 @@
+import { clusterAtTime } from "@/lib/hebrew-phones";
 import raw from "@/lib/genesis-1-5.json";
 import audioRaw from "@/lib/tanakh-audio.json";
 import { shuffle } from "@/lib/vocab";
@@ -114,7 +115,10 @@ export function verseAtTime(chapter: number, time: number): number {
   if (!starts.length) return 1;
   let v = 1;
   for (let i = 0; i < starts.length; i++) {
-    if (time + HIGHLIGHT_LEAD >= (starts[i] ?? 0)) v = i + 1;
+    const prev = i > 0 ? starts[i - 1] : undefined;
+    const gap = prev != null ? (starts[i] ?? 0) - prev : 1;
+    const lead = Math.min(HIGHLIGHT_LEAD, Math.max(0.04, gap * 0.4));
+    if (time + lead >= (starts[i] ?? 0)) v = i + 1;
     else break;
   }
   return v;
@@ -126,10 +130,32 @@ export function wordAtTime(chapter: number, verse: number, time: number): number
   if (!starts.length) return 0;
   let w = 0;
   for (let i = 0; i < starts.length; i++) {
-    if (time + HIGHLIGHT_LEAD >= (starts[i] ?? 0)) w = i;
+    const prev = i > 0 ? starts[i - 1] : undefined;
+    const gap = prev != null ? (starts[i] ?? 0) - prev : 1;
+    const lead = Math.min(HIGHLIGHT_LEAD, Math.max(0.04, gap * 0.4));
+    if (time + lead >= (starts[i] ?? 0)) w = i;
     else break;
   }
   return w;
+}
+
+export function wordEndTime(chapter: number, verse: number, word: number): number {
+  const meta = chapterAudio(chapter);
+  const starts = meta?.words?.[Math.max(0, verse - 1)] ?? [];
+  const next = starts[word + 1];
+  if (next != null) return next;
+  const verses = meta?.verses ?? [];
+  const vEnd = verses[verse];
+  if (vEnd != null) return vEnd;
+  return meta?.duration ?? starts[word] ?? 0;
+}
+
+export function clusterAtPlay(chapter: number, verse: number, word: number, time: number, surface: string): number {
+  const starts = chapterAudio(chapter)?.words?.[Math.max(0, verse - 1)] ?? [];
+  const t0 = starts[word] ?? 0;
+  const t1 = wordEndTime(chapter, verse, word);
+  const lead = Math.min(HIGHLIGHT_LEAD, Math.max(0.04, (t1 - t0) * 0.2));
+  return clusterAtTime(surface, t0, t1, time + lead);
 }
 
 export type GradeItem = {

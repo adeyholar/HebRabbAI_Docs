@@ -20,8 +20,68 @@ OUT = ROOT / "src/lib/tanakh-audio.json"
 AUDIO_DIR = ROOT / "public/audio/tanakh"
 
 
+CONS = set(chr(c) for c in range(0x05D0, 0x05EB))
+SHEVA = "\u05B0"
+HATEF = set("\u05B1\u05B2\u05B3")
+SHORT = set("\u05B4\u05B6\u05B7\u05BB\u05C7")
+LONG = set("\u05B5\u05B8\u05B9\u05BA")
+DAGESH = "\u05BC"
+METEG = "\u05BD"
+MATRES = set("אהוי")
+VOWELS = {SHEVA, *HATEF, *SHORT, *LONG}
+
+
 def letters(word: str) -> int:
     return sum(1 for c in word if "\u05d0" <= c <= "\u05ea") or 1
+
+
+def phone_weight(word: str) -> float:
+    chars = list(word)
+    raw = []
+    i = 0
+    while i < len(chars):
+        ch = chars[i]
+        if ch not in CONS:
+            i += 1
+            continue
+        i += 1
+        marks = []
+        while i < len(chars) and chars[i] not in CONS:
+            marks.append(chars[i])
+            i += 1
+        raw.append((ch, "".join(marks), [m for m in marks if m in VOWELS], DAGESH in marks))
+    if not raw:
+        return float(letters(word))
+    total = 0.0
+    has_cluster = False
+    for n, (cons, marks, vowels, dagesh) in enumerate(raw):
+        shureq = cons == "ו" and dagesh and not vowels
+        holem_vav = cons == "ו" and any(v in LONG for v in vowels) and len(vowels) == 1
+        if not vowels and not shureq:
+            total += 0.08 if cons in MATRES else (0.28 if has_cluster else 0.34)
+            has_cluster = True
+            continue
+        w = 0.34
+        if shureq:
+            w = 1.18
+        elif holem_vav:
+            w = 1.28
+        else:
+            v = vowels[0]
+            if v == SHEVA:
+                prev_short = n > 0 and any(x in SHORT or x == SHEVA for x in raw[n - 1][2])
+                w += 0.0 if prev_short and n > 0 else 0.42
+            elif v in HATEF:
+                w += 0.52
+            elif v in SHORT:
+                w += 0.88
+            elif v in LONG:
+                w += 1.22 + (0.12 if METEG in marks else 0)
+        if dagesh and not shureq:
+            w += 0.08 if cons in MATRES else 0.22
+        total += max(0.12, w)
+        has_cluster = True
+    return total or 1.0
 
 
 def decode(path: Path) -> tuple[np.ndarray, int]:
@@ -104,7 +164,7 @@ def place_words(segs: list[tuple[float, float]], words: list[str], t0: float, t1
         return [round(t0 + i * step, 3) for i in range(n)]
     # Always walk speech by letter weight. Island count is not word count
     # in this cantillation, so 1:1 mapping lags or skips.
-    wts = np.array([letters(w) for w in words], dtype=float)
+    wts = np.array([phone_weight(w) for w in words], dtype=float)
     wts = wts / wts.sum()
     speech = max(0.08, sum(b - a for a, b in segs))
     durs = wts * speech

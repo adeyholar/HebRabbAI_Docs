@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Pause, Play, Rewind, FastForward, SkipBack, SkipForward } from "lucide-react";
+import { hebrewClusters } from "@/lib/hebrew-phones";
 import { Button } from "@/components/ui/button";
 import { ListenMenu } from "@/components/listen-menu";
 import { Panel } from "@/components/panel";
@@ -10,6 +11,7 @@ import {
   READ_RATES,
   READING_CREDIT,
   chapterAudio,
+  clusterAtPlay,
   formatPlayTime,
   loadReadingProgress,
   mediaClockTime,
@@ -36,6 +38,7 @@ function ReadingPage() {
   const [mode, setMode] = useState<Mode>("follow");
   const [i, setI] = useState(0);
   const [wordI, setWordI] = useState(0);
+  const [clusterI, setClusterI] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const [tnow, setTnow] = useState(0);
@@ -51,6 +54,7 @@ function ReadingPage() {
   const seekingRef = useRef(false);
   const iRef = useRef(0);
   const wordRef = useRef(0);
+  const clusterRef = useRef(0);
   const versesRef = useRef(verses);
   const rateRef = useRef(rate);
   const verse = verses[i];
@@ -101,6 +105,12 @@ function ReadingPage() {
       if (w !== wordRef.current) {
         wordRef.current = w;
         setWordI(w);
+      }
+      const surface = item.words[w] ?? "";
+      const c = clusterAtPlay(item.chapter, item.verse, w, t, surface);
+      if (c !== clusterRef.current) {
+        clusterRef.current = c;
+        setClusterI(c);
       }
     }
   }
@@ -212,6 +222,8 @@ function ReadingPage() {
     iRef.current = 0;
     setWordI(0);
     wordRef.current = 0;
+    setClusterI(0);
+    clusterRef.current = 0;
     setMode("follow");
     setQuiz(null);
     setDone(false);
@@ -256,6 +268,8 @@ function ReadingPage() {
     setI(next);
     setWordI(0);
     wordRef.current = 0;
+    setClusterI(0);
+    clusterRef.current = 0;
     if (playing) void playFrom(next, true);
     else {
       const item = verses[next];
@@ -353,6 +367,7 @@ function ReadingPage() {
           verse={verse}
           i={i}
           wordI={wordI}
+          clusterI={clusterI}
           total={verses.length}
           playing={playing}
           rate={rate}
@@ -417,6 +432,7 @@ function FollowCard({
   verse,
   i,
   wordI,
+  clusterI,
   total,
   playing,
   rate,
@@ -433,6 +449,7 @@ function FollowCard({
   verse: ReadingVerse;
   i: number;
   wordI: number;
+  clusterI: number;
   total: number;
   playing: boolean;
   rate: number;
@@ -454,9 +471,16 @@ function FollowCard({
           {verse.words.map((w, wi) => (
             <span
               key={`${verse.ref}-${wi}`}
-              className={wi === wordI ? "rounded-sm bg-primary px-1 text-primary-foreground" : "text-ink"}
+              className={wi === wordI ? "he-spoken max-w-full" : "max-w-full text-ink"}
             >
-              {w}
+              {hebrewClusters(w).map((part, pi) => (
+                <span
+                  key={`${verse.ref}-${wi}-${pi}`}
+                  className={wi === wordI && pi === clusterI ? "rounded-sm bg-primary px-0.5 text-primary-foreground" : undefined}
+                >
+                  {part.glyph}
+                </span>
+              ))}
             </span>
           ))}
         </p>
