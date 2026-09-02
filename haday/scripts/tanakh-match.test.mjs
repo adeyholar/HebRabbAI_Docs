@@ -4,20 +4,20 @@ import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url, { alias: { "@": "/workspace/src" } });
 const { lettersOnly } = await jiti.import("/workspace/src/lib/hebrew.ts");
-const { lemmaForSurface, isInflected, tanakhForms, lemmaIdOf } = await jiti.import(
+const { lemmaForSurface, isInflected, tanakhForms, lemmaIdOf, tanakhVerseFor } = await jiti.import(
   "/workspace/src/lib/tanakh-pool.ts",
 );
+
+function storedAs(he, lemmaId) {
+  return tanakhForms().some((v) => lemmaIdOf(v.id) === lemmaId && lettersOnly(v.hebrew) === lettersOnly(he));
+}
 
 test("Gen 3:15 אשית is I will put, not fire", () => {
   assert.equal(lemmaForSurface("אָשִׁית"), undefined);
   assert.equal(lemmaForSurface("אשית"), undefined);
   assert.notEqual(lemmaForSurface("אָשִׁית")?.id, "ishah");
   assert.equal(isInflected("אָשִׁית", "אֵשׁ"), false);
-  const fires = tanakhForms().filter((v) => lemmaIdOf(v.id) === "esh");
-  for (const f of fires) {
-    assert.notEqual(lettersOnly(f.hebrew), lettersOnly("אָשִׁית"), f.hebrew);
-    assert.ok(isInflected(f.hebrew, "אֵשׁ") || lettersOnly(f.hebrew) === lettersOnly("אֵשׁ"), f.hebrew);
-  }
+  assert.equal(storedAs("אָשִׁית", "esh"), false);
 });
 
 test("woman is not fire; fire with article is fire", () => {
@@ -26,6 +26,33 @@ test("woman is not fire; fire with article is fire", () => {
   assert.equal(lemmaForSurface("הָאֵשׁ")?.id, "esh");
   assert.equal(lemmaForSurface("בָּאֵשׁ")?.id, "esh");
   assert.notEqual(lemmaForSurface("אֲשֶׁר")?.id, "esh");
+});
+
+test("false friends: surface is not a shorter unrelated lemma", () => {
+  const cases = [
+    ["אֱלֹהֵינוּ", "elleh", "elohim"],
+    ["בָּאוּ", "o", "bo"],
+    ["שֵׁמוֹת", "mut", "shem"],
+    ["מַהֵר", "har"],
+    ["מַלְאַךְ", "male"],
+    ["רֹעִי", "ra"],
+    ["פְּרוּ", "par"],
+    ["אִמּוֹ", "im-if", "em"],
+    ["הֶבֶל", "bal"],
+    ["לִפְנֵי", "pen"],
+    ["הַשֻּׁלְחָן", "shalach"],
+    ["לְאֹתֹת", "attah"],
+  ];
+  const bad = [];
+  for (const [he, wrong, right] of cases) {
+    const guessed = lemmaForSurface(he)?.id;
+    if (guessed === wrong) bad.push(`${he} guessed ${wrong}`);
+    if (storedAs(he, wrong)) bad.push(`${he} stored as ${wrong}`);
+    if (right && guessed && guessed !== right && guessed === wrong) bad.push(`${he} wanted ${right}`);
+  }
+  assert.equal(bad.length, 0, bad.join("\n"));
+  assert.equal(lemmaForSurface("אֱלֹהֵינוּ")?.id, "elohim");
+  assert.notEqual(lemmaForSurface("אִמּוֹ")?.id, "im-if");
 });
 
 test("longer lemma wins over a 2-letter substring", () => {
@@ -52,4 +79,17 @@ test("a 2-letter lemma is never glued onto a longer unrelated word", () => {
     }
   }
   assert.equal(bad.length, 0, bad.slice(0, 20).join("\n"));
+});
+
+test("attached verse actually contains the Hebrew surface", () => {
+  const bad = [];
+  for (const item of tanakhForms()) {
+    const verse = tanakhVerseFor(item.id);
+    if (!verse?.he) continue;
+    const surf = lettersOnly(item.hebrew);
+    if (!lettersOnly(verse.he).includes(surf) && !verse.he.includes(item.hebrew)) {
+      bad.push(`${item.hebrew} [${lemmaIdOf(item.id)}] ${verse.ref} ${verse.he}`);
+    }
+  }
+  assert.equal(bad.length, 0, bad.slice(0, 15).join("\n"));
 });

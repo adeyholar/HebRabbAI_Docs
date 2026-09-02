@@ -5,14 +5,7 @@ import { VOCAB, itemsForWeek, shuffle, type VocabItem } from "@/lib/vocab";
 
 const FORM_VERSES: Record<string, VerseEx> = {};
 
-function tokens(he: string): string[] {
-  return he
-    .split(/[\s־–—,;:.]+/)
-    .map((t) => t.replace(/[^\u0590-\u05F4]/g, ""))
-    .filter((t) => lettersOnly(t).length >= 2);
-}
-
-const CLITICS = new Set(["ו", "ה", "ב", "ל", "מ", "כ", "ש"]);
+const CLITICS = new Set(["ו", "ה", "ב", "ל", "כ"]);
 
 /** Noun/prep endings, longest first, always regular (non-final) letters. */
 const SUFFIXES = [
@@ -36,7 +29,6 @@ const SUFFIXES = [
   "ו",
   "י",
   "ה",
-  "ת",
   "ן",
   "ם",
 ].map((s) => foldFinals(s));
@@ -63,18 +55,29 @@ export function isInflected(surface: string, lemmaHe: string): boolean {
   if (s.length <= r.length) return false;
 
   const short = r.length < 3;
-  const shortSuf = ["ך", "ו", "י"].map((x) => foldFinals(x));
+  if (short) {
+    const bodies = "והבלכ".includes(s[0]!) ? [s, s.slice(1)] : [s];
+    for (const body of bodies) {
+      if (body === r) return true;
+      if (body.length === r.length + 1 && body.endsWith("י") && body.slice(0, r.length) === r) return true;
+    }
+    return false;
+  }
+
   for (const body of afterClitics(s)) {
     if (body === r) return true;
-    if (short) {
-      for (const suf of shortSuf) {
-        if (body.length === r.length + 1 && body.endsWith(suf) && body.slice(0, r.length) === r) return true;
-      }
-      continue;
-    }
     if (r.endsWith("ה")) {
       const bare = r.slice(0, -1);
       if (body === `${bare}ת` || body === `${bare}ים` || body === `${bare}ות`) return true;
+    }
+    // masculine plural construct: אלהים → אלהי, then אלהינו
+    if (r.endsWith("ימ") && r.length >= 4) {
+      const cons = `${r.slice(0, -2)}י`;
+      if (body === cons) return true;
+      if (body.startsWith(cons)) {
+        const rest = body.slice(cons.length);
+        if (SUFFIXES.includes(rest) || rest === "י") return true;
+      }
     }
     for (const suf of SUFFIXES) {
       if (suf === "ית") continue;
@@ -83,10 +86,31 @@ export function isInflected(surface: string, lemmaHe: string): boolean {
       if (core === r) return true;
       if (r.endsWith("ה") && core === `${r.slice(0, -1)}ת`) return true;
     }
-    // feminine abstract -ית on 3+ letter stems (ראשית ← ראש). Not on 2-letter (אשית is a verb).
     if (body.endsWith("ית") && foldFinals(body.slice(0, -2)) === r) return true;
   }
   return false;
+}
+
+function closedClass(v: VocabItem): boolean {
+  return v.pos === "particle" || v.pos === "pron";
+}
+
+/** True when this surface may be shown as that lemma in a drill. */
+export function formFitsLemma(surface: string, lemma: VocabItem): boolean {
+  const s = foldFinals(lettersOnly(surface));
+  const r = foldFinals(lettersOnly(lemma.hebrew));
+  if (s.length < 2 || r.length < 2) return false;
+  if (s === r) return true;
+  if (lemma.pos === "verb") return false;
+  if (closedClass(lemma)) return s.startsWith("ו") && s.slice(1) === r;
+  if (r.length < 3) {
+    const c = s[0]!;
+    if ("והבלכ".includes(c) && s.slice(1) === r) return true;
+    const rest = c === "ו" || c === "ה" ? s.slice(1) : s;
+    if (lemma.pos === "noun" && rest.endsWith("י") && rest.slice(0, -1) === r) return true;
+    return false;
+  }
+  return isInflected(surface, lemma.hebrew);
 }
 
 export function lemmaForSurface(surface: string): VocabItem | undefined {
@@ -102,7 +126,7 @@ export function lemmaForSurface(surface: string): VocabItem | undefined {
       if (!exact || v.freq > exact.freq) exact = v;
       continue;
     }
-    if (!isInflected(surf, root)) continue;
+    if (!formFitsLemma(surface, v)) continue;
     if (!best || root.length > bestLen || (root.length === bestLen && v.freq > best.freq)) {
       best = v;
       bestLen = root.length;
@@ -194,6 +218,7 @@ const EXTRA: Record<string, Array<{ he: string; ref: string; verse?: string; en?
     { he: "שְׁמֶךָ", ref: "Gen 12:2", verse: "וַאֲגַדְּלָה שְׁמֶךָ", en: "I will make your name great." },
     { he: "שְׁמוֹ", ref: "Exod 3:15", verse: "זֶה־שְּׁמִי לְעֹלָם וְזֶה זִכְרִי לְדֹר דֹּר", en: "This is my name forever, and this is my memorial from generation to generation." },
     { he: "בְּשֵׁם", ref: "Gen 4:26", verse: "אָז הוּחַל לִקְרֹא בְּשֵׁם יְהוָה", en: "Then people began to call on the name of YHWH." },
+    { he: "שֵׁמוֹת", ref: "Exod 1:1", verse: "וְאֵלֶּה שְׁמוֹת בְּנֵי יִשְׂרָאֵל", en: "These are the names of the sons of Israel." },
   ],
   panim: [
     { he: "פָּנָיו", ref: "Num 6:25", verse: "יָאֵר יְהוָה פָּנָיו אֵלֶיךָ", en: "YHWH make his face shine upon you." },
@@ -391,7 +416,7 @@ const EXTRA: Record<string, Array<{ he: string; ref: string; verse?: string; en?
     { he: "וְלֹא", ref: "Gen 2:25", verse: "וְלֹא יִתְבֹּשָׁשׁוּ", en: "And they were not ashamed." },
   ],
   el: [
-    { he: "אֵלַי", ref: "Gen 12:1", verse: "אֶל־הָאָרֶץ אֲשֶׁר אַרְאֶךָּ", en: "To the land that I will show you." },
+    { he: "אֵלַי", ref: "Gen 4:10", verse: "קוֹל דְּמֵי אָחִיךָ צֹעֲקִים אֵלַי מִן־הָאֲדָמָה", en: "The voice of your brother’s blood is crying to me from the ground." },
     { he: "אֵלֶיךָ", ref: "Num 6:25", verse: "יָאֵר יְהוָה פָּנָיו אֵלֶיךָ", en: "YHWH make his face shine upon you." },
   ],
   min: [
@@ -400,10 +425,10 @@ const EXTRA: Record<string, Array<{ he: string; ref: string; verse?: string; en?
   ],
   al: [
     { he: "עָלֶיךָ", ref: "Num 6:25", verse: "יָאֵר יְהוָה פָּנָיו אֵלֶיךָ וִיחֻנֶּךָּ", en: "YHWH make his face shine upon you and be gracious to you." },
-    { he: "עָלָיו", ref: "Gen 1:2", verse: "וְחֹשֶׁךְ עַל־פְּנֵי תְהוֹם", en: "And darkness over the face of the deep." },
+    { he: "עָלָיו", ref: "Isa 11:2", verse: "וְנָחָה עָלָיו רוּחַ יְהוָה", en: "And the spirit of YHWH shall rest upon him." },
   ],
   esh: [
-    { he: "הָאֵשׁ", ref: "Exod 3:2", verse: "וַיֵּרָא מַלְאַךְ יְהוָה אֵלָיו בְּלַבַּת־אֵשׁ", en: "The messenger of YHWH appeared to him in a flame of fire." },
+    { he: "הָאֵשׁ", ref: "Deut 5:24", verse: "וְאֶת־קֹלוֹ שָׁמַעְנוּ מִתּוֹךְ הָאֵשׁ", en: "We heard his voice from the midst of the fire." },
   ],
   zahav: [
     { he: "הַזָּהָב", ref: "Exod 25:11", verse: "וְצִפִּיתָ אֹתוֹ זָהָב טָהוֹר", en: "You shall overlay it with pure gold." },
@@ -425,7 +450,7 @@ const EXTRA: Record<string, Array<{ he: string; ref: string; verse?: string; en?
     { he: "קְדֹשִׁים", ref: "Lev 19:2", verse: "קְדֹשִׁים תִּהְיוּ כִּי קָדוֹשׁ אֲנִי יְהוָה", en: "You shall be holy, for I, YHWH, am holy." },
   ],
   ehad: [
-    { he: "אַחַת", ref: "Gen 1:9", verse: "וְתֵרָאֶה הַיַּבָּשָׁה", en: "And let the dry land appear." },
+    { he: "אַחַת", ref: "Gen 11:1", verse: "וַיְהִי כָל־הָאָרֶץ שָׂפָה אֶחָת וּדְבָרִים אֲחָדִים", en: "The whole earth was one language and the same words." },
     { he: "אֶחָד", ref: "Deut 6:4", verse: "יְהוָה אֱלֹהֵינוּ יְהוָה אֶחָד", en: "YHWH our God, YHWH is one." },
   ],
 };
@@ -446,7 +471,9 @@ function addForm(
   if (seen.has(key)) return;
   seen.add(key);
   const id = `tv:${lemma.id}:${out.length}`;
-  if (verse?.he) {
+  const heHay = verse?.he ? lettersOnly(verse.he) : "";
+  const inVerse = Boolean(verse?.he && (heHay.includes(letters) || verse.he.includes(surface)));
+  if (inVerse && verse) {
     FORM_VERSES[id] = {
       ref: verse.ref,
       he: verse.he,
@@ -470,10 +497,6 @@ function addForm(
 
 function harvestVerse(out: VocabItem[], seen: Set<string>, verse: VerseEx, lemmaHint?: VocabItem) {
   if (lemmaHint && verse.hit) addForm(out, seen, verse.hit, lemmaHint, verse);
-  for (const tok of tokens(verse.he)) {
-    const found = lemmaForSurface(tok);
-    if (found) addForm(out, seen, tok, found, verse);
-  }
 }
 
 /** Distinct Tanakh surface forms tied to BBH lemmas. */
@@ -491,7 +514,7 @@ export function tanakhForms(): VocabItem[] {
     for (const verse of unit.verses) harvestVerse(out, seen, verse);
     for (const sample of unit.samples) {
       const found = lemmaForSurface(sample.word);
-      if (!found) continue;
+      if (!found || !formFitsLemma(sample.word, found)) continue;
       const verse: VerseEx | undefined = sample.ref
         ? { ref: sample.ref, he: sample.word, en: sample.note, hit: sample.word }
         : undefined;

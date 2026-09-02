@@ -156,8 +156,8 @@ export const SYLLABLE_UNITS: SyllableUnit[] = [
     ],
     verses: [
       { ref: "Prov 1:7", he: "יִרְאַת יְהוָה רֵאשִׁית דָּעַת חָכְמָה וּמוּסָר אֱוִילִים בָּזוּ", en: "The fear of YHWH is the beginning of knowledge; fools despise wisdom and instruction.", hit: "חָכְמָה", hitEn: "wisdom" },
-      { ref: "Exod 19:5", he: "וִהְיִיתֶם לִי סְגֻלָּה מִכָּל־הָעַמִּים", en: "You shall be my treasured possession out of all the peoples.", hit: "מִכָּל" },
-      { ref: "Deut 6:5", he: "וְאָהַבְתָּ אֵת יְהוָה אֱלֹהֶיךָ בְּכָל־לְבָבְךָ", en: "You shall love YHWH your God with all your heart.", hit: "בְּכָל" },
+      { ref: "Exod 19:5", he: "וִהְיִיתֶם לִי סְגֻלָּה מִכָּל־הָעַמִּים", en: "You shall be my treasured possession out of all the peoples.", hit: "מִכָּל", hitEn: "all" },
+      { ref: "Deut 6:5", he: "וְאָהַבְתָּ אֵת יְהוָה אֱלֹהֶיךָ בְּכָל־לְבָבְךָ", en: "You shall love YHWH your God with all your heart.", hit: "בְּכָל", hitEn: "all" },
       { ref: "Gen 1:5", he: "וַיִּקְרָא אֱלֹהִים לָאוֹר יוֹם וְלַחֹשֶׁךְ קָרָא לָיְלָה", en: "God called the light Day, and the darkness he called Night.", hit: "קָרָא" },
     ],
     quiz: [
